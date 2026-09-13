@@ -75,7 +75,15 @@ export default function PublicCertificationView() {
         signatoryDni: dni,
         signature: signatureBase64
       });
-      setCertification((prev: any) => ({ ...prev, ...data }));
+      // Recargar datos completos para evitar inconsistencias
+        const { data: newData } = await api.get(`/certifications/public/${token}`);
+        if (newData.certification) {
+          setFullData(newData);
+          setCertification(newData.certification);
+        } else {
+          setFullData({ certification: newData, baseQuotation: null, budgetQuotation: null, certifications: [] });
+          setCertification(newData);
+        }
       setShowSignModal(false);
       toast.success('¡Certificación firmada exitosamente!');
     } catch (err: any) {
@@ -114,7 +122,7 @@ export default function PublicCertificationView() {
         </html>
       `;
 
-      const response = await api.post('/projects/generate-pdf', {
+      const response = await api.post('/certifications/public/generate-pdf', {
         html: htmlContent,
         filename: `Certificacion_${certification.project?.name || 'Proyecto'}_${certification.name}`,
         landscape: false

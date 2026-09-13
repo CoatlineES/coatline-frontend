@@ -111,14 +111,11 @@ export default function AlmacenView() {
         }]
       });
 
-      // Auto-approve if user is almacen_admin
-      const perms = user?.customPermissions || [];
-      if (perms.includes('almacen_admin')) {
-        await inventoryService.updateRequestStatus(newRequest.id, {
-          status: 'APPROVED',
-          approvalReason: 'Auto-aprobado automáticamente (Admin de Almacén)'
-        });
-      }
+      // Auto-aprobar siempre ya que el usuario es quien retira el material
+      await inventoryService.updateRequestStatus(newRequest.id, {
+        status: 'APPROVED',
+        approvalReason: 'Auto-aprobado automáticamente (Usuario retira material)'
+      });
 
       showNotification('Solicitud enviada correctamente', 'success');
       setSelectedBinAction(null);

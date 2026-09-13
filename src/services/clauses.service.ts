@@ -13,22 +13,22 @@ export interface LibraryClause {
 export const clausesService = {
   getAll: async (): Promise<LibraryClause[]> => {
     const response = await api.get('/clauses');
-    return response;
+    return response.data;
   },
 
   getById: async (id: string): Promise<LibraryClause> => {
     const response = await api.get(`/clauses/${id}`);
-    return response;
+    return response.data;
   },
 
   create: async (data: Omit<LibraryClause, 'id' | 'createdAt' | 'updatedAt'>): Promise<LibraryClause> => {
     const response = await api.post('/clauses', data);
-    return response;
+    return response.data;
   },
 
   update: async (id: string, data: Partial<LibraryClause>): Promise<LibraryClause> => {
     const response = await api.put(`/clauses/${id}`, data);
-    return response;
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {

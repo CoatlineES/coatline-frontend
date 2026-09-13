@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ScreenId } from '../types';
 
 import HomeHero from '../components/home/HomeHero';
-import HomeZeroFiltraciones from '../components/home/HomeZeroFiltraciones';
+import HomePackages from '../components/home/HomePackages';
 import HomeMethodology from '../components/home/HomeMethodology';
 import HomeServices from '../components/home/HomeServices';
 import HomeBrands from '../components/home/HomeBrands';
@@ -32,7 +32,7 @@ export default function HomeView({ onNavigate }: HomeViewProps) {
   return (
     <div className="w-full text-on-surface">
       <HomeHero onNavigate={onNavigate} />
-      <HomeZeroFiltraciones />
+      <HomePackages />
       <HomeMethodology />
       <HomeServices onNavigate={onNavigate} />
       <HomeBrands />

@@ -20,6 +20,7 @@ import {
 import { ScreenId } from '../types';
 import CssDetectorCart from '../components/animations/CssDetectorCart';
 import CssDetectionFloor from '../components/animations/CssDetectionFloor';
+import imgHeroDeteccion from '../assets/packages/deteccion_termografica_1789058782940.jpg';
 
 interface DetectionViewProps {
   onNavigate: (screen: ScreenId, transition: 'none' | 'push') => void;
@@ -194,38 +195,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
     );
   };
 
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const distX = e.clientX - centerX;
-    const distY = e.clientY - centerY;
-    const distance = Math.sqrt(distX * distX + distY * distY);
-    
-    // Limitar la animación a cuando el ratón esté relativamente cerca (ej. 120px)
-    if (distance < 120) {
-      mouseX.set(distX);
-      mouseY.set(distY);
-    } else {
-      mouseX.set(0);
-      mouseY.set(0);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  const springConfig = { damping: 25, stiffness: 150 };
-  const evadeX = useSpring(useTransform(mouseX, [-300, 300], [80, -80]), springConfig);
-  const evadeY = useSpring(useTransform(mouseY, [-300, 300], [80, -80]), springConfig);
-  const evadeRotateZ = useSpring(useTransform(mouseX, [-300, 300], [-10, 10]), springConfig);
-  const evadeRotateX = useSpring(useTransform(mouseY, [-300, 300], [-10, 10]), springConfig);
 
   const cases = [
     {
@@ -301,24 +271,22 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
   return (
     <div className="w-full text-on-surface">
       {/* Hero Section */}
-      <header className="relative w-full min-h-[90vh] flex items-center pt-20 overflow-hidden">
+      <header className="relative w-full min-h-[calc(100vh-80px)] md:h-[calc(100vh-80px)] flex flex-col justify-center pt-8 overflow-hidden">
         <div className="absolute inset-0 w-full h-full z-0">
           <CssDetectionFloor />
-          {/* Subtle white vignette to ensure text readability on the light roof */}
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/30 to-transparent z-10 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent z-10 pointer-events-none" />
+          {/* Subtle vignette and blur to ensure text readability and create a premium feel */}
+          <div className="absolute inset-0 bg-background/70 md:bg-background/50 z-10 pointer-events-none backdrop-blur-[2px]" />
         </div>
         
-        <div className="relative z-30 max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+        <div className="relative z-30 max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16 items-center">
           
           {/* Left Column: Typography */}
-          <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-center space-y-4">
-            
+          <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-center text-left">
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center self-start gap-2 px-3 py-1.5 mb-2 rounded-full bg-white/50 border border-slate-300 backdrop-blur-sm shadow-sm"
+              className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 rounded-full bg-white/80 border border-slate-300 backdrop-blur-md shadow-sm w-max"
             >
               <Settings size={14} className="text-secondary" />
               <span className="font-sans font-bold text-slate-800 uppercase tracking-widest text-[10px]">
@@ -330,7 +298,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, x: -30, filter: 'blur(10px)' }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-              className="font-display font-extrabold text-3xl md:text-4xl lg:text-5xl xl:text-6xl text-slate-900 leading-[1.15] tracking-tight"
+              className="font-display font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.1] tracking-tight mb-6"
             >
               Detección Electrónica de Filtraciones
             </motion.h1>
@@ -339,7 +307,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, x: -20, filter: 'blur(8px)' }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-              className="text-sm md:text-base lg:text-lg text-slate-700 font-sans max-w-xl leading-relaxed font-medium"
+              className="text-base md:text-lg lg:text-xl text-slate-700 font-sans max-w-xl leading-relaxed font-medium mb-10"
             >
               Diagnóstico de alta precisión sin alteraciones estructurales. Tecnología no invasiva que identifica microfisuras con exactitud milimétrica.
             </motion.p>
@@ -348,59 +316,70 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
-              className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4"
+              className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
             >
-              <a 
-                href="#tecnologia" 
-                onClick={(e) => { e.preventDefault(); document.getElementById('tecnologia')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="px-5 py-2.5 md:px-6 md:py-3 bg-transparent border-2 border-[#001c3a] text-[#001c3a] font-sans font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-[#001c3a]/5 transition-all active:scale-95 flex items-center gap-2 w-full sm:w-auto justify-center"
-              >
-                Conocer la Tecnología
-              </a>
               <a 
                 href="#contacto" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="px-5 py-2.5 md:px-6 md:py-3 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-[#9a0c2d] transition-all shadow-lg shadow-secondary/30 active:scale-95 flex items-center gap-2 group w-full sm:w-auto justify-center"
+                className="px-8 py-4 bg-secondary text-white font-sans font-bold text-sm uppercase tracking-wider rounded-xl hover:bg-[#9a0c2d] transition-all shadow-xl shadow-secondary/30 active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
               >
-                Solicitar Diagnóstico <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                Solicitar Diagnóstico <ArrowRight size={16} />
+              </a>
+              <a 
+                href="#tecnologia" 
+                onClick={(e) => { e.preventDefault(); document.getElementById('tecnologia')?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="px-8 py-4 bg-white/50 border-2 border-[#001c3a]/20 text-[#001c3a] font-sans font-bold text-sm uppercase tracking-wider rounded-xl hover:bg-white hover:border-[#001c3a] transition-all active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
+              >
+                Conocer la Tecnología
               </a>
             </motion.div>
           </div>
 
-          {/* Right Column: Animated Detector Cart */}
-          <div 
-            className="md:col-span-6 lg:col-span-7 relative h-full flex items-center justify-center pt-10 md:pt-0 pointer-events-auto"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-          >
-            {/* Background Glow */}
-            <div className="absolute w-[80%] h-[50%] bg-blue-500/20 rounded-full blur-[80px] z-0 pointer-events-none"></div>
-
-            <motion.div
-              initial={{ opacity: 0, x: '50vw', rotate: -10 }}
-              animate={{ opacity: 1, x: 0, rotate: 0 }}
-              transition={{ duration: 2, type: "spring", stiffness: 30, damping: 15, delay: 0.4 }}
-              className="relative z-10 w-full pointer-events-none"
+          {/* Right Column: Premium Image with Floating Cards */}
+          <div className="md:col-span-6 lg:col-span-7 relative h-full flex items-center justify-center pt-16 md:pt-0">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="relative w-full max-w-xl mx-auto aspect-[4/3]"
             >
-              {/* Slight continuous forward/backward hovering motion */}
-              <motion.div
-                animate={{ x: [-20, 20, -20], y: [-5, 5, -5] }}
-                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-                className="w-full flex justify-center items-center pointer-events-auto"
+              <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border border-white/20">
+                <img 
+                  src={imgHeroDeteccion} 
+                  alt="Técnico realizando detección termográfica" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#001c3a]/30 to-transparent pointer-events-none" />
+              </div>
+              
+              {/* Floating Metric 1 */}
+              <motion.div 
+                animate={{ y: [-6, 6, -6] }}
+                transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+                className="absolute top-6 md:top-10 -left-6 md:-left-12 bg-white/95 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/50 flex items-center gap-4 z-10"
               >
-                <motion.div
-                  style={{
-                    x: evadeX,
-                    y: evadeY,
-                    rotateZ: evadeRotateZ,
-                    rotateX: evadeRotateX
-                  }}
-                  whileHover={{ scale: 1.1, cursor: 'grab' }}
-                  whileTap={{ scale: 0.95, cursor: 'grabbing' }}
-                  className="w-full flex justify-center"
-                >
-                  <CssDetectorCart />
-                </motion.div>
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                  <Target className="text-emerald-600 w-5 h-5" />
+                </div>
+                <div className="pr-2">
+                  <p className="font-display font-bold text-slate-900 text-lg md:text-xl leading-tight">99.9%</p>
+                  <p className="font-sans text-[10px] md:text-xs uppercase tracking-widest text-slate-500 font-bold mt-0.5">Precisión Exacta</p>
+                </div>
+              </motion.div>
+
+              {/* Floating Metric 2 */}
+              <motion.div 
+                animate={{ y: [6, -6, 6] }}
+                transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 1 }}
+                className="absolute bottom-8 md:bottom-12 -right-6 md:-right-12 bg-white/95 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/50 flex items-center gap-4 z-10"
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="text-primary w-5 h-5" />
+                </div>
+                <div className="pr-2">
+                  <p className="font-display font-bold text-slate-900 text-base md:text-lg leading-tight">Normativa UNE</p>
+                  <p className="font-sans text-[10px] md:text-xs uppercase tracking-widest text-slate-500 font-bold mt-0.5">Certificado Oficial</p>
+                </div>
               </motion.div>
             </motion.div>
           </div>
@@ -436,17 +415,17 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
             {/* Benefits Bento */}
             <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12 md:mt-0">
               
-              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl transition-all duration-300 group">
                 <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">
-                  <Droplet className="text-primary w-6 h-6" />
+                  <Zap className="text-primary w-6 h-6" />
                 </div>
-                <h3 className="font-display font-bold text-primary mb-3 text-lg">Cero Consumo de Agua</h3>
+                <h3 className="font-display font-bold text-primary mb-3 text-lg">Resultados Instantáneos</h3>
                 <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Elimina la necesidad de inundar cubiertas, ahorrando miles de litros de agua y recursos por proyecto.
+                  Evita las esperas de 48 horas de las pruebas de inundación tradicionales. El escaneo electrónico proporciona lecturas precisas en tiempo real.
                 </p>
               </div>
               
-              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl transition-all duration-300 group">
                 <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">
                   <Scale className="text-primary w-6 h-6" />
                 </div>
@@ -456,7 +435,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
                 </p>
               </div>
               
-              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl transition-all duration-300 group">
                 <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">
                   <Target className="text-primary w-6 h-6" />
                 </div>
@@ -466,7 +445,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
                 </p>
               </div>
               
-              <div className="bg-primary border border-primary p-8 rounded-xl flex flex-col hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group" style={{ backgroundColor: '#003b70' }}>
+              <div className="bg-primary border border-primary p-8 rounded-xl flex flex-col hover:shadow-2xl transition-all duration-300 group" style={{ backgroundColor: '#003b70' }}>
                 <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-6">
                   <CheckCircle className="text-white w-6 h-6" />
                 </div>
@@ -500,8 +479,8 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Low Voltage */}
-              <div className="bg-white border border-surface-variant p-10 lg:p-12 rounded-xl flex flex-col relative overflow-hidden group hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:scale-110 transition-transform">
+              <div className="bg-white border border-surface-variant p-10 lg:p-12 rounded-xl flex flex-col relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+                <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                   <Zap strokeWidth={1} className="w-48 h-48 text-primary" />
                 </div>
                 <div className="relative z-10">
@@ -530,8 +509,8 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               </div>
               
               {/* High Voltage */}
-              <div className="bg-white border border-surface-variant p-10 lg:p-12 rounded-xl flex flex-col relative overflow-hidden group hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:scale-110 transition-transform">
+              <div className="bg-white border border-surface-variant p-10 lg:p-12 rounded-xl flex flex-col relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+                <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                   <Zap strokeWidth={1.5} className="w-48 h-48 text-primary" />
                 </div>
                 <div className="relative z-10">
@@ -580,7 +559,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 relative z-10">
               
               {/* Step 1 */}
-              <div className="flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-300 cursor-default">
+              <div className="flex flex-col items-center text-center group cursor-default">
                 <div className="w-24 h-24 rounded-full bg-white border border-surface-variant flex items-center justify-center mb-6 shadow-sm relative group-hover:shadow-md transition-shadow">
                   <span className="font-display font-extrabold text-2xl text-primary">01</span>
                   <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
@@ -594,7 +573,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               </div>
               
               {/* Step 2 */}
-              <div className="flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-300 cursor-default">
+              <div className="flex flex-col items-center text-center group cursor-default">
                 <div className="w-24 h-24 rounded-full bg-white border border-surface-variant flex items-center justify-center mb-6 shadow-sm relative group-hover:shadow-md transition-shadow">
                   <span className="font-display font-extrabold text-2xl text-primary">02</span>
                   <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
@@ -608,7 +587,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               </div>
               
               {/* Step 3 */}
-              <div className="flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-300 cursor-default">
+              <div className="flex flex-col items-center text-center group cursor-default">
                 <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center mb-6 shadow-md relative ring-4 ring-primary/10 group-hover:shadow-xl transition-shadow">
                   <span className="font-display font-extrabold text-2xl">03</span>
                   <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center shadow-md">
@@ -622,7 +601,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               </div>
               
               {/* Step 4 */}
-              <div className="flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-300 cursor-default">
+              <div className="flex flex-col items-center text-center group cursor-default">
                 <div className="w-24 h-24 rounded-full bg-white border border-surface-variant flex items-center justify-center mb-6 shadow-sm relative group-hover:shadow-md transition-shadow">
                   <span className="font-display font-extrabold text-2xl text-primary">04</span>
                   <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
@@ -721,30 +700,25 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
                     <div 
                       key={c.id} 
                       onClick={() => setSelectedCard(c)}
-                      className="bg-white rounded-xl overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-transparent hover:border-blue-100"
+                      className="bg-white rounded-xl overflow-hidden flex flex-col transition-all duration-300 cursor-pointer group border border-slate-100 hover:border-secondary shadow-sm hover:shadow-md"
                     >
                       <div className="aspect-video overflow-hidden relative">
                         <img 
                           alt={c.system} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                          className="w-full h-full object-cover" 
                           src={c.before.img} 
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-full transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-primary text-xs font-bold flex items-center gap-2 shadow-xl border border-primary/10">
-                            Ver Filtraciones <ArrowRight size={14} className="text-secondary" />
-                          </div>
-                        </div>
+                        <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/10 transition-colors duration-300" />
                       </div>
                       <div className="p-6 flex flex-col flex-grow text-left relative">
-                        <div className="absolute -top-4 right-6 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center border border-slate-100 group-hover:scale-110 transition-transform">
-                          <Eye size={14} className="text-secondary" />
+                        <div className="absolute -top-4 right-6 w-8 h-8 bg-white rounded-full shadow flex items-center justify-center border border-slate-100 text-slate-300 group-hover:text-secondary transition-colors">
+                          <Eye size={14} />
                         </div>
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 rounded text-primary mb-3 w-max">
                            <Radar size={10} className="text-secondary" />
                            <span className="font-sans font-bold text-[8px] uppercase tracking-wider">Caso de Estudio</span>
                         </div>
-                        <h3 className="font-display font-bold text-lg mb-2 text-slate-800 leading-tight">
+                        <h3 className="font-display font-bold text-lg mb-2 text-slate-800 leading-tight group-hover:text-primary transition-colors">
                           {c.system}
                         </h3>
                         <p className="font-sans text-xs md:text-sm text-slate-500 flex-grow leading-relaxed line-clamp-3">

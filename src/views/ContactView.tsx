@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   MapPin,
@@ -26,6 +27,9 @@ interface ContactViewProps {
 }
 
 export default function ContactView({ onNavigate }: ContactViewProps) {
+  const [searchParams] = useSearchParams();
+  const initialService = searchParams.get('service');
+
   // Form State
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
@@ -34,10 +38,10 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
   const [typology, setTypology] = useState('');
   const [sector, setSector] = useState('');
   const [services, setServices] = useState({
-    waterproofing: false,
-    detection: false,
-    repairs: false,
-    zeroLeaks: false,
+    waterproofing: initialService === 'waterproofing',
+    detection: initialService === 'detection',
+    repairs: initialService === 'repairs',
+    zeroLeaks: initialService === 'zeroLeaks',
   });
   const [area, setArea] = useState('');
   const [budget, setBudget] = useState('');

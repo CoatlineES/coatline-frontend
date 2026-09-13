@@ -76,11 +76,16 @@ export const exportActivitiesToExcel = async (data: any, filtersInfo: string) =>
 
   let statusRow = 14;
   if (metrics.dashboardDistribution) {
-    const dashboardLabels: any = { planned: 'Planificadas', noDate: 'Sin fecha', overdue: 'Vencidas', inProgress: 'En curso', completed: 'Completadas' };
-    Object.entries(metrics.dashboardDistribution).forEach(([status, count]) => {
+    const dist = { ...metrics.dashboardDistribution };
+    if (dist.noDate) {
+      dist.planned = (dist.planned || 0) + dist.noDate;
+      delete dist.noDate;
+    }
+    const dashboardLabels = { planned: 'Planificadas', overdue: 'Vencidas', inProgress: 'En curso', completed: 'Completadas' };
+    Object.entries(dist).forEach(([status, count]) => {
       summarySheet.addRow([dashboardLabels[status] || status, count]);
-      summarySheet.getCell(`A${statusRow}`).font = { bold: true };
-      summarySheet.getCell(`B${statusRow}`).alignment = { horizontal: 'right' };
+      summarySheet.getCell('A' + statusRow).font = { bold: true };
+      summarySheet.getCell('B' + statusRow).alignment = { horizontal: 'right' };
       statusRow++;
     });
   }
@@ -132,9 +137,10 @@ export const exportActivitiesToExcel = async (data: any, filtersInfo: string) =>
     row.getCell(3).alignment = { horizontal: 'center' };
     row.getCell(4).alignment = { horizontal: 'center' };
     row.getCell(5).alignment = { horizontal: 'center' };
-    row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
-    row.getCell(6).font = { bold: true };
-    row.getCell(7).alignment = { horizontal: 'center' };
+    row.getCell(6).alignment = { horizontal: 'center' };
+    row.getCell(7).alignment = { horizontal: 'center', vertical: 'middle' };
+    row.getCell(7).font = { bold: true };
+    row.getCell(9).alignment = { horizontal: 'center' };
     row.getCell(8).alignment = { horizontal: 'center' };
     currentRow++;
   }

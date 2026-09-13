@@ -20,7 +20,7 @@ export default function HomeServices({ onNavigate }: HomeServicesProps) {
         >
           <div className="text-center mb-16 max-w-3xl mx-auto space-y-6">
           <h2 className="font-display font-bold text-3xl md:text-4xl text-primary tracking-tight">
-            PRODUCTOS Y SERVICIOS
+            SOLUCIONES TÉCNICAS
           </h2>
           <div className="w-16 h-1 bg-secondary mx-auto"></div>
           <p className="font-sans text-base md:text-lg text-on-surface-variant">

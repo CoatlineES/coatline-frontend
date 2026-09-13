@@ -6,7 +6,7 @@ import {
   Building2, Users, Search, Plus, Edit2, Trash2, 
   AlertCircle, CheckCircle, RefreshCw, X, Mail, Phone, Briefcase,
   LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, Download, History, User, Filter
-} from 'lucide-react';
+, Target } from 'lucide-react';
 import { accountsService, contactsService, Account, Contact } from '../../services/crm.service';
 import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus } from '../../services/activities.service';
 import { dealsService, Deal, DealStage } from '../../services/deals.service';
@@ -142,6 +142,113 @@ function SearchableAccountSelect({
   );
 }
 
+function SearchableContactFilter({ 
+  contacts, 
+  value, 
+  onChange, 
+  disabled = false,
+  placeholder = "Todos los contactos"
+}: { 
+  contacts: Contact[], 
+  value: string, 
+  onChange: (id: string) => void,
+  disabled?: boolean,
+  placeholder?: string
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  const selectedContact = value === 'ALL' ? null : contacts.find(c => c.id === value);
+  const filteredContacts = contacts.filter(c => 
+    c.name.toLowerCase().includes(search.toLowerCase()) || 
+    (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div className="relative">
+      <div 
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`px-3 py-2 min-w-[200px] h-[38px] bg-white border border-slate-200 rounded-xl text-sm font-medium flex items-center justify-between cursor-pointer shadow-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'focus-within:ring-2 focus-within:ring-[#001c3a]/20 text-slate-600'}`}
+      >
+        <span className="truncate mr-2">
+          {selectedContact ? selectedContact.name : placeholder}
+        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {selectedContact && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange('ALL');
+                setSearch('');
+              }}
+              className="p-0.5 rounded hover:bg-slate-100 text-slate-400 hover:text-red-500 transition-colors"
+              title="Borrar filtro"
+            >
+              <X size={14} />
+            </button>
+          )}
+          <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </div>
+      
+      <AnimatePresence>
+        {isOpen && !disabled && (
+          <>
+            <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)}></div>
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute z-[110] w-64 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
+            >
+              <div className="p-2 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                <Search size={14} className="text-slate-400" />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Buscar contacto..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full text-sm bg-transparent outline-none text-slate-700"
+                />
+              </div>
+              <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                <div
+                  onClick={() => {
+                    onChange('ALL');
+                    setIsOpen(false);
+                    setSearch('');
+                  }}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 flex flex-col border-b border-slate-50 transition-colors ${value === 'ALL' ? 'bg-blue-50/50 text-[#001c3a] font-bold' : 'text-slate-700'}`}
+                >
+                  <span>Todos los contactos</span>
+                </div>
+                {filteredContacts.length === 0 ? (
+                  <div className="p-3 text-xs text-slate-500 text-center">No se encontraron contactos</div>
+                ) : (
+                  filteredContacts.map(contact => (
+                    <div
+                      key={contact.id}
+                      onClick={() => {
+                        onChange(contact.id);
+                        setIsOpen(false);
+                        setSearch('');
+                      }}
+                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 flex flex-col border-b border-slate-50 last:border-none transition-colors ${value === contact.id ? 'bg-blue-50/50 text-[#001c3a] font-bold' : 'text-slate-700'}`}
+                    >
+                      <span>{contact.name}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function CrmView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as Tab) || 'dashboard';
@@ -182,9 +289,13 @@ export default function CrmView() {
   const [projects, setProjects] = useState<any[]>([]);
   
   // UI state
+  const ITEMS_PER_PAGE = 25;
+  const [accountsPage, setAccountsPage] = useState(1);
+  const [contactsPage, setContactsPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [importCount, setImportCount] = useState(0);
+  const [duplicateCount, setDuplicateCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   
@@ -212,11 +323,12 @@ export default function CrmView() {
           }
 
           let response;
-          if (activeTab === 'accounts') {
+            let totalAttempted = 0;
+            if (activeTab === 'accounts') {
             // Map headers for Accounts (Empresas)
             // Esperamos: Nombre, CIF, Sector, Email, Teléfono, Ciudad
             const mappedData = data.map((row: any) => ({
-              name: row['Nombre'] || row['name'] || row['NAME'],
+              name: row['Nombre'] || row['name'] || row['NAME'] || row['__EMPTY'] || row['Empresa'] || (Object.values(row)[0] as string),
               cif: row['CIF'] || row['cif'],
               sector: row['Sector'] || row['sector'],
               email: row['Email'] || row['email'] || row['Correo'],
@@ -224,28 +336,38 @@ export default function CrmView() {
               city: row['Ciudad'] || row['city'],
             })).filter(item => !!item.name); // Filter out empty rows
 
-            response = await accountsService.bulkCreate(mappedData);
+            totalAttempted = mappedData.length;
+              response = await accountsService.bulkCreate(mappedData);
           } else if (activeTab === 'contacts') {
             // Map headers for Contacts (Contactos)
             // Esperamos: Empresa, Nombre, Email, Teléfono, Cargo
-            const mappedData = data.map((row: any) => ({
-              accountName: row['Empresa'] || row['empresa'],
-              name: row['Nombre'] || row['name'],
-              email: row['Email'] || row['email'] || row['Correo'],
-              phone: String(row['Teléfono'] || row['Telefono'] || row['phone'] || ''),
-              position: row['Cargo'] || row['cargo'] || row['position'],
-            })).filter(item => !!item.accountName && !!item.name);
+                          const mappedData = data.map((row: any) => {
+                const values = Object.values(row);
+                return {
+                  accountName: row['Empresa'] || row['empresa'] || row['__EMPTY'] || (values[0] as string),
+                  name: row['Nombre'] || row['name'] || row['NAME'] || row['__EMPTY_1'] || (values[1] as string),
+                  email: row['Email'] || row['email'] || row['Correo'] || row['__EMPTY_2'] || (values[2] as string) || null,
+                  phone: String(row['Teléfono'] || row['Telefono'] || row['phone'] || row['__EMPTY_3'] || (values[3] as string) || ''),
+                  position: row['Cargo'] || row['cargo'] || row['position'] || row['__EMPTY_4'] || (values[4] as string) || '',
+                };
+              }).filter(item => !!item.accountName && !!item.name);
 
-            response = await contactsService.bulkCreate(mappedData);
+            totalAttempted = mappedData.length;
+              response = await contactsService.bulkCreate(mappedData);
           }
           
-          if (response?.errors?.length > 0) {
-            toast.error(`Se importaron ${response.count} registros con ${response.errors.length} errores. Revisa la consola.`);
-            console.error('Errores en importación:', response.errors);
-          } else {
-            setImportCount(response.count);
-            setShowSuccessOverlay(true);
-          }
+                          const duplicatedItems = totalAttempted - (response?.count || 0);
+              if (duplicatedItems > 0 || response?.errors?.length > 0) {
+                setDuplicateCount(duplicatedItems);
+                console.error("Errores o duplicados en importación:", response?.errors || "Filas duplicadas ignoradas por Prisma");
+              } else {
+                setDuplicateCount(0);
+              }
+              
+              if (response?.count >= 0) {
+                setImportCount(response.count);
+                setShowSuccessOverlay(true);
+              }
           
           // Refresh data
           fetchData();
@@ -285,6 +407,7 @@ export default function CrmView() {
   const [dashboardActivityStatusFilter, setDashboardActivityStatusFilter] = useState('PLANNED');
   const [dashboardActivityUserFilter, setDashboardActivityUserFilter] = useState('ALL');
   const [dashboardActivityDateFilter, setDashboardActivityDateFilter] = useState('ALL');
+    const [dashboardActivitySort, setDashboardActivitySort] = useState('PLANNED_ASC');
   const [expandedDashboardActivityId, setExpandedDashboardActivityId] = useState<string | null>(null);
   const [dashboardActivityRangeFrom, setDashboardActivityRangeFrom] = useState('');
   const [dashboardActivityRangeTo, setDashboardActivityRangeTo] = useState('');
@@ -713,6 +836,7 @@ export default function CrmView() {
         parentActivityId: editingActivity.parentActivityId || null,
         result: editingActivity.result || null,
         notes: editingActivity.notes || null,
+        plannedDate: editingActivity.plannedDate || null,
         completedAt: editingActivity.completedAt || null,
       };
 
@@ -770,7 +894,7 @@ export default function CrmView() {
       }
 
       if (payload.stage === DealStage.WON && savedDealId) {
-        const createProject = window.confirm('Este negocio ha sido marcado como Ganado. ¿Desea crear un proyecto para este negocio?');
+        const createProject = window.confirm('Este negocio ha sido marcado como Ganado. Â¿Desea crear un proyecto para este negocio?');
         if (createProject) {
           try {
             await projectsService.createFromDeal(savedDealId);
@@ -910,7 +1034,28 @@ export default function CrmView() {
     filteredActivities = filteredActivities.filter(a => a.deal?.businessLineId === dashboardActivityBusinessLineFilter);
   }
 
-  const getActivityIcon = (type: ActivityType) => {
+  
+    if (dashboardActivitySort === 'PLANNED_ASC') {
+      filteredActivities.sort((a, b) => {
+        if (!a.plannedDate && !b.plannedDate) return 0;
+        if (!a.plannedDate) return 1;
+        if (!b.plannedDate) return -1;
+        return new Date(a.plannedDate).getTime() - new Date(b.plannedDate).getTime();
+      });
+    } else if (dashboardActivitySort === 'PLANNED_DESC') {
+      filteredActivities.sort((a, b) => {
+        if (!a.plannedDate && !b.plannedDate) return 0;
+        if (!a.plannedDate) return 1;
+        if (!b.plannedDate) return -1;
+        return new Date(b.plannedDate).getTime() - new Date(a.plannedDate).getTime();
+      });
+    } else if (dashboardActivitySort === 'CREATED_DESC') {
+      filteredActivities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (dashboardActivitySort === 'CREATED_ASC') {
+      filteredActivities.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+
+    const getActivityIcon = (type: ActivityType) => {
     switch(type) {
       case ActivityType.CALL: return <PhoneCall size={14} />;
       case ActivityType.EMAIL: return <Mail size={14} />;
@@ -1028,8 +1173,47 @@ export default function CrmView() {
     );
   };
 
+  const paginatedAccounts = filteredAccounts.slice((accountsPage - 1) * ITEMS_PER_PAGE, accountsPage * ITEMS_PER_PAGE);
+  const paginatedContacts = filteredContacts.slice((contactsPage - 1) * ITEMS_PER_PAGE, contactsPage * ITEMS_PER_PAGE);
+
   return (
-    <div className="p-4 md:p-8 w-full max-w-7xl mx-auto min-h-full relative font-sans">
+      <div className="p-4 md:p-8 w-full max-w-7xl mx-auto min-h-full relative font-sans">
+      {/* Import Success Overlay */}
+      <AnimatePresence>
+        {showSuccessOverlay && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center"
+            >
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle size={40} />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">Â¡Importación Exitosa!</h3>
+                              <div className="text-slate-600 mb-8 text-sm">
+                  <p className="text-base mb-3">
+                    Se importaron <span className="font-bold text-slate-800 text-lg">{importCount}</span> registros nuevos a la base de datos de {activeTab === 'accounts' ? 'Empresas' : 'Contactos'} exitosamente.
+                  </p>
+                  {duplicateCount > 0 && (
+                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 flex flex-col gap-1 items-center">
+                      <span className="font-bold">Aviso de duplicados</span>
+                      <span>Se omitieron <strong>{duplicateCount}</strong> registros porque ya existían en el sistema o les faltaba un dato obligatorio.</span>
+                    </div>
+                  )}
+                </div>
+              <button 
+                onClick={() => setShowSuccessOverlay(false)}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors"
+              >
+                Continuar
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Header & Controls */}
       <motion.div 
@@ -1234,7 +1418,7 @@ export default function CrmView() {
               <h2 className="text-lg font-bold text-slate-800">
                 Mis actividades pendientes
               </h2>
-              <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">{activities.length}</span>
+              <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">{filteredActivities.length}</span>
             </div>
             
             <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
@@ -1276,133 +1460,141 @@ export default function CrmView() {
             </div>
           </div>
 
-          {/* Filters Bar */}
-          <div className="p-3 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center gap-3">
-                <select 
-                  value={dashboardActivityContactFilter}
-                  onChange={(e) => setDashboardActivityContactFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
-                >
-                  <option value="ALL">Todos los contactos</option>
-                  {contacts.filter(c => dashboardActivityAccountFilter === 'ALL' || c.accountId === dashboardActivityAccountFilter).map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                      {/* Filters Bar */}
+            <div className="p-3 border-b border-slate-100 bg-slate-50 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-3 w-full">
+                  <SearchableContactFilter
+                    value={dashboardActivityContactFilter}
+                    onChange={(id) => setDashboardActivityContactFilter(id)}
+                    contacts={contacts.filter(c => dashboardActivityAccountFilter === 'ALL' || c.accountId === dashboardActivityAccountFilter)}
+                  />
+  
+                  <select 
+                    value={dashboardActivityStatusFilter}
+                    onChange={(e) => setDashboardActivityStatusFilter(e.target.value)}
+                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
+                  >
+                    <option value="ALL">Todas las actividades</option>
+                    <option value="PLANNED">Planeadas</option>
+                    <option value="COMPLETED">Completadas</option>
+                  </select>
+  
+                  <select 
+                    value={dashboardActivityUserFilter}
+                    onChange={(e) => setDashboardActivityUserFilter(e.target.value)}
+                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
+                  >
+                    <option value="ALL">Cualquier responsable</option>
+                    {crmUsers.map(u => (
+                      <option key={u.id} value={u.id}>{(u as any).display_name || u.name}</option>
+                    ))}
+                  </select>
 
-                <select 
-                  value={dashboardActivityStatusFilter}
-                  onChange={(e) => setDashboardActivityStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
-                >
-                  <option value="ALL">Todas las actividades</option>
-                  <option value="PLANNED">Planeadas</option>
-                  <option value="COMPLETED">Completadas</option>
-                </select>
-
-                <select 
-                  value={dashboardActivityUserFilter}
-                  onChange={(e) => setDashboardActivityUserFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
-                >
-                  <option value="ALL">Cualquier responsable</option>
-                  {crmUsers.map(u => (
-                    <option key={u.id} value={u.id}>{(u as any).display_name || u.name}</option>
-                  ))}
-                </select>
-
-                <button 
-                  onClick={() => setShowMoreDashboardFilters(!showMoreDashboardFilters)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border ${showMoreDashboardFilters ? 'bg-slate-200 text-slate-700 border-slate-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'} shadow-sm`}
-                >
-                  <Filter size={14} /> Más filtros
-                </button>
-
-                {showMoreDashboardFilters && (
-                  <>
-                    <select 
-                      value={dashboardActivityBusinessLineFilter}
-                      onChange={(e) => setDashboardActivityBusinessLineFilter(e.target.value)}
-                      className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
-                    >
-                      <option value="ALL">Todas las líneas</option>
-                      {businessLines.map(b => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-
-                    <select 
-                      value={dashboardActivityDateFilter}
-                      onChange={(e) => setDashboardActivityDateFilter(e.target.value)}
-                      className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
-                    >
-                      <option value="ALL">Cualquier fecha</option>
-                      <option value="TODAY">Hoy</option>
-                      <option value="TOMORROW">Mañana</option>
-                      <option value="WEEK">Esta semana</option>
-                      <option value="OVERDUE">Atrasadas</option>
-                      <option value="RANGE">Intervalo personalizado...</option>
-                    </select>
-
-                    {dashboardActivityDateFilter === 'RANGE' && (
-                      <div className="flex items-center gap-2">
-                        <input type="date" value={dashboardActivityRangeFrom} onChange={e => setDashboardActivityRangeFrom(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-[#001c3a]" />
-                        <span className="text-slate-400 text-xs">hasta</span>
-                        <input type="date" value={dashboardActivityRangeTo} onChange={e => setDashboardActivityRangeTo(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-[#001c3a]" />
+                  <select 
+                    value={dashboardActivitySort}
+                    onChange={(e) => setDashboardActivitySort(e.target.value)}
+                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
+                  >
+                    <option value="PLANNED_ASC">Orden: Más próximos</option>
+                    <option value="PLANNED_DESC">Orden: Más lejanos</option>
+                    <option value="CREATED_DESC">Orden: Más recientes</option>
+                    <option value="CREATED_ASC">Orden: Más antiguos</option>
+                  </select>
+  
+                  <button 
+                    onClick={() => setShowMoreDashboardFilters(!showMoreDashboardFilters)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border ${showMoreDashboardFilters ? 'bg-slate-200 text-slate-700 border-slate-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'} shadow-sm ml-auto`}
+                  >
+                    <Filter size={14} /> Más filtros
+                  </button>
+              </div>
+  
+              {showMoreDashboardFilters && (
+                <div className="flex flex-wrap items-center gap-3 p-3 bg-slate-100/50 rounded-xl border border-slate-200 w-full">
+                      <select 
+                        value={dashboardActivityBusinessLineFilter}
+                        onChange={(e) => setDashboardActivityBusinessLineFilter(e.target.value)}
+                        className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]"
+                      >
+                        <option value="ALL">Todas las líneas</option>
+                        {businessLines.map(b => (
+                          <option key={b.id} value={b.id}>{b.name}</option>
+                        ))}
+                      </select>
+  
+                      <select 
+                        value={dashboardActivityDateFilter}
+                        onChange={(e) => setDashboardActivityDateFilter(e.target.value)}
+                        className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]"
+                      >
+                        <option value="ALL">Cualquier fecha</option>
+                        <option value="TODAY">Hoy</option>
+                        <option value="TOMORROW">Mañana</option>
+                        <option value="WEEK">Esta semana</option>
+                        <option value="OVERDUE">Atrasadas</option>
+                        <option value="RANGE">Intervalo personalizado...</option>
+                      </select>
+  
+                      {dashboardActivityDateFilter === 'RANGE' && (
+                        <div className="flex items-center gap-2">
+                          <input type="date" value={dashboardActivityRangeFrom} onChange={e => setDashboardActivityRangeFrom(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-[#001c3a]" />
+                          <span className="text-slate-400 text-xs">hasta</span>
+                          <input type="date" value={dashboardActivityRangeTo} onChange={e => setDashboardActivityRangeTo(e.target.value)} className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-[#001c3a]" />
+                        </div>
+                      )}
+  
+                      <select 
+                        value={dashboardActivityAccountFilter}
+                        onChange={(e) => {
+                          setDashboardActivityAccountFilter(e.target.value);
+                          if (e.target.value === 'ALL') setDashboardActivityContactFilter('ALL');
+                        }}
+                        className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]"
+                      >
+                        <option value="ALL">Todas las empresas</option>
+                        {accounts.map(a => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+  
+                      <select value={activitiesFilters.activityType} onChange={(e) => setActivitiesFilters({...activitiesFilters, activityType: e.target.value})} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]">
+                        <option value="">Tipo: Todos</option>
+                        <option value={ActivityType.CALL}>Llamada</option>
+                        <option value={ActivityType.REUNION_COMERCIAL}>Reunión Comercial</option>
+                        <option value={ActivityType.REUNION_SEGUIMIENTO}>Reunión Seguimiento</option>
+                        <option value={ActivityType.COTIZACION}>Cotización</option>
+                        <option value={ActivityType.SEGUIMIENTO}>Seguimiento</option>
+                        <option value={ActivityType.EMAIL}>Email</option>
+                        <option value={ActivityType.TASK}>Tarea Genérica</option>
+                      </select>
+  
+                      <select value={activitiesFilters.result} onChange={(e) => setActivitiesFilters({...activitiesFilters, result: e.target.value})} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]">
+                        <option value="">Result: Cualquiera</option>
+                        <option value={ActivityResult.CALL_BACK}>Llamar más tarde</option>
+                        <option value={ActivityResult.INTERESTED}>Interesado</option>
+                        <option value={ActivityResult.NO_ANSWER}>No contesta</option>
+                        <option value={ActivityResult.SUCCESSFUL}>Exitoso</option>
+                        <option value={ActivityResult.UNSUCCESSFUL}>No exitoso</option>
+                      </select>
+  
+                      <div className="flex items-center bg-white border border-slate-200 rounded-xl h-10 px-3 shadow-sm gap-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Creado:</span>
+                        <input type="date" value={activitiesFilters.startDate} onChange={(e) => setActivitiesFilters({...activitiesFilters, startDate: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
+                        <span className="text-slate-300">-</span>
+                        <input type="date" value={activitiesFilters.endDate} onChange={(e) => setActivitiesFilters({...activitiesFilters, endDate: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
                       </div>
-                    )}
+  
+                      <div className="flex items-center bg-white border border-slate-200 rounded-xl h-10 px-3 shadow-sm gap-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Comp.:</span>
+                        <input type="date" value={activitiesFilters.completedAtFrom} onChange={(e) => setActivitiesFilters({...activitiesFilters, completedAtFrom: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
+                        <span className="text-slate-300">-</span>
+                        <input type="date" value={activitiesFilters.completedAtTo} onChange={(e) => setActivitiesFilters({...activitiesFilters, completedAtTo: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
+                      </div>
+                </div>
+              )}
+            </div>
 
-                    <select 
-                      value={dashboardActivityAccountFilter}
-                      onChange={(e) => {
-                        setDashboardActivityAccountFilter(e.target.value);
-                        if (e.target.value === 'ALL') setDashboardActivityContactFilter('ALL');
-                      }}
-                      className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
-                    >
-                      <option value="ALL">Todas las empresas</option>
-                      {accounts.map(a => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
-                      ))}
-                    </select>
-
-                    <select value={activitiesFilters.activityType} onChange={(e) => setActivitiesFilters({...activitiesFilters, activityType: e.target.value})} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm">
-                      <option value="">Tipo: Todos</option>
-                      <option value={ActivityType.CALL}>Llamada</option>
-                      <option value={ActivityType.REUNION_COMERCIAL}>Reunión Comercial</option>
-                      <option value={ActivityType.REUNION_SEGUIMIENTO}>Reunión Seguimiento</option>
-                      <option value={ActivityType.COTIZACION}>Cotización</option>
-                      <option value={ActivityType.SEGUIMIENTO}>Seguimiento</option>
-                      <option value={ActivityType.EMAIL}>Email</option>
-                      <option value={ActivityType.TASK}>Tarea Genérica</option>
-                    </select>
-
-                    <select value={activitiesFilters.result} onChange={(e) => setActivitiesFilters({...activitiesFilters, result: e.target.value})} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm">
-                      <option value="">Result: Cualquiera</option>
-                      <option value={ActivityResult.CALL_BACK}>Llamar más tarde</option>
-                      <option value={ActivityResult.INTERESTED}>Interesado</option>
-                      <option value={ActivityResult.NO_ANSWER}>No contesta</option>
-                      <option value={ActivityResult.SUCCESSFUL}>Exitoso</option>
-                      <option value={ActivityResult.UNSUCCESSFUL}>No exitoso</option>
-                    </select>
-
-                    <div className="flex items-center bg-white border border-slate-200 rounded-xl h-10 px-3 shadow-sm gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Creado:</span>
-                      <input type="date" value={activitiesFilters.startDate} onChange={(e) => setActivitiesFilters({...activitiesFilters, startDate: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
-                      <span className="text-slate-300">-</span>
-                      <input type="date" value={activitiesFilters.endDate} onChange={(e) => setActivitiesFilters({...activitiesFilters, endDate: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
-                    </div>
-
-                    <div className="flex items-center bg-white border border-slate-200 rounded-xl h-10 px-3 shadow-sm gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Comp.:</span>
-                      <input type="date" value={activitiesFilters.completedAtFrom} onChange={(e) => setActivitiesFilters({...activitiesFilters, completedAtFrom: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
-                      <span className="text-slate-300">-</span>
-                      <input type="date" value={activitiesFilters.completedAtTo} onChange={(e) => setActivitiesFilters({...activitiesFilters, completedAtTo: e.target.value})} className="w-28 text-sm bg-transparent focus:outline-none text-slate-700 font-medium" />
-                    </div>
-                  </>
-                )}
-          </div>
-
-          {/* Activities List */}
+            {/* Activities List */}
           {isLoading && activities.length === 0 ? (
             <div className="p-16 flex flex-col items-center justify-center text-slate-400">
               <RefreshCw size={32} className="animate-spin mb-4 text-[#001c3a]/50" />
@@ -1413,7 +1605,7 @@ export default function CrmView() {
               <table className="w-full text-left border-collapse table-fixed">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
-                    <th className="p-3 border-b border-slate-200 text-center w-12">✓</th>
+                    <th className="p-3 border-b border-slate-200 text-center w-12">âœ“</th>
                     <th className="p-3 border-b border-slate-200 w-40">Actividad</th>
                     <th className="p-3 border-b border-slate-200 w-64">Contacto</th>
                     <th className="p-3 border-b border-slate-200 w-64">Contexto</th>
@@ -1462,8 +1654,17 @@ export default function CrmView() {
                                   </div>
                                   <div>
                                     <div className="text-xs font-bold text-slate-800">{getActivityTypeLabel(act.activityType)}</div>
-                                    <div className="text-[10px] font-medium text-slate-500 mt-0.5">
-                                      {act.plannedDate ? new Date(act.plannedDate).toLocaleDateString() : new Date(act.createdAt).toLocaleDateString()}
+                                    <div className="flex flex-col gap-0.5 mt-1">
+                                      <div className="text-[10px] font-medium text-slate-500 flex items-center gap-1" title="Fecha de Creación">
+                                        <Clock size={10} className="text-slate-400" />
+                                        Creada: {new Date(act.createdAt).toLocaleDateString()}
+                                      </div>
+                                      {act.plannedDate && (
+                                        <div className="text-[10px] font-medium text-blue-600 flex items-center gap-1" title="Fecha Planeada">
+                                          <Calendar size={10} className="text-blue-400" />
+                                          Planeada: {new Date(act.plannedDate).toLocaleDateString()}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -1574,7 +1775,7 @@ export default function CrmView() {
                                                   {getActivityIcon(h.activityType)}
                                                   {getActivityTypeLabel(h.activityType)}
                                                 </div>
-                                                <span className="text-slate-400">•</span>
+                                                <span className="text-slate-400">&bull;</span>
                                                 <div className="text-slate-500 flex items-center gap-1">
                                                   <Calendar size={12}/>
                                                   {new Date(h.completedAt!).toLocaleDateString()} a las {new Date(h.completedAt!).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -1765,7 +1966,7 @@ export default function CrmView() {
                               </span>
                               {deal.probability != null && (
                                 <span className="text-[10px] font-medium flex items-center gap-1 text-slate-500">
-                                  🎯 {deal.probability}% Prob.
+                                  <Target size={12} className="text-slate-400" /> {deal.probability}% Prob.
                                 </span>
                               )}
                             </div>
@@ -1845,7 +2046,7 @@ export default function CrmView() {
                           </td>
                           <td className="p-4 text-sm text-slate-500 whitespace-nowrap">
                             {deal.probability != null ? (
-                              <span className="flex items-center gap-1 font-medium">🎯 {deal.probability}%</span>
+                  <span className="flex items-center gap-1 font-medium"><Target size={12} className="text-slate-400" /> {deal.probability}%</span>
                             ) : <span className="text-slate-300">-</span>}
                           </td>
                           <td className="p-4 text-sm text-slate-500 font-medium">
@@ -2369,13 +2570,14 @@ export default function CrmView() {
             
             {/* DATA TABLE: ACCOUNTS */}
             {activeTab === 'accounts' && (
+              <>
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
                     {isBulkSelectionMode && (
                       <th className="p-5 border-b border-slate-200 w-12 text-center">
                         <input type="checkbox" className="w-4 h-4 rounded text-[#001c3a] focus:ring-[#001c3a] border-slate-300 cursor-pointer"
-                          checked={filteredAccounts.length > 0 && selectedAccounts.size === filteredAccounts.length}
+                          checked={paginatedAccounts.length > 0 && selectedAccounts.size === filteredAccounts.length}
                           onChange={toggleAllFilteredAccounts}
                         />
                       </th>
@@ -2412,7 +2614,7 @@ export default function CrmView() {
                 <tbody className="divide-y divide-slate-100">
                   <AnimatePresence>
                     {filteredAccounts.length > 0 ? (
-                      filteredAccounts.map((acc, idx) => {
+                      paginatedAccounts.map((acc, idx) => {
                         const accActivities = activities.filter(a => a.accountId === acc.id);
                         const plannedCount = accActivities.filter(a => a.status === ActivityStatus.PLANNED && !a.completedAt).length;
                         const completedCount = accActivities.filter(a => a.status === ActivityStatus.COMPLETED || !!a.completedAt).length;
@@ -2491,17 +2693,42 @@ export default function CrmView() {
                   </AnimatePresence>
                 </tbody>
               </table>
+              
+              {/* ACCOUNTS PAGINATION UI */}
+              {filteredAccounts.length > ITEMS_PER_PAGE && (
+                <div className="flex justify-between items-center p-4 border-t border-slate-200 bg-slate-50 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <button 
+                    onClick={() => setAccountsPage(p => Math.max(1, p - 1))} 
+                    disabled={accountsPage === 1}
+                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    Anterior
+                  </button>
+                  <span className="text-sm text-slate-500 font-medium">
+                    Página {accountsPage} de {Math.ceil(filteredAccounts.length / ITEMS_PER_PAGE)}
+                  </span>
+                  <button 
+                    onClick={() => setAccountsPage(p => Math.min(Math.ceil(filteredAccounts.length / ITEMS_PER_PAGE), p + 1))} 
+                    disabled={accountsPage === Math.ceil(filteredAccounts.length / ITEMS_PER_PAGE)}
+                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
+              </>
             )}
 
             {/* DATA TABLE: CONTACTS */}
             {activeTab === 'contacts' && (
+              <>
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
                     {isBulkSelectionModeContacts && (
                       <th className="p-5 border-b border-slate-200 w-12 text-center">
                         <input type="checkbox" className="w-4 h-4 rounded text-[#001c3a] focus:ring-[#001c3a] border-slate-300 cursor-pointer"
-                          checked={filteredContacts.length > 0 && selectedContacts.size === filteredContacts.length}
+                          checked={paginatedContacts.length > 0 && selectedContacts.size === filteredContacts.length}
                           onChange={toggleAllFilteredContacts}
                         />
                       </th>
@@ -2528,7 +2755,7 @@ export default function CrmView() {
                 <tbody className="divide-y divide-slate-100">
                   <AnimatePresence>
                     {filteredContacts.length > 0 ? (
-                      filteredContacts.map((contact) => {
+                      paginatedContacts.map((contact) => {
                         const contactActivitiesCount = activities.filter(a => a.contactId === contact.id).length;
                         return (
                         <motion.tr 
@@ -2595,6 +2822,30 @@ export default function CrmView() {
                   </AnimatePresence>
                 </tbody>
               </table>
+              
+              {/* CONTACTS PAGINATION UI */}
+              {filteredContacts.length > ITEMS_PER_PAGE && (
+                <div className="flex justify-between items-center p-4 border-t border-slate-200 bg-slate-50 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <button 
+                    onClick={() => setContactsPage(p => Math.max(1, p - 1))} 
+                    disabled={contactsPage === 1}
+                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    Anterior
+                  </button>
+                  <span className="text-sm text-slate-500 font-medium">
+                    Página {contactsPage} de {Math.ceil(filteredContacts.length / ITEMS_PER_PAGE)}
+                  </span>
+                  <button 
+                    onClick={() => setContactsPage(p => Math.min(Math.ceil(filteredContacts.length / ITEMS_PER_PAGE), p + 1))} 
+                    disabled={contactsPage === Math.ceil(filteredContacts.length / ITEMS_PER_PAGE)}
+                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
+              </>
             )}
           </div>
         )}
@@ -2887,6 +3138,16 @@ export default function CrmView() {
                   </div>
 
                   <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fecha Planeada</label>
+                    <input
+                      type="date"
+                      value={editingActivity.plannedDate ? editingActivity.plannedDate.split('T')[0] : ''}
+                      onChange={(e) => setEditingActivity({...editingActivity, plannedDate: e.target.value ? new Date(e.target.value).toISOString() : null})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fecha de Completado</label>
                     <input
                       type="date"
@@ -2977,7 +3238,7 @@ export default function CrmView() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Monto Estimado (€)</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Monto Estimado (â‚¬)</label>
                     <input
                       type="number"
                       value={editingDeal.amount || ''}
@@ -3097,7 +3358,7 @@ export default function CrmView() {
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <div>
                   <h2 className="text-xl font-bold text-slate-800">{viewingDeal.name}</h2>
-                  <p className="text-sm text-slate-500">{viewingDeal.account?.name} • {viewingDeal.amount ? new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(viewingDeal.amount) : 'Sin monto'}</p>
+                  <p className="text-sm text-slate-500">{viewingDeal.account?.name} &bull; {viewingDeal.amount ? new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(viewingDeal.amount) : 'Sin monto'}</p>
                 </div>
                 <button onClick={() => setViewingDeal(null)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-full">
                   <X size={20} />
@@ -3176,7 +3437,7 @@ export default function CrmView() {
                 <AlertCircle size={24} />
               </div>
               <h3 className="text-xl font-display font-bold text-center text-slate-800 mb-2">
-                ¿Eliminar {deletingId.type === 'account' ? 'Empresa' : deletingId.type === 'activity' ? 'Actividad' : deletingId.type === 'deal' ? 'Negocio' : 'Contacto'}?
+                Â¿Eliminar {deletingId.type === 'account' ? 'Empresa' : deletingId.type === 'activity' ? 'Actividad' : deletingId.type === 'deal' ? 'Negocio' : 'Contacto'}?
               </h3>
               <p className="text-sm text-center text-slate-500 mb-6 leading-relaxed">
                 Esta acción es permanente y no se puede deshacer. {deletingId.type === 'account' && 'Se eliminarán también todos los contactos asociados a esta empresa.'}
@@ -3383,3 +3644,4 @@ export default function CrmView() {
     </div>
   );
 }
+
