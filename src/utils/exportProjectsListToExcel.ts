@@ -69,11 +69,11 @@ export const exportProjectsListToExcel = async (projects: Project[], filtersInfo
   summarySheet.addRow(['Demos / Plantillas:', byType['Demo/Plantilla']]);
   
   summarySheet.addRow(['Total Cotizado:', totalQuoted]);
-  summarySheet.getCell('B8').numFmt = '#,##0.00" €"';
+  summarySheet.getCell('B8').numFmt = '#,##0.00';
   summarySheet.addRow(['Total Certificado:', totalCertified]);
-  summarySheet.getCell('B9').numFmt = '#,##0.00" €"';
+  summarySheet.getCell('B9').numFmt = '#,##0.00';
   summarySheet.addRow(['Total Facturado:', totalInvoiced]);
-  summarySheet.getCell('B10').numFmt = '#,##0.00" €"';
+  summarySheet.getCell('B10').numFmt = '#,##0.00';
 
   // Sección: Por Estado
   summarySheet.getRow(13).values = ['PROYECTOS POR ESTADO'];
@@ -152,9 +152,9 @@ export const exportProjectsListToExcel = async (projects: Project[], filtersInfo
       p.projectOrigin === 'DEMO' ? 'Demo/Plantilla' : 'Real'
     ]);
 
-    row.getCell(6).numFmt = '#,##0.00" €"';
-    row.getCell(7).numFmt = '#,##0.00" €"';
-    row.getCell(8).numFmt = '#,##0.00" €"';
+    row.getCell(6).numFmt = '#,##0.00';
+    row.getCell(7).numFmt = '#,##0.00';
+    row.getCell(8).numFmt = '#,##0.00';
   });
 
   // Widths

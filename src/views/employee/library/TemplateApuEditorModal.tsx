@@ -4,6 +4,7 @@ import { QuotationTemplateLine, quotationTemplatesService } from '../../../servi
 import ApuPickerModal from '../quotations/ApuPickerModal';
 import { ResourceType, Resource } from '../../../services/resources.service';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface TemplateApuEditorModalProps {
   templateId: string;
@@ -22,6 +23,7 @@ export default function TemplateApuEditorModal({
   onClose,
   onUpdate
 }: TemplateApuEditorModalProps) {
+  const { formatCurrency } = useCurrency();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [pickerFilter, setPickerFilter] = useState<ResourceType | null>(null);
 
@@ -33,7 +35,7 @@ export default function TemplateApuEditorModal({
     setLocalMargin(line.margin || 0);
   }, [line.margin]);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   const updateParentCost = async () => {
     onUpdate();

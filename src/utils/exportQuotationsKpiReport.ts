@@ -120,7 +120,7 @@ export const exportQuotationsKpiToExcel = async (data: QuotationSummary[], filte
     row.getCell(2).border = { bottom: { style: 'thin', color: { argb: 'FFEEEEEE' } } };
     
     if (item[0] === 'Valor Monetario Total:') {
-      row.getCell(2).numFmt = '#,##0.00" €"';
+      row.getCell(2).numFmt = '#,##0.00';
     }
     currentRow++;
   });
@@ -168,7 +168,7 @@ export const exportQuotationsKpiToExcel = async (data: QuotationSummary[], filte
           stats.converted
         ];
 
-        row.getCell(3).numFmt = '#,##0.00" €"';
+        row.getCell(3).numFmt = '#,##0.00';
 
         for (let i = 1; i <= 4; i++) {
           row.getCell(i).border = { bottom: { style: 'thin', color: { argb: 'FFEEEEEE' } } };
@@ -194,7 +194,7 @@ export const exportQuotationsKpiToExcel = async (data: QuotationSummary[], filte
       Object.values(dataObj).reduce((sum, s: any) => sum + s.converted, 0)
     ];
 
-    tRow.getCell(3).numFmt = '#,##0.00" €"';
+    tRow.getCell(3).numFmt = '#,##0.00';
 
     for (let i = 1; i <= 4; i++) {
       tRow.getCell(i).font = { bold: true, color: { argb: 'FF002D5A' } };
@@ -283,7 +283,7 @@ export const exportQuotationsKpiToExcel = async (data: QuotationSummary[], filte
       projectsDetail
     });
 
-    row.getCell('totalValue').numFmt = '#,##0.00" €"';
+    row.getCell('totalValue').numFmt = '#,##0.00';
   });
 
   const buffer = await workbook.xlsx.writeBuffer();

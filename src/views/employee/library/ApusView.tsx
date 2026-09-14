@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Folder, FolderOpen, ChevronRight, ChevronDown, Package, Edit, Trash2, Copy, FileText, Plus, X, Calculator } from 'lucide-react';
 import { Resource, ResourceFolder, resourcesService, ResourceType } from '../../../services/resources.service';
 import ApuEditorModal from './ApuEditorModal';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 const FolderNode = ({ 
   folder, 
@@ -113,6 +114,7 @@ const TagInput = ({ name, initialTags = [], placeholder, label }: { name: string
 };
 
 export default function ApusView() {
+  const { formatCurrency } = useCurrency();
   const [folders, setFolders] = useState<ResourceFolder[]>([]);
   const [apus, setApus] = useState<Resource[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -177,9 +179,7 @@ export default function ApusView() {
     fetchApus();
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
-  };
+  ;
 
   const handleSaveApu = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

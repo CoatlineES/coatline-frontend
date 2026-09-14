@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Package } from 'lucide-react';
 import { Resource, ResourceComponent, resourcesService, ResourceType } from '../../../services/resources.service';
 import ApuPickerModal from '../quotations/ApuPickerModal';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface ApuEditorModalProps {
   apu: Resource;
@@ -11,6 +12,7 @@ interface ApuEditorModalProps {
 }
 
 export default function ApuEditorModal({ apu, onClose, onUpdate }: ApuEditorModalProps) {
+  const { formatCurrency } = useCurrency();
   const [components, setComponents] = useState<ResourceComponent[]>(apu.components || []);
   const [margin, setMargin] = useState<number>(apu.margin || 0);
   const [isSavingMargin, setIsSavingMargin] = useState(false);
@@ -141,7 +143,7 @@ export default function ApuEditorModal({ apu, onClose, onUpdate }: ApuEditorModa
     }
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">

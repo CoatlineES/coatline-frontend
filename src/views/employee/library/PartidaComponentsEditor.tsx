@@ -4,12 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ResourceComponent, Resource, resourcesService, ResourceType } from '../../../services/resources.service';
 import ApuPickerModal from '../quotations/ApuPickerModal';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface PartidaComponentsEditorProps {
   partidaId: string;
 }
 
 export default function PartidaComponentsEditor({ partidaId }: PartidaComponentsEditorProps) {
+  const { formatCurrency } = useCurrency();
   const [components, setComponents] = useState<ResourceComponent[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -24,7 +26,7 @@ export default function PartidaComponentsEditor({ partidaId }: PartidaComponents
 
   const hasApuComponent = components.some(c => c.childResourceId !== null);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   const fetchComponents = async () => {
     try {

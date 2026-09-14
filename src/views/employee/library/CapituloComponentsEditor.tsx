@@ -5,6 +5,7 @@ import { ResourceComponent, Resource, resourcesService, ResourceType } from '../
 import ApuPickerModal from '../quotations/ApuPickerModal';
 import PartidaComponentsEditor from './PartidaComponentsEditor';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface CapituloComponentsEditorProps {
   capituloId?: string;
@@ -13,6 +14,7 @@ interface CapituloComponentsEditorProps {
 }
 
 export default function CapituloComponentsEditor({ capituloId, initialComponents = [], onChange }: CapituloComponentsEditorProps) {
+  const { formatCurrency } = useCurrency();
   const [components, setComponents] = useState<ResourceComponent[]>(initialComponents);
   const [nestedComps, setNestedComps] = useState<Record<string, ResourceComponent[]>>({});
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function CapituloComponentsEditor({ capituloId, initialComponents
   const [viewingApuId, setViewingApuId] = useState<string | null>(null);
   const [viewingApuName, setViewingApuName] = useState<string>('');
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   const fetchComponents = async () => {
     if (!capituloId) return;

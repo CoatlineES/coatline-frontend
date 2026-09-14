@@ -5,6 +5,7 @@ import { quotationsService } from '../../../services/quotations.service';
 import ApuPickerModal from './ApuPickerModal';
 import { ResourceType, Resource } from '../../../services/resources.service';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface QuotationApuEditorModalProps {
   quotationId: string;
@@ -23,6 +24,7 @@ export default function QuotationApuEditorModal({
   onClose,
   onUpdate
 }: QuotationApuEditorModalProps) {
+  const { formatCurrency } = useCurrency();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [pickerFilter, setPickerFilter] = useState<ResourceType | null>(null);
 
@@ -34,7 +36,7 @@ export default function QuotationApuEditorModal({
     setLocalMargin(line.margin || 0);
   }, [line.margin]);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   // Recalcular APU en backend ya ocurre auto en Prisma? No, en QuotationLine no es automático.
   // Cuando editamos hijos de una línea de cotización, el Total se calcula sumando en Frontend.

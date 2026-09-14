@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { X, Download, Printer } from 'lucide-react';
 import { Quotation } from '../../../types/quotation';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface QuotationPreviewModalProps {
   quotation: Quotation;
@@ -9,7 +10,8 @@ interface QuotationPreviewModalProps {
 }
 
 export default function QuotationPreviewModal({ quotation, onClose }: QuotationPreviewModalProps) {
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
+  const { formatCurrency, taxRate: defaultTaxRate } = useCurrency();
+  
 
   const getUnitPrice = (line: any, allLines: any[]) => {
     if (line.isGroup) {
@@ -20,7 +22,7 @@ export default function QuotationPreviewModal({ quotation, onClose }: QuotationP
   };
 
   const subtotal = quotation.chapters.reduce((acc, chapter) => acc + chapter.lines.filter(l => !l.parentId).reduce((a, l) => a + (l.quantity * getUnitPrice(l, chapter.lines)), 0), 0);
-  const tax = subtotal * ((quotation.taxRate || 21) / 100);
+  const tax = subtotal * ((quotation.taxRate || defaultTaxRate) / 100);
   const total = subtotal - (quotation.discount || 0) + tax;
 
   const handlePrint = () => {

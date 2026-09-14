@@ -4,6 +4,7 @@ import { X, Plus, Trash2, Package, Check } from 'lucide-react';
 import { projectPlanningService, ProjectTask, ProjectTaskComponent } from '../../../../services/project-planning.service';
 import ApuPickerModal from '../../quotations/ApuPickerModal';
 import { ResourceType } from '../../../../services/resources.service';
+import { useCurrency } from '../../../../hooks/useCurrency';
 
 interface TaskBreakdownModalProps {
   task: ProjectTask;
@@ -12,6 +13,7 @@ interface TaskBreakdownModalProps {
 }
 
 export function TaskBreakdownModal({ task, onClose, onUpdate }: TaskBreakdownModalProps) {
+  const { formatCurrency } = useCurrency();
   const [components, setComponents] = useState<ProjectTaskComponent[]>([]);
   const [loading, setLoading] = useState(true);
   const [localMargin, setLocalMargin] = useState(task.margin || 0);
@@ -156,7 +158,7 @@ export function TaskBreakdownModal({ task, onClose, onUpdate }: TaskBreakdownMod
     }
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   return createPortal(
     <>

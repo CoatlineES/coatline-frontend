@@ -6,6 +6,7 @@ import { resourcesService, Resource, ResourceType } from '../../../services/reso
 import toast from 'react-hot-toast';
 import ApuPickerModal from './ApuPickerModal';
 import QuotationApuEditorModal from './QuotationApuEditorModal';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface QuotationChapterEditorProps {
   quotationId: string;
@@ -15,6 +16,7 @@ interface QuotationChapterEditorProps {
 }
 
 export default function QuotationChapterEditor({ quotationId, chapter, index, onUpdate }: QuotationChapterEditorProps) {
+  const { formatCurrency } = useCurrency();
   const [editingChapter, setEditingChapter] = useState(false);
   const [chapterTitle, setChapterTitle] = useState(chapter.title);
   const [startDate, setStartDate] = useState(chapter.startDate ? new Date(chapter.startDate).toISOString().split('T')[0] : '');
@@ -74,7 +76,7 @@ export default function QuotationChapterEditor({ quotationId, chapter, index, on
     setDragOverLineId(null);
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   // --- Chapter Actions ---
   const saveChapterTitle = async () => {

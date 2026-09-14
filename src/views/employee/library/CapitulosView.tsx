@@ -4,6 +4,7 @@ import { Search, Folder, FolderOpen, ChevronRight, ChevronDown, Package, Edit, T
 import { Resource, ResourceFolder, resourcesService, ResourceType, ResourceComponent } from '../../../services/resources.service';
 import CapituloComponentsEditor from './CapituloComponentsEditor';
 import ApuPickerModal from '../quotations/ApuPickerModal';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 const FolderNode = ({ 
   folder, 
@@ -114,6 +115,7 @@ const TagInput = ({ name, initialTags = [], placeholder, label }: { name: string
 };
 
 export default function CapitulosView() {
+  const { formatCurrency } = useCurrency();
   const [folders, setFolders] = useState<ResourceFolder[]>([]);
   const [capitulos, setCapítulos] = useState<Resource[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -167,9 +169,7 @@ export default function CapitulosView() {
     return () => clearTimeout(timeoutId);
   }, [selectedFolderId, search, showInactive]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
-  };
+  ;
 
   const handleSaveCapitulo = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

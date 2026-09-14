@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { ProjectPlan, ProjectTask } from '../../../../services/project-planning.service';
 import { ChevronRight, ChevronDown, DollarSign, Folder, FileText, AlertCircle } from 'lucide-react';
+import { useCurrency } from '../../../../hooks/useCurrency';
 
 interface CostesViewProps {
   plan: ProjectPlan | null;
 }
 
 export function CostesView({ plan }: CostesViewProps) {
+  const { formatCurrency } = useCurrency();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
   if (!plan || !plan.tasks || plan.tasks.length === 0) {
@@ -55,9 +57,7 @@ export function CostesView({ plan }: CostesViewProps) {
     });
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
-  };
+  ;
 
   const renderTaskRow = (task: ProjectTask, level: number = 0) => {
     const hasChildren = task.children && task.children.length > 0;

@@ -28,6 +28,7 @@ import QuotationGantt from './QuotationGantt';
 import QuotationPreviewModal from './QuotationPreviewModal';
 import EditQuotationModal from './EditQuotationModal';
 import QuotationClauseEditor from './QuotationClauseEditor';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface QuotationDetailViewProps {
   quotationId: string;
@@ -78,6 +79,7 @@ const Accordion = ({ id, title, icon, color, subtitle, children, isOpen, onToggl
 };
 
 export default function QuotationDetailView({ quotationId, onBack, businessLines, users, isBudget, baseAmount }: QuotationDetailViewProps) {
+  const { formatCurrency, taxRate: defaultTaxRate } = useCurrency();
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeAccordion, setActiveAccordion] = useState<string>('partidas');
@@ -246,12 +248,12 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
       return acc + ch.lines.filter(l => !l.parentId).reduce((a, l) => a + getLineTotal(l, ch.lines), 0);
     }, 0);
     const taxable = subtotal - (quotation.discount || 0);
-    const tax = taxable * ((quotation.taxRate || 21) / 100);
+    const tax = taxable * ((quotation.taxRate || defaultTaxRate) / 100);
     const total = taxable + tax;
     return { subtotal, tax, total };
   }, [quotation]);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   const handleStatusChange = async (newStatus: QuotationStatus) => {
     if (!quotation) return;

@@ -114,7 +114,7 @@ export const exportAccountsKpiToExcel = async (data: any, filtersInfo: string) =
     row.getCell(2).border = { bottom: { style: 'thin', color: { argb: 'FFEEEEEE' } } };
     
     if (item[0] === 'Monto Total Cotizado:' || item[0] === 'Valor del Pipeline (Deals):') {
-      row.getCell(2).numFmt = '#,##0.00" €"';
+      row.getCell(2).numFmt = '#,##0.00';
     }
     currentRow++;
   });
@@ -276,8 +276,8 @@ export const exportAccountsKpiToExcel = async (data: any, filtersInfo: string) =
     });
     
     row.getCell('isContacted').font = { color: { argb: acc.isContacted ? 'FF166534' : 'FF991B1B' }, bold: true };
-    row.getCell('totalQuoted').numFmt = '#,##0.00" €"';
-    row.getCell('pipelineAmount').numFmt = '#,##0.00" €"';
+    row.getCell('totalQuoted').numFmt = '#,##0.00';
+    row.getCell('pipelineAmount').numFmt = '#,##0.00';
     
     for (let col = 3; col <= 16; col++) {
       row.getCell(col).alignment = { horizontal: 'center', vertical: 'middle' };
@@ -324,8 +324,8 @@ export const exportAccountsKpiToExcel = async (data: any, filtersInfo: string) =
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
     }
   }
-  totalsRowDetail.getCell('totalQuoted').numFmt = '#,##0.00" €"';
-  totalsRowDetail.getCell('pipelineAmount').numFmt = '#,##0.00" €"';
+  totalsRowDetail.getCell('totalQuoted').numFmt = '#,##0.00';
+  totalsRowDetail.getCell('pipelineAmount').numFmt = '#,##0.00';
 
   // Enable AutoFilter for the detail table
   if (data.length > 0) {

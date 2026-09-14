@@ -5,8 +5,10 @@ import SignatureCanvas from 'react-signature-canvas';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, CheckCircle, PenTool, X, Download, ShieldCheck, FileSignature, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../../hooks/useCurrency';
 
 export default function PublicQuotationView() {
+  const { formatCurrency, taxRate: defaultTaxRate } = useCurrency();
   const { token } = useParams();
   const [quotation, setQuotation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -129,11 +131,11 @@ export default function PublicQuotationView() {
   );
   const discountAmount = quotation.discount ?? 0;
   const taxable = subtotal - discountAmount;
-  const taxAmount = taxable * ((quotation.taxRate || 21) / 100);
+  const taxAmount = taxable * ((quotation.taxRate || defaultTaxRate) / 100);
   const total = taxable + taxAmount;
 
   const isSigned = quotation.status === 'SIGNED' || quotation.status === 'ACCEPTED';
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
+  
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">

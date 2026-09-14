@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, Package, Check, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resourcesService, Resource, ResourceType } from '../../../services/resources.service';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface ApuPickerModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface ApuPickerModalProps {
 }
 
 export default function ApuPickerModal({ isOpen, onClose, onSelect, resourceType, title = 'Seleccionar APU de la Biblioteca' }: ApuPickerModalProps) {
+  const { formatCurrency } = useCurrency();
   const [apus, setApus] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -33,7 +35,7 @@ export default function ApuPickerModal({ isOpen, onClose, onSelect, resourceType
     (a.code && a.code.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   return (
     <AnimatePresence>

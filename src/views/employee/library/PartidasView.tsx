@@ -4,6 +4,7 @@ import { Search, Folder, FolderOpen, ChevronRight, ChevronDown, Package, Edit, T
 import { Resource, ResourceFolder, resourcesService, ResourceType } from '../../../services/resources.service';
 import PartidaComponentsEditor from './PartidaComponentsEditor';
 import ApuPickerModal from '../quotations/ApuPickerModal';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 const FolderNode = ({ 
   folder, 
@@ -114,6 +115,7 @@ const TagInput = ({ name, initialTags = [], placeholder, label }: { name: string
 };
 
 export default function PartidasView() {
+  const { formatCurrency } = useCurrency();
   const [folders, setFolders] = useState<ResourceFolder[]>([]);
   const [partidas, setPartidas] = useState<Resource[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -180,9 +182,7 @@ export default function PartidasView() {
     return () => clearTimeout(timeoutId);
   }, [selectedFolderId, search, showInactive]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
-  };
+  ;
 
   const handleSavePartida = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

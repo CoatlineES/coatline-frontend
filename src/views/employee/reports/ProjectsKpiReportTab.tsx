@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Filter, AlertCircle, Calendar as CalendarIcon, Download, CheckCircle, Clock, Building2, Briefcase, Activity } from 'lucide-react';
 import api from '../../../services/api';
 import { exportProjectsKpiToExcel } from '../../../utils/exportProjectsKpiReport';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface ProjectsKpiData {
   globalKpis: {
@@ -39,9 +40,7 @@ interface ProjectsKpiData {
   }>;
 }
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount || 0);
-};
+;
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return '-';
@@ -49,6 +48,7 @@ const formatDate = (dateString: string | null) => {
 };
 
 export const ProjectsKpiReportTab = () => {
+  const { formatCurrency } = useCurrency();
   const [data, setData] = useState<ProjectsKpiData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -5,6 +5,7 @@ import { Resource, ResourceType } from '../../../services/resources.service';
 import toast from 'react-hot-toast';
 import ApuPickerModal from '../quotations/ApuPickerModal';
 import TemplateApuEditorModal from './TemplateApuEditorModal';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 interface TemplateChapterEditorProps {
   templateId: string;
@@ -14,6 +15,7 @@ interface TemplateChapterEditorProps {
 }
 
 export default function TemplateChapterEditor({ templateId, chapter, index, onUpdate }: TemplateChapterEditorProps) {
+  const { formatCurrency } = useCurrency();
   const [editingChapter, setEditingChapter] = useState(false);
   const [chapterTitle, setChapterTitle] = useState(chapter.title);
 
@@ -24,7 +26,7 @@ export default function TemplateChapterEditor({ templateId, chapter, index, onUp
   const [isAddingLine, setIsAddingLine] = useState(false);
   const [pickerType, setPickerType] = useState<ResourceType | null>(null);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   // --- Chapter Actions ---
   const saveChapterTitle = async () => {

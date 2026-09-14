@@ -23,7 +23,7 @@ export default function EditQuotationModal({ quotation, users, businessLines, on
     number: quotation.number || '',
     title: quotation.title || '',
     validUntil: quotation.validUntil ? new Date(quotation.validUntil).toISOString().split('T')[0] : '',
-    taxRate: quotation.taxRate || 21,
+    taxRate: quotation.taxRate || defaultTaxRate,
     discount: quotation.discount || 0,
     userId: quotation.user?.id || '',
     contactId: quotation.contact?.id || '',

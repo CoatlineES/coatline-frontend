@@ -115,7 +115,7 @@ export const exportDealsKpiToExcel = async (data: any[], filtersInfo: string) =>
     row.getCell(2).border = { bottom: { style: 'thin', color: { argb: 'FFEEEEEE' } } };
     
     if (item[0] === 'Monto Total Cotizado:') {
-      row.getCell(2).numFmt = '#,##0.00" €"';
+      row.getCell(2).numFmt = '#,##0.00';
     }
     currentRow++;
   });
@@ -164,7 +164,7 @@ export const exportDealsKpiToExcel = async (data: any[], filtersInfo: string) =>
           stats.projects
         ];
 
-        row.getCell(3).numFmt = '#,##0.00" €"';
+        row.getCell(3).numFmt = '#,##0.00';
 
         for (let i = 1; i <= 5; i++) {
           row.getCell(i).border = { bottom: { style: 'thin', color: { argb: 'FFEEEEEE' } } };
@@ -191,7 +191,7 @@ export const exportDealsKpiToExcel = async (data: any[], filtersInfo: string) =>
       Object.values(dataObj).reduce((sum, s: any) => sum + s.projects, 0)
     ];
 
-    tRow.getCell(3).numFmt = '#,##0.00" €"';
+    tRow.getCell(3).numFmt = '#,##0.00';
 
     for (let i = 1; i <= 5; i++) {
       tRow.getCell(i).font = { bold: true, color: { argb: 'FF002D5A' } };
@@ -282,7 +282,7 @@ export const exportDealsKpiToExcel = async (data: any[], filtersInfo: string) =>
       completedActivities: deal.completedActivities || 0
     });
     
-    row.getCell('amount').numFmt = '#,##0.00" €"';
+    row.getCell('amount').numFmt = '#,##0.00';
     
     for (let col = 5; col <= 14; col++) {
       if (col !== 10 && col !== 12) { // Allow detail columns to left-align

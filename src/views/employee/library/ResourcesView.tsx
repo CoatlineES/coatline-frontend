@@ -4,6 +4,7 @@ import ApuEditorModal from './ApuEditorModal';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Resource, resourcesService, ResourceFolder } from '../../../services/resources.service';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 const RESOURCE_TYPES = [
   { id: '', label: 'Todos' },
@@ -126,6 +127,7 @@ const FolderNode = ({
 };
 
 export default function ResourcesView() {
+  const { formatCurrency } = useCurrency();
   const [resources, setResources] = useState<Resource[]>([]);
   const [folders, setFolders] = useState<ResourceFolder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -288,8 +290,7 @@ export default function ResourcesView() {
     }
   };
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   const handleExportExcel = async () => {
     try {

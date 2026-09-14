@@ -34,9 +34,9 @@ export const exportProjectsKpiToExcel = async (data: any, filtersInfo: string) =
 
   summarySheet.addRow(['Total Proyectos:', globalKpis.totalProjects]);
   summarySheet.addRow(['Presupuesto Global Cotizado:', globalKpis.globalQuotedAmount]);
-  summarySheet.getCell('B6').numFmt = '#,##0.00" €"';
+  summarySheet.getCell('B6').numFmt = '#,##0.00';
   summarySheet.addRow(['Monto Global Certificado:', globalKpis.globalCertifiedAmount || 0]);
-  summarySheet.getCell('B7').numFmt = '#,##0.00" €"';
+  summarySheet.getCell('B7').numFmt = '#,##0.00';
   summarySheet.addRow(['Avance Financiero Global:', `${(globalKpis.globalFinancialProgress || 0).toFixed(2)}%`]);
   
   summarySheet.addRow(['Total Actividades:', globalKpis.globalTotalActivities]);
@@ -153,7 +153,7 @@ export const exportProjectsKpiToExcel = async (data: any, filtersInfo: string) =
     });
 
     // Formatear números de la fila
-    row.getCell('quotedAmount').numFmt = '#,##0.00" €"';
+    row.getCell('quotedAmount').numFmt = '#,##0.00';
     row.getCell('financialProgress').numFmt = '0.00%';
     row.getCell('completionRate').numFmt = '0.00%';
 

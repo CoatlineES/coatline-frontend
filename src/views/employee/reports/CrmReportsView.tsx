@@ -13,6 +13,7 @@ import { AccountsReportTab } from './AccountsReportTab';
 import { ProjectsKpiReportTab } from './ProjectsKpiReportTab';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 const COLORS = ['#002D5A', '#0f766e', '#0369a1', '#b45309', '#be123c', '#4338ca', '#047857', '#a21caf'];
 
@@ -44,6 +45,7 @@ interface Props {
 type ReportTab = 'general' | 'deals' | 'quotations' | 'team' | 'accounts' | 'projects';
 
 export default function CrmReportsView({ users }: Props) {
+  const { formatCurrency } = useCurrency();
   const [activeTab, setActiveTab] = useState<ReportTab>('general');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -97,8 +99,7 @@ export default function CrmReportsView({ users }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate, userId, businessLineId, stage, minAmount, quotationStatus, activityType]);
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+  
 
   const formatMonth = (monthStr: string) => {
     if (!monthStr || monthStr.length < 7) return monthStr;
