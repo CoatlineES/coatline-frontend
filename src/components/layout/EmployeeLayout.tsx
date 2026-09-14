@@ -33,7 +33,7 @@ export default function EmployeeLayout() {
   const [activeWorkerName, setActiveWorkerName] = useState<string | null>(localStorage.getItem('contractor_worker_name'));
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const { user, logout } = useAuth();
+  const { user, logout, activeSubsidiary, setActiveSubsidiaryId, availableSubsidiaries } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 

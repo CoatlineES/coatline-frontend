@@ -83,7 +83,7 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
     setIsSubmitted(true); // Using this as loading state for the button animation
 
     try {
-      const res = await fetch('http://localhost:4000/api/public/contact', {
+      const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:4000/api') + '/public/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

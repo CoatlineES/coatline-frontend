@@ -1605,7 +1605,7 @@ export default function CrmView() {
               <table className="w-full text-left border-collapse table-fixed">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
-                    <th className="p-3 border-b border-slate-200 text-center w-12">âœ“</th>
+                    <th className="p-3 border-b border-slate-200 text-center w-12">St</th>
                     <th className="p-3 border-b border-slate-200 w-40">Actividad</th>
                     <th className="p-3 border-b border-slate-200 w-64">Contacto</th>
                     <th className="p-3 border-b border-slate-200 w-64">Contexto</th>

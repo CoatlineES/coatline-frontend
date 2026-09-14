@@ -10,9 +10,14 @@ const api = axios.create({
 // Interceptor de Request
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('coastline_token');
+const token = localStorage.getItem('coastline_token');
+    const subsidiaryId = localStorage.getItem('coastline_subsidiary_id');
+    
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (subsidiaryId && config.headers) {
+      config.headers['x-subsidiary-id'] = subsidiaryId;
     }
     return config;
   },

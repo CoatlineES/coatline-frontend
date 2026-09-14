@@ -28,7 +28,7 @@ export default function QuotationPreviewModal({ quotation, onClose }: QuotationP
   };
 
   const handleDownload = () => {
-    window.open(`http://localhost:4000/api/quotations/${quotation.id}/pdf`, '_blank');
+    window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/quotations/${quotation.id}/pdf`, '_blank');
   };
 
   return (

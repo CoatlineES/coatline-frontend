@@ -21,7 +21,7 @@ export default function PublicQuotationView() {
   useEffect(() => {
     const fetchQuotation = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:4000/api/quotations/public/${token}`);
+        const { data } = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/quotations/public/${token}`);
         setQuotation(data);
         if (data.contact) {
           setName(data.contact.name || '');
@@ -61,7 +61,7 @@ export default function PublicQuotationView() {
         console.warn('No se pudo capturar la IP externa:', ipErr);
       }
 
-      const { data } = await axios.post(`http://localhost:4000/api/quotations/public/${token}/sign`, {
+      const { data } = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/quotations/public/${token}/sign`, {
         name,
         dni,
         signature: signatureBase64,
@@ -81,7 +81,7 @@ export default function PublicQuotationView() {
   const downloadPDF = async () => {
     try {
       // Usaremos la ruta original de generación de PDF que usa Puppeteer
-      const response = await axios.get(`http://localhost:4000/api/quotations/${quotation.id}/pdf`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/quotations/${quotation.id}/pdf`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));

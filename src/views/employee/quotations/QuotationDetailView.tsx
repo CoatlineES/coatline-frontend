@@ -98,7 +98,7 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
 
   const handleRequestSignature = async () => {
     try {
-      const response = await fetch(`http://localhost:4000/api/quotations/${quotationId}/generate-signature-link`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/quotations/${quotationId}/generate-signature-link`, {
         method: 'POST',
       });
       if (!response.ok) throw new Error('Error al generar enlace');
@@ -402,7 +402,7 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
               <FileSignature size={16} /> Solicitar Firma
             </button>
           )}
-          <button onClick={() => window.open(`http://localhost:4000/api/quotations/${quotation.id}/pdf`, '_blank')} className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50 flex items-center gap-2">
+          <button onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/quotations/${quotation.id}/pdf`, '_blank')} className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50 flex items-center gap-2">
             <Download size={16} /> PDF
           </button>
           <button onClick={handleDelete} disabled={loading} className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded hover:bg-red-50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" title="Eliminar cotización">

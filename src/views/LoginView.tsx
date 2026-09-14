@@ -33,7 +33,7 @@ export default function LoginView({ onNavigate }: LoginViewProps) {
       
       if (loginResponse && loginResponse.accessToken) {
         // Enviar el token al backend
-        const res = await fetch('http://localhost:4000/api/auth/microsoft', {
+        const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:4000/api') + '/auth/microsoft', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ accessToken: loginResponse.accessToken })
