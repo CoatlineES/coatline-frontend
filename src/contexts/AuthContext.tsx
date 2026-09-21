@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   
   useEffect(() => {
-    if (user?.role === 'Director Global' && token) {
+    if (user && ['Director Global', 'SUPERADMIN'].includes(user.role) && token) {
       fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/settings/subsidiaries`, {
         headers: { Authorization: `Bearer ${token}` }
       })

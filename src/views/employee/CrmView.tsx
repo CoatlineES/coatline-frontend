@@ -296,6 +296,7 @@ export default function CrmView() {
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [importCount, setImportCount] = useState(0);
   const [duplicateCount, setDuplicateCount] = useState(0);
+    const [importErrors, setImportErrors] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   
@@ -359,9 +360,11 @@ export default function CrmView() {
                           const duplicatedItems = totalAttempted - (response?.count || 0);
               if (duplicatedItems > 0 || response?.errors?.length > 0) {
                 setDuplicateCount(duplicatedItems);
+                  setImportErrors(response?.errors || []);
                 console.error("Errores o duplicados en importación:", response?.errors || "Filas duplicadas ignoradas por Prisma");
               } else {
                 setDuplicateCount(0);
+                  setImportErrors([]);
               }
               
               if (response?.count >= 0) {
@@ -755,14 +758,15 @@ export default function CrmView() {
     
     setIsSubmitting(true);
     try {
-      const payload: Partial<Account> = {
-        name: editingAccount.name,
-        cif: editingAccount.cif || undefined,
-        sector: editingAccount.sector || undefined,
-        email: editingAccount.email || undefined,
-        phone: editingAccount.phone || undefined,
-        city: editingAccount.city || undefined,
-      };
+              const payload: Partial<Account> = {
+          name: editingAccount.name,
+          cif: editingAccount.cif || undefined,
+          sector: editingAccount.sector || undefined,
+          email: editingAccount.email || undefined,
+          phone: editingAccount.phone || undefined,
+          city: editingAccount.city || undefined,
+          filial: editingAccount.filial || undefined,
+        };
 
       if (editingAccount.id) {
         await accountsService.update(editingAccount.id, payload);
@@ -1192,17 +1196,25 @@ export default function CrmView() {
               <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle size={40} />
               </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">Â¡Importación Exitosa!</h3>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">¡Importación Exitosa!</h3>
                               <div className="text-slate-600 mb-8 text-sm">
                   <p className="text-base mb-3">
                     Se importaron <span className="font-bold text-slate-800 text-lg">{importCount}</span> registros nuevos a la base de datos de {activeTab === 'accounts' ? 'Empresas' : 'Contactos'} exitosamente.
                   </p>
                   {duplicateCount > 0 && (
-                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 flex flex-col gap-1 items-center">
-                      <span className="font-bold">Aviso de duplicados</span>
-                      <span>Se omitieron <strong>{duplicateCount}</strong> registros porque ya existían en el sistema o les faltaba un dato obligatorio.</span>
-                    </div>
-                  )}
+                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 flex flex-col gap-1 items-center">
+                        <span className="font-bold">Aviso de duplicados</span>
+                        <span>Se omitieron <strong>{duplicateCount}</strong> registros porque ya existían en el sistema o les faltaba un dato obligatorio.</span>
+                      </div>
+                    )}
+                    {importErrors.length > 0 && (
+                      <div className="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg text-sky-700 flex flex-col gap-2 items-start text-left">
+                        <span className="font-bold w-full text-center">Avisos de Importación</span>
+                        <ul className="list-disc pl-4 w-full">
+                          {importErrors.map((err, i) => <li key={i}>{err}</li>)}
+                        </ul>
+                      </div>
+                    )}
                 </div>
               <button 
                 onClick={() => setShowSuccessOverlay(false)}
@@ -1720,11 +1732,12 @@ export default function CrmView() {
                                       const acc = accounts.find(a => a.id === act.accountId);
                                       setCreatingDealForActivityId(act.id); 
                                       setEditingDeal({ 
-                                        name: acc ? `Nuevo Negocio - ${acc.name}` : act.subject, 
-                                        accountId: act.accountId, 
-                                        contactId: act.contactId || '', 
-                                        stage: DealStage.LEAD 
-                                      }); 
+                                          name: acc ? `Nuevo Negocio - ${acc.name}` : act.subject, 
+                                          accountId: act.accountId, 
+                                          contactId: act.contactId || '', 
+                                          stage: DealStage.LEAD,
+                                          userId: user?.id || ''
+                                        }); 
                                       setShowDealModal(true); 
                                     }} className="p-1.5 text-slate-400 hover:text-purple-600 rounded" title="Convertir a Negocio">
                                       <Briefcase size={14} />
@@ -1886,7 +1899,7 @@ export default function CrmView() {
               >
                 <Download size={16} /> Excel
               </button>
-              <button onClick={() => { setEditingDeal({ stage: DealStage.LEAD }); setShowDealModal(true); }} className="px-4 py-2 bg-secondary text-white rounded-xl font-bold text-sm hover:bg-secondary-container flex items-center gap-2">
+              <button onClick={() => { setEditingDeal({ stage: DealStage.LEAD, userId: user?.id || '' }); setShowDealModal(true); }} className="px-4 py-2 bg-secondary text-white rounded-xl font-bold text-sm hover:bg-secondary-container flex items-center gap-2">
                 <Plus size={16} />
                 Nuevo Negocio
               </button>
@@ -1922,7 +1935,7 @@ export default function CrmView() {
                           id={`deal-card-${deal.id}`}
                           draggable
                           onDragStart={(e) => e.dataTransfer.setData('dealId', deal.id)}
-                          onClick={(e) => { e.stopPropagation(); setViewingDeal(deal); setHighlightedDealId(deal.id); }}
+                          onClick={(e) => { e.stopPropagation(); setRecord360({ id: deal.id, type: 'deal', accountId: deal.accountId }); }}
                           onDoubleClick={(e) => { e.stopPropagation(); setRecord360({ id: deal.id, type: 'deal', accountId: deal.accountId }); }}
                           className={`bg-white p-4 rounded-xl border transition-all duration-300 cursor-grab active:cursor-grabbing group ${
                             highlightedDealId === deal.id 
@@ -2018,7 +2031,7 @@ export default function CrmView() {
                               ? 'bg-amber-50 shadow-[inset_4px_0_0_0_rgba(251,191,36,1)] relative z-10'
                               : 'hover:bg-slate-50'
                           }`}
-                          onClick={(e) => { e.stopPropagation(); setViewingDeal(deal); setHighlightedDealId(deal.id); }}
+                          onClick={(e) => { e.stopPropagation(); setRecord360({ id: deal.id, type: 'deal', accountId: deal.accountId }); }}
                           onDoubleClick={(e) => { e.stopPropagation(); setRecord360({ id: deal.id, type: 'deal', accountId: deal.accountId }); }}
                         >
                           <td className="p-4">
@@ -2076,7 +2089,7 @@ export default function CrmView() {
                                 </button>
                               )}
 
-                              <button onClick={(e) => { e.stopPropagation(); setViewingDeal(deal); setHighlightedDealId(deal.id); }} className="p-2 text-slate-400 hover:text-secondary bg-white border border-slate-200 rounded-lg hover:shadow active:scale-95" title="Ver historial">
+                              <button onClick={(e) => { e.stopPropagation(); setRecord360({ id: deal.id, type: 'deal', accountId: deal.accountId }); }} className="p-2 text-slate-400 hover:text-secondary bg-white border border-slate-200 rounded-lg hover:shadow active:scale-95" title="Ver historial">
                                 <Calendar size={14} />
                               </button>
                               <button onClick={(e) => { e.stopPropagation(); setEditingDeal(deal); setShowDealModal(true); }} className="p-2 text-slate-400 hover:text-secondary bg-white border border-slate-200 rounded-lg hover:shadow active:scale-95" title="Editar">
@@ -2640,7 +2653,14 @@ export default function CrmView() {
                               <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
                                 {acc.name.charAt(0).toUpperCase()}
                               </div>
-                              <span className="text-slate-800 font-bold">{acc.name}</span>
+                              <div className="flex flex-col">
+                                <span className="text-slate-800 font-bold">{acc.name}</span>
+                                {acc.filial && (
+                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                                    {acc.filial}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="p-5 text-center">
@@ -2922,9 +2942,19 @@ export default function CrmView() {
                     type="text"
                     value={editingAccount.city || ''}
                     onChange={(e) => setEditingAccount({...editingAccount, city: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50"
-                  />
-                </div>
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Filial (Grupo Empresarial)</label>
+                    <input
+                      type="text"
+                      value={editingAccount.filial || ''}
+                      onChange={(e) => setEditingAccount({...editingAccount, filial: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50"
+                      placeholder="Ej. Grupo EULEN"
+                    />
+                  </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <button type="button" onClick={() => setShowAccountModal(false)} className="px-4 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm transition-all active:scale-95">Cancelar</button>
                   <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-secondary text-white hover:bg-secondary-container rounded-xl font-bold text-sm disabled:opacity-50 flex items-center gap-2 transition-all active:scale-95 shadow-md hover:shadow-lg">

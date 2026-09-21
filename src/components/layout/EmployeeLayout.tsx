@@ -446,8 +446,23 @@ export default function EmployeeLayout() {
             <img src={logoUrl} alt="Coatline" className="h-6 md:hidden" />
           </div>
           
-          <div className="flex items-center gap-4">
-            {isContratista && activeWorkerName && (
+                      <div className="flex items-center gap-4">
+              {availableSubsidiaries.length > 0 && activeSubsidiary && (
+                <div className="hidden md:flex items-center gap-2">
+                  <select 
+                    value={activeSubsidiary.id}
+                    onChange={(e) => setActiveSubsidiaryId(e.target.value)}
+                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    {availableSubsidiaries.map(sub => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.country} ({sub.currency})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {isContratista && activeWorkerName && (
               <div className="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
                 <UserCircle size={18} className="text-secondary" />
                 <span className="text-sm font-semibold text-slate-700">{activeWorkerName}</span>
