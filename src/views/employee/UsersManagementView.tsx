@@ -32,8 +32,8 @@ export default function UsersManagementView() {
     name: '',
     email: '',
     password: '',
-    roleName: 'EMPLEADO',
-    departmentName: 'TECNICO',
+    roleName: 'Empleado',
+    departmentName: 'Técnico',
     status: 'ACTIVO',
     contract: {
       contractType: 'Indefinido',
@@ -184,8 +184,8 @@ export default function UsersManagementView() {
       const response = await usersService.getUserById(userId);
       if (response.success && response.data) {
         const user = response.data;
-        const roleName = typeof user.role === 'object' && user.role !== null ? (user.role as any).name : (user.role || 'EMPLEADO');
-        const deptName = typeof user.department === 'object' && user.department !== null ? (user.department as any).name : (user.department || 'TECNICO');
+        const roleName = typeof user.role === 'object' && user.role !== null ? (user.role as any).name : (user.role || 'Empleado');
+        const deptName = typeof user.department === 'object' && user.department !== null ? (user.department as any).name : (user.department || 'Técnico');
         
         // Ensure valid date formatting for inputs (YYYY-MM-DD)
         const formatForInput = (dateStr?: any) => {
@@ -302,10 +302,11 @@ export default function UsersManagementView() {
   };
 
   const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName) {
+    switch (roleName?.toUpperCase()) {
       case 'SUPERADMIN': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'ADMIN': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       case 'SUPERVISOR': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'TÉCNICO':
       case 'TECNICO': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       default: return 'bg-slate-100 text-slate-800 border-slate-200';
     }
@@ -448,7 +449,7 @@ export default function UsersManagementView() {
                 >
                   3. Permisos y Accesos
                 </button>
-                {formData.roleName === 'CONTRATISTA' && editingUserId && (
+                {(formData.roleName === 'CONTRATISTA' || formData.roleName === 'Proveedor') && editingUserId && (
                   <button 
                     onClick={() => setActiveTab('trabajadores')}
                     type="button"
@@ -519,13 +520,20 @@ export default function UsersManagementView() {
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50 focus:border-[#001c3a] transition-all"
                     >
-                      <option value="SUPERADMIN">Superadmin</option>
-                      <option value="ADMIN">Admin</option>
-                      <option value="SUPERVISOR">Supervisor</option>
-                      <option value="EMPLEADO">Empleado (Base)</option>
-                      <option value="TECNICO">Técnico de Campo</option>
-                      <option value="PEON">Peón</option>
-                      <option value="CONTRATISTA">Contratista</option>
+                      <option value="Superadmin">Superadmin</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Supervisor">Supervisor</option>
+                      <option value="Empleado">Empleado</option>
+                      <option value="Empleado (Base)">Empleado (Base)</option>
+                      <option value="Cliente">Cliente</option>
+                      <option value="Técnico">Técnico</option>
+                      <option value="Peón">Peón</option>
+                      <option value="Gerente">Gerente</option>
+                      <option value="Coordinador">Coordinador</option>
+                      <option value="Comercial">Comercial</option>
+                      <option value="Contable">Contable</option>
+                      <option value="Auditor">Auditor</option>
+                      <option value="Proveedor">Proveedor</option>
                     </select>
                   </div>
                   
@@ -539,12 +547,20 @@ export default function UsersManagementView() {
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50 focus:border-[#001c3a] transition-all"
                     >
-                      <option value="DIRECCION">Dirección</option>
-                      <option value="ADMINISTRACION">Administración</option>
-                      <option value="TECNICO">Técnico Operativo</option>
-                      <option value="OPERACIONES">Operaciones</option>
-                      <option value="COMERCIAL">Comercial</option>
-                      <option value="RRHH">Recursos Humanos</option>
+                      <option value="General">General</option>
+                      <option value="Dirección">Dirección</option>
+                      <option value="Administración">Administración</option>
+                      <option value="Ventas">Ventas</option>
+                      <option value="Comercial">Comercial</option>
+                      <option value="Técnico">Técnico</option>
+                      <option value="Operaciones">Operaciones</option>
+                      <option value="RRHH">RRHH</option>
+                      <option value="Finanzas">Finanzas</option>
+                      <option value="Logística">Logística</option>
+                      <option value="Atención al Cliente">Atención al Cliente</option>
+                      <option value="Calidad">Calidad</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="IT">IT</option>
                     </select>
                   </div>
 
@@ -683,7 +699,7 @@ export default function UsersManagementView() {
               )}
 
               {/* TAB CONTENT: TRABAJADORES */}
-              {activeTab === 'trabajadores' && formData.roleName === 'CONTRATISTA' && editingUserId && (
+              {activeTab === 'trabajadores' && (formData.roleName === 'CONTRATISTA' || formData.roleName === 'Proveedor') && editingUserId && (
                 <div className="animate-in fade-in zoom-in-95 duration-200 flex flex-col h-full">
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 flex items-start gap-3">
                     <Users className="text-[#001c3a] shrink-0 mt-0.5" size={20} />
@@ -887,7 +903,7 @@ export default function UsersManagementView() {
                             </div>
                           </td>
                           <td className="p-5 text-right">
-                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                            <div className="flex items-center justify-end gap-2 transition-all">
                               <button 
                                 onClick={() => handleEditClick(user.id)}
                                 className="p-2 text-slate-400 hover:text-secondary bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow active:scale-95 transition-all"
