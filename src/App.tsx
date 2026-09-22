@@ -125,7 +125,7 @@ export default function App() {
           } />
           
           <Route path="/app/empleado" element={
-            <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'EMPLEADO', 'TECNICO', 'PEON', 'CONTRATISTA', 'OBRERO']}>
+            <ProtectedRoute>
               <EmployeeLayout />
             </ProtectedRoute>
           }>
@@ -151,7 +151,7 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="todos-partes" element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'EMPLEADO', 'TECNICO', 'PEON', 'CONTRATISTA', 'OBRERO']}>
+              <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'EMPLEADO', 'TECNICO', 'PEON', 'CONTRATISTA', 'OBRERO', 'COMERCIAL']}>
                 <TodosPartesView />
               </ProtectedRoute>
             } />

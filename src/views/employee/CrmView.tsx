@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -280,6 +280,8 @@ export default function CrmView() {
   
   // Master Data State
   const { user } = useAuth();
+  const currentUserRole = typeof user?.role === 'object' ? (user?.role as any)?.name : user?.role;
+  const canDeleteActivity = currentUserRole === 'SUPERADMIN' || currentUserRole === 'ADMIN';
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -1749,9 +1751,11 @@ export default function CrmView() {
                                   <button onClick={() => { setEditingActivity(act); setShowActivityModal(true); }} className="p-1.5 text-slate-400 hover:text-secondary rounded" title="Editar">
                                     <Edit2 size={14} />
                                   </button>
-                                  <button onClick={() => setDeletingId({ id: act.id, type: 'activity' })} className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50" title="Eliminar">
-                                    <Trash2 size={14} />
-                                  </button>
+                                  {canDeleteActivity && (
+                                    <button onClick={() => setDeletingId({ id: act.id, type: 'activity' })} className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50" title="Eliminar">
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </motion.tr>
@@ -3133,8 +3137,12 @@ export default function CrmView() {
                       onChange={(e) => setEditingActivity({...editingActivity, userId: e.target.value})}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 focus:bg-white transition-all duration-200"
                     >
-                      <option value="">Selecciona un responsable...</option>
-                      {crmUsers.map(user => (
+                      <option value={user?.id}>{user?.name} (Tú)</option>
+                      {crmUsers.filter(u => {
+                        if (u.id === user?.id) return false;
+                        const depto = (u as any).department?.name?.toUpperCase() || '';
+                        return depto === 'OPERACIONES' || depto === 'VENTAS' || depto === 'COMERCIAL';
+                      }).map(user => (
                         <option key={user.id} value={user.id}>{(user as any).display_name || user.name || user.email}</option>
                       ))}
                     </select>
@@ -3647,8 +3655,12 @@ export default function CrmView() {
                         onChange={(e) => setNextActivityUserId(e.target.value)}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 focus:bg-white transition-all duration-200"
                       >
-                        <option value="">{user?.name} (yo)</option>
-                        {crmUsers.filter(u => u.id !== user?.id).map(u => (
+                        <option value="">{user?.name} (Tú)</option>
+                        {crmUsers.filter(u => {
+                          if (u.id === user?.id) return false;
+                          const depto = (u as any).department?.name?.toUpperCase() || '';
+                          return depto === 'OPERACIONES' || depto === 'VENTAS' || depto === 'COMERCIAL';
+                        }).map(u => (
                           <option key={u.id} value={u.id}>{(u as any).display_name || u.name}</option>
                         ))}
                       </select>
