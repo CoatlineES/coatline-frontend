@@ -49,8 +49,8 @@ export default function QuotationListView({ businessLines, users, onViewDetail, 
       const apiFilters: Record<string, string> = {};
       if (filters?.status) apiFilters.status = filters.status;
       if (filters?.businessLineId) apiFilters.businessLineId = filters.businessLineId;
-      if (filters?.startDate) apiFilters.startDate = filters.startDate;
-      if (filters?.endDate) apiFilters.endDate = filters.endDate;
+      if (filters?.startDate) apiFilters.startDate = filters.startDate + 'T00:00:00.000Z';
+      if (filters?.endDate) apiFilters.endDate = filters.endDate + 'T23:59:59.999Z';
       if (searchQuery) apiFilters.search = searchQuery;
       
       const data = await quotationsService.getAll(apiFilters);
@@ -97,8 +97,8 @@ export default function QuotationListView({ businessLines, users, onViewDetail, 
                   const apiFilters: Record<string, string> = {};
                   if (filters?.status) apiFilters.status = filters.status;
                   if (filters?.businessLineId) apiFilters.businessLineId = filters.businessLineId;
-                  if (filters?.startDate) apiFilters.startDate = filters.startDate;
-                  if (filters?.endDate) apiFilters.endDate = filters.endDate;
+                  if (filters?.startDate) apiFilters.startDate = filters.startDate + 'T00:00:00.000Z';
+      if (filters?.endDate) apiFilters.endDate = filters.endDate + 'T23:59:59.999Z';
                   if (searchQuery) apiFilters.search = searchQuery;
                   const data = await quotationsService.getAll(apiFilters);
                   

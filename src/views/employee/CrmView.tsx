@@ -406,7 +406,7 @@ export default function CrmView() {
   const [quotationsFilters, setQuotationsFilters] = useState({ status: '', businessLineId: '', startDate: '', endDate: '' });
   const debouncedQuotationsFilters = useDebounce(quotationsFilters, 500);
 
-  const [activitiesFilters, setActivitiesFilters] = useState({ subject: '', notes: '', activityType: '', result: '', userId: '', dealId: '', accountId: '', contactId: '', parentActivityId: '', startDate: '', endDate: '', completedAtFrom: '', completedAtTo: '' });
+  const [activitiesFilters, setActivitiesFilters] = useState({ subject: '', notes: '', activityType: '', result: '', userId: '', dealId: '', accountId: '', contactId: '', parentActivityId: '', startDate: '', endDate: '', completedAtFrom: '', completedAtTo: '', plannedDateFrom: '', plannedDateTo: '' });
   const debouncedActivitiesFilters = useDebounce(activitiesFilters, 500);
 
   const [dashboardActivityStatusFilter, setDashboardActivityStatusFilter] = useState('PLANNED');
@@ -506,10 +506,14 @@ export default function CrmView() {
       if (debouncedActivitiesFilters.userId) params.append('userId', debouncedActivitiesFilters.userId);
       if (debouncedActivitiesFilters.activityType) params.append('activityType', debouncedActivitiesFilters.activityType);
       if (debouncedActivitiesFilters.result) params.append('result', debouncedActivitiesFilters.result);
-      if (debouncedActivitiesFilters.startDate) params.append('startDate', debouncedActivitiesFilters.startDate);
-      if (debouncedActivitiesFilters.endDate) params.append('endDate', debouncedActivitiesFilters.endDate);
-      if (debouncedActivitiesFilters.completedAtFrom) params.append('completedAtFrom', debouncedActivitiesFilters.completedAtFrom);
-      if (debouncedActivitiesFilters.completedAtTo) params.append('completedAtTo', debouncedActivitiesFilters.completedAtTo);
+      
+        if (debouncedActivitiesFilters.startDate) { params.append('startDate', debouncedActivitiesFilters.startDate + 'T00:00:00.000Z'); }
+        if (debouncedActivitiesFilters.endDate) { params.append('endDate', debouncedActivitiesFilters.endDate + 'T23:59:59.999Z'); }
+        if (debouncedActivitiesFilters.completedAtFrom) { params.append('completedAtFrom', debouncedActivitiesFilters.completedAtFrom + 'T00:00:00.000Z'); }
+        if (debouncedActivitiesFilters.completedAtTo) { params.append('completedAtTo', debouncedActivitiesFilters.completedAtTo + 'T23:59:59.999Z'); }
+        if ((debouncedActivitiesFilters as any).plannedDateFrom) { params.append('plannedDateFrom', (debouncedActivitiesFilters as any).plannedDateFrom + 'T00:00:00.000Z'); }
+        if ((debouncedActivitiesFilters as any).plannedDateTo) { params.append('plannedDateTo', (debouncedActivitiesFilters as any).plannedDateTo + 'T23:59:59.999Z'); }
+
 
       if (debouncedActivitiesFilters.startDate || debouncedActivitiesFilters.endDate) {
         filtersInfo += " | Creación: " + (debouncedActivitiesFilters.startDate || '*') + " a " + (debouncedActivitiesFilters.endDate || '*');
@@ -662,15 +666,35 @@ export default function CrmView() {
     try {
       const search = debouncedSearchQuery || undefined;
       
-      const dealsParams = { search, ...debouncedDealsFilters };
-      if (dealsParams.amountMin) dealsParams.amountMin = Number(dealsParams.amountMin) as any;
-      if (dealsParams.amountMax) dealsParams.amountMax = Number(dealsParams.amountMax) as any;
+      const dealsParams = { search, ...debouncedDealsFilters } as any;
+        if (dealsParams.amountMin) dealsParams.amountMin = Number(dealsParams.amountMin);
+        if (dealsParams.amountMax) dealsParams.amountMax = Number(dealsParams.amountMax);
+        if (dealsParams.startDate) dealsParams.startDate += 'T00:00:00.000Z';
+        if (dealsParams.endDate) dealsParams.endDate += 'T23:59:59.999Z';
+        if (dealsParams.closeDateFrom) dealsParams.closeDateFrom += 'T00:00:00.000Z';
+        if (dealsParams.closeDateTo) dealsParams.closeDateTo += 'T23:59:59.999Z';
+        
+        const actParams = { search, ...debouncedActivitiesFilters } as any;
+        if (actParams.startDate) { actParams.startDate = actParams.startDate + 'T00:00:00.000Z'; }
+        if (actParams.endDate) { actParams.endDate = actParams.endDate + 'T23:59:59.999Z'; }
+        if (actParams.completedAtFrom) { actParams.completedAtFrom = actParams.completedAtFrom + 'T00:00:00.000Z'; }
+        if (actParams.completedAtTo) { actParams.completedAtTo = actParams.completedAtTo + 'T23:59:59.999Z'; }
+        if (actParams.plannedDateFrom) { actParams.plannedDateFrom = actParams.plannedDateFrom + 'T00:00:00.000Z'; }
+        if (actParams.plannedDateTo) { actParams.plannedDateTo = actParams.plannedDateTo + 'T23:59:59.999Z'; }
 
-      const [accountsData, contactsData, activitiesData, dealsData, usersData, businessLinesRes, projectsData] = await Promise.all([
-        accountsService.getAll({ search: debouncedSearchQuery, ...debouncedAccountsFilters }),
-        contactsService.getAll({ search, ...debouncedContactsFilters }),
-        activitiesService.getAll({ search, ...debouncedActivitiesFilters }),
-        dealsService.getAll(dealsParams as any),
+        const accParams = { search: debouncedSearchQuery, ...debouncedAccountsFilters } as any;
+        if (accParams.startDate) accParams.startDate += 'T00:00:00.000Z';
+        if (accParams.endDate) accParams.endDate += 'T23:59:59.999Z';
+
+        const conParams = { search, ...debouncedContactsFilters } as any;
+        if (conParams.startDate) conParams.startDate += 'T00:00:00.000Z';
+        if (conParams.endDate) conParams.endDate += 'T23:59:59.999Z';
+
+        const [accountsData, contactsData, activitiesData, dealsData, usersData, businessLinesRes, projectsData] = await Promise.all([
+          accountsService.getAll(accParams),
+          contactsService.getAll(conParams),
+          activitiesService.getAll(actParams),
+          dealsService.getAll(dealsParams),
         usersService.getUsers(),
         api.get('/business-lines').catch(() => ({ data: [] })),
         projectsService.getAll()
@@ -1029,13 +1053,10 @@ export default function CrmView() {
       if (dashboardActivityDateFilter === 'WEEK' && (t < today0 || t > week1)) return false;
       if (dashboardActivityDateFilter === 'RANGE') {
         if (dashboardActivityRangeFrom) {
-          const [y, m, d] = dashboardActivityRangeFrom.split('-').map(Number);
-          if (t < new Date(y, m - 1, d, 0, 0, 0, 0).getTime()) return false;
+          if (t < new Date(dashboardActivityRangeFrom + 'T00:00:00.000Z').getTime()) return false;
         }
         if (dashboardActivityRangeTo) {
-          const [y, m, d] = dashboardActivityRangeTo.split('-').map(Number);
-          const toDate = new Date(y, m - 1, d, 23, 59, 59, 999);
-          if (t > toDate.getTime()) return false;
+          if (t > new Date(dashboardActivityRangeTo + 'T23:59:59.999Z').getTime()) return false;
         }
         if (!dashboardActivityRangeFrom && !dashboardActivityRangeTo) return false;
       }
@@ -1376,7 +1397,7 @@ export default function CrmView() {
                       setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', startDate: '', endDate: '' });
                       setDealsFilters({ name: '', amountMin: '', amountMax: '', stage: '', userId: '', accountId: '', contactId: '', startDate: '', endDate: '', closeDateFrom: '', closeDateTo: '' });
                       setQuotationsFilters({ status: '', businessLineId: '', startDate: '', endDate: '' });
-                      setActivitiesFilters({ subject: '', notes: '', activityType: '', result: '', userId: '', dealId: '', accountId: '', contactId: '', parentActivityId: '', startDate: '', endDate: '', completedAtFrom: '', completedAtTo: '' });
+                      setActivitiesFilters({ subject: '', notes: '', activityType: '', result: '', userId: '', dealId: '', accountId: '', contactId: '', parentActivityId: '', startDate: '', endDate: '', completedAtFrom: '', completedAtTo: '', plannedDateFrom: '', plannedDateTo: '' });
                     }}
                     className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
                   >
@@ -1533,6 +1554,7 @@ export default function CrmView() {
                         setDashboardActivityAccountFilter('ALL');
                         setDashboardActivityContactFilter('ALL');
                         setDashboardActivityBusinessLineFilter('ALL');
+                        setActivitiesFilters({ subject: '', notes: '', activityType: '', result: '', userId: '', dealId: '', accountId: '', contactId: '', parentActivityId: '', startDate: '', endDate: '', completedAtFrom: '', completedAtTo: '', plannedDateFrom: '', plannedDateTo: '' });
                       }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border bg-white text-slate-600 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm"
                       title="Restablecer filtros"
