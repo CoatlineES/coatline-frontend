@@ -410,7 +410,7 @@ export default function CrmView() {
   const debouncedActivitiesFilters = useDebounce(activitiesFilters, 500);
 
   const [dashboardActivityStatusFilter, setDashboardActivityStatusFilter] = useState('PLANNED');
-  const [dashboardActivityUserFilter, setDashboardActivityUserFilter] = useState('ALL');
+  const [dashboardActivityUserFilter, setDashboardActivityUserFilter] = useState(() => (currentUserRole === 'SUPERADMIN' || currentUserRole === 'ADMIN') ? 'ALL' : (user?.id || 'ALL'));
   const [dashboardActivityDateFilter, setDashboardActivityDateFilter] = useState('ALL');
     const [dashboardActivitySort, setDashboardActivitySort] = useState('PLANNED_ASC');
   const [expandedDashboardActivityId, setExpandedDashboardActivityId] = useState<string | null>(null);
@@ -490,10 +490,13 @@ export default function CrmView() {
       } else if (dashboardActivityDateFilter === 'OVERDUE') {
         params.append('endDate', today0.toISOString());
       } else if (dashboardActivityDateFilter === 'RANGE') {
-        if (dashboardActivityRangeFrom) params.append('startDate', new Date(dashboardActivityRangeFrom).toISOString());
+        if (dashboardActivityRangeFrom) {
+          const [y, m, d] = dashboardActivityRangeFrom.split('-').map(Number);
+          params.append('startDate', new Date(y, m - 1, d, 0, 0, 0, 0).toISOString());
+        }
         if (dashboardActivityRangeTo) {
-          const to = new Date(dashboardActivityRangeTo);
-          to.setHours(23, 59, 59, 999);
+          const [y, m, d] = dashboardActivityRangeTo.split('-').map(Number);
+          const to = new Date(y, m - 1, d, 23, 59, 59, 999);
           params.append('endDate', to.toISOString());
         }
       }
@@ -1025,10 +1028,13 @@ export default function CrmView() {
       if (dashboardActivityDateFilter === 'OVERDUE' && t >= today0) return false;
       if (dashboardActivityDateFilter === 'WEEK' && (t < today0 || t > week1)) return false;
       if (dashboardActivityDateFilter === 'RANGE') {
-        if (dashboardActivityRangeFrom && t < new Date(dashboardActivityRangeFrom).getTime()) return false;
+        if (dashboardActivityRangeFrom) {
+          const [y, m, d] = dashboardActivityRangeFrom.split('-').map(Number);
+          if (t < new Date(y, m - 1, d, 0, 0, 0, 0).getTime()) return false;
+        }
         if (dashboardActivityRangeTo) {
-          const toDate = new Date(dashboardActivityRangeTo);
-          toDate.setHours(23, 59, 59, 999);
+          const [y, m, d] = dashboardActivityRangeTo.split('-').map(Number);
+          const toDate = new Date(y, m - 1, d, 23, 59, 59, 999);
           if (t > toDate.getTime()) return false;
         }
         if (!dashboardActivityRangeFrom && !dashboardActivityRangeTo) return false;
@@ -1515,12 +1521,31 @@ export default function CrmView() {
                     <option value="CREATED_ASC">Orden: Más antiguos</option>
                   </select>
   
-                  <button 
-                    onClick={() => setShowMoreDashboardFilters(!showMoreDashboardFilters)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border ${showMoreDashboardFilters ? 'bg-slate-200 text-slate-700 border-slate-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'} shadow-sm ml-auto`}
-                  >
-                    <Filter size={14} /> Más filtros
-                  </button>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <button
+                      onClick={() => {
+                        setDashboardActivityStatusFilter('PLANNED');
+                        setDashboardActivityUserFilter((currentUserRole === 'SUPERADMIN' || currentUserRole === 'ADMIN') ? 'ALL' : (user?.id || 'ALL'));
+                        setDashboardActivityDateFilter('ALL');
+                        setDashboardActivitySort('PLANNED_ASC');
+                        setDashboardActivityRangeFrom('');
+                        setDashboardActivityRangeTo('');
+                        setDashboardActivityAccountFilter('ALL');
+                        setDashboardActivityContactFilter('ALL');
+                        setDashboardActivityBusinessLineFilter('ALL');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border bg-white text-slate-600 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm"
+                      title="Restablecer filtros"
+                    >
+                      Resetear
+                    </button>
+                    <button 
+                      onClick={() => setShowMoreDashboardFilters(!showMoreDashboardFilters)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all border ${showMoreDashboardFilters ? 'bg-slate-200 text-slate-700 border-slate-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'} shadow-sm`}
+                    >
+                      <Filter size={14} /> Más filtros
+                    </button>
+                  </div>
               </div>
   
               {showMoreDashboardFilters && (
@@ -1673,12 +1698,17 @@ export default function CrmView() {
                                         <Clock size={10} className="text-slate-400" />
                                         Creada: {new Date(act.createdAt).toLocaleDateString()}
                                       </div>
-                                      {act.plannedDate && (
-                                        <div className="text-[10px] font-medium text-blue-600 flex items-center gap-1" title="Fecha Planeada">
-                                          <Calendar size={10} className="text-blue-400" />
-                                          Planeada: {new Date(act.plannedDate).toLocaleDateString()}
-                                        </div>
-                                      )}
+                                      {(act.status === 'COMPLETED' || act.completedAt) ? (
+                                      <div className="text-[10px] font-medium text-emerald-600 flex items-center gap-1" title="Fecha Completada">
+                                        <Calendar size={10} className="text-emerald-400" />
+                                        Completada: {new Date(act.completedAt || act.plannedDate || act.createdAt).toLocaleDateString()}
+                                      </div>
+                                    ) : act.plannedDate && (
+                                      <div className="text-[10px] font-medium text-blue-600 flex items-center gap-1" title="Fecha Planeada">
+                                        <Calendar size={10} className="text-blue-400" />
+                                        Planeada: {new Date(act.plannedDate).toLocaleDateString()}
+                                      </div>
+                                    )}
                                     </div>
                                   </div>
                                 </div>
