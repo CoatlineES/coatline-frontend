@@ -8,6 +8,7 @@ export interface Account {
   email?: string;
   phone?: string;
   city?: string;
+  notes?: string;
   contacts?: Contact[];
   createdAt: string;
   updatedAt: string;
@@ -19,6 +20,7 @@ export interface Contact {
   email: string | null;
   phone: string | null;
   position?: string | null;
+  notes?: string;
   accountId: string;
   account?: Account;
   createdAt: string;
@@ -38,8 +40,8 @@ export const accountsService = {
 export const contactsService = {
   getAll: async (params?: { search?: string, name?: string, email?: string, phone?: string, accountId?: string, position?: string, startDate?: string, endDate?: string }) => (await api.get('/contacts', { params: cleanParams(params) })).data.data,
   getById: async (id: string) => (await api.get(`/contacts/${id}`)).data.data,
-  create: async (data: { accountId: string; name?: string; email?: string; phone?: string; position?: string }) => (await api.post('/contacts', data)).data.data,
+  create: async (data: { accountId: string; name?: string; email?: string; phone?: string; position?: string; notes?: string }) => (await api.post('/contacts', data)).data.data,
   bulkCreate: async (data: any[]) => (await api.post('/contacts/bulk', data)).data,
-  update: async (id: string, data: { accountId?: string; name?: string; email?: string; phone?: string; position?: string }) => (await api.put(`/contacts/${id}`, data)).data.data,
+  update: async (id: string, data: { accountId?: string; name?: string; email?: string; phone?: string; position?: string; notes?: string }) => (await api.put(`/contacts/${id}`, data)).data.data,
   delete: async (id: string) => (await api.delete(`/contacts/${id}`)).data.data
 };

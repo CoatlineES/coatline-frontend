@@ -337,6 +337,7 @@ export default function CrmView() {
               email: row['Email'] || row['email'] || row['Correo'],
               phone: String(row['Teléfono'] || row['Telefono'] || row['phone'] || ''),
               city: row['Ciudad'] || row['city'],
+              notes: row['Notas'] || row['notas'] || row['Notes'] || row['notes'] || '',
             })).filter(item => !!item.name); // Filter out empty rows
 
             totalAttempted = mappedData.length;
@@ -352,6 +353,7 @@ export default function CrmView() {
                   email: row['Email'] || row['email'] || row['Correo'] || row['__EMPTY_2'] || (values[2] as string) || null,
                   phone: String(row['Teléfono'] || row['Telefono'] || row['phone'] || row['__EMPTY_3'] || (values[3] as string) || ''),
                   position: row['Cargo'] || row['cargo'] || row['position'] || row['__EMPTY_4'] || (values[4] as string) || '',
+                  notes: row['Notas'] || row['notas'] || row['Notes'] || row['notes'] || row['__EMPTY_5'] || (values[5] as string) || '',
                 };
               }).filter(item => !!item.accountName && !!item.name);
 
@@ -795,6 +797,7 @@ export default function CrmView() {
           phone: editingAccount.phone || undefined,
           city: editingAccount.city || undefined,
           filial: editingAccount.filial || undefined,
+          notes: editingAccount.notes || undefined,
         };
 
       if (editingAccount.id) {
@@ -830,6 +833,7 @@ export default function CrmView() {
         email: editingContact.email || undefined,
         phone: editingContact.phone || undefined,
         position: editingContact.position || undefined,
+        notes: editingContact.notes || undefined,
       };
 
       if (editingContact.id) {
@@ -2666,6 +2670,7 @@ export default function CrmView() {
                     <th className="p-5 border-b border-slate-200 text-center">Total Actividades</th>
                     <th className="p-5 border-b border-slate-200 text-center">En Planeación</th>
                     <th className="p-5 border-b border-slate-200 text-center">Completadas</th>
+                    <th className="p-5 border-b border-slate-200 text-center">Notas</th>
                     <th 
                       className="p-5 border-b border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
                       onClick={() => handleSortAccounts('createdAt')}
@@ -2747,6 +2752,9 @@ export default function CrmView() {
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
+                          <td className="p-5 text-slate-500 text-sm max-w-[150px] truncate" title={acc.notes || ''}>
+                            {acc.notes || '-'}
+                          </td>
                           <td className="p-5 text-slate-500 text-sm">
                             {new Date(acc.createdAt).toLocaleDateString()}
                           </td>
@@ -2764,7 +2772,7 @@ export default function CrmView() {
                         );
                       })
                     ) : (
-                      <tr><td colSpan={4} className="p-10 text-center text-slate-400 text-sm">No se encontraron empresas.</td></tr>
+                      <tr><td colSpan={8} className="p-10 text-center text-slate-400 text-sm">No se encontraron empresas.</td></tr>
                     )}
                   </AnimatePresence>
                 </tbody>
@@ -2824,6 +2832,7 @@ export default function CrmView() {
                     <th className="p-5 border-b border-slate-200 text-center">Actividades</th>
                     <th className="p-5 border-b border-slate-200">Cargo</th>
                     <th className="p-5 border-b border-slate-200">Teléfono</th>
+                    <th className="p-5 border-b border-slate-200">Notas</th>
                     <th className="p-5 border-b border-slate-200">Empresa (Cuenta)</th>
                     <th className="p-5 border-b border-slate-200 text-right">Acciones</th>
                   </tr>
@@ -2873,6 +2882,9 @@ export default function CrmView() {
                               <Phone size={14} className="text-slate-400"/> {contact.phone || '-'}
                             </div>
                           </td>
+                          <td className="p-5 text-slate-500 text-sm max-w-[150px] truncate" title={contact.notes || ''}>
+                            {contact.notes || '-'}
+                          </td>
                           <td className="p-5">
                             <div className="flex items-center gap-2 text-sm font-medium text-[#001c3a]">
                               <Briefcase size={14} className="text-slate-400" />
@@ -2893,7 +2905,7 @@ export default function CrmView() {
                         );
                       })
                     ) : (
-                      <tr><td colSpan={7} className="p-10 text-center text-slate-400 text-sm">No se encontraron contactos.</td></tr>
+                      <tr><td colSpan={8} className="p-10 text-center text-slate-400 text-sm">No se encontraron contactos.</td></tr>
                     )}
                   </AnimatePresence>
                 </tbody>
@@ -3011,6 +3023,15 @@ export default function CrmView() {
                       placeholder="Ej. Grupo EULEN"
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Notas</label>
+                    <textarea
+                      value={editingAccount.notes || ''}
+                      onChange={(e) => setEditingAccount({...editingAccount, notes: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50 min-h-[80px] resize-y"
+                      placeholder="Notas adicionales sobre la empresa..."
+                    />
+                  </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <button type="button" onClick={() => setShowAccountModal(false)} className="px-4 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm transition-all active:scale-95">Cancelar</button>
                   <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-secondary text-white hover:bg-secondary-container rounded-xl font-bold text-sm disabled:opacity-50 flex items-center gap-2 transition-all active:scale-95 shadow-md hover:shadow-lg">
@@ -3084,6 +3105,16 @@ export default function CrmView() {
                     value={editingContact.phone || ''}
                     onChange={(e) => setEditingContact({...editingContact, phone: e.target.value})}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Notas</label>
+                  <textarea
+                    value={editingContact.notes || ''}
+                    onChange={(e) => setEditingContact({...editingContact, notes: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50 min-h-[80px] resize-y"
+                    placeholder="Notas adicionales sobre el contacto..."
                   />
                 </div>
 
@@ -3738,4 +3769,6 @@ export default function CrmView() {
     </div>
   );
 }
+
+
 
