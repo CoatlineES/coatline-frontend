@@ -28,7 +28,7 @@ export interface Contact {
 }
 
 export const accountsService = {
-  getAll: async (params?: { search?: string, name?: string, cif?: string, sector?: string, city?: string, email?: string, phone?: string, startDate?: string, endDate?: string }) => (await api.get('/accounts', { params: cleanParams(params) })).data.data,
+  getAll: async (params?: { search?: string, name?: string, cif?: string, sector?: string, sectors?: string | string[], city?: string, email?: string, phone?: string, startDate?: string, endDate?: string }) => (await api.get('/accounts', { params: cleanParams(params) })).data.data,
   getById: async (id: string) => (await api.get(`/accounts/${id}`)).data.data,
   get360: async (id: string) => (await api.get(`/accounts/${id}/360`)).data.data,
   create: async (data: Partial<Account>) => (await api.post('/accounts', data)).data.data,
@@ -38,7 +38,7 @@ export const accountsService = {
 };
 
 export const contactsService = {
-  getAll: async (params?: { search?: string, name?: string, email?: string, phone?: string, accountId?: string, position?: string, startDate?: string, endDate?: string }) => (await api.get('/contacts', { params: cleanParams(params) })).data.data,
+  getAll: async (params?: { search?: string, name?: string, email?: string, phone?: string, accountId?: string, sector?: string, sectors?: string | string[], position?: string, startDate?: string, endDate?: string }) => (await api.get('/contacts', { params: cleanParams(params) })).data.data,
   getById: async (id: string) => (await api.get(`/contacts/${id}`)).data.data,
   create: async (data: { accountId: string; name?: string; email?: string; phone?: string; position?: string; notes?: string }) => (await api.post('/contacts', data)).data.data,
   bulkCreate: async (data: any[]) => (await api.post('/contacts/bulk', data)).data,

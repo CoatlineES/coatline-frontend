@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -23,9 +23,10 @@ export function SectorAutocomplete({ value, onChange, placeholder = 'Ej. Constru
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Combine predefined sectors with existing unique sectors from the database, removing duplicates
+  // Combine sectors: if existingSectors is passed with items, use those; otherwise fallback to default
+  const sourceSectors = (existingSectors && existingSectors.length > 0) ? existingSectors : PREDEFINED_SECTORS;
   const allSectorsMap = new Map<string, string>();
-  [...PREDEFINED_SECTORS, ...existingSectors].forEach(sector => {
+  sourceSectors.forEach(sector => {
     if (sector) {
       const normalized = sector.trim().toLowerCase();
       if (!allSectorsMap.has(normalized)) {

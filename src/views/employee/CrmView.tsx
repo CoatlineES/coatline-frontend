@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Users, Search, Plus, Edit2, Trash2, 
   AlertCircle, CheckCircle, RefreshCw, X, Mail, Phone, Briefcase,
-  LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, Download, History, User, Filter
-, Target } from 'lucide-react';
+  LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, Download, History, User, Filter,
+  Copy, Check, Target } from 'lucide-react';
 import { accountsService, contactsService, Account, Contact } from '../../services/crm.service';
 import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus } from '../../services/activities.service';
 import { dealsService, Deal, DealStage } from '../../services/deals.service';
@@ -32,6 +32,9 @@ import Record360Modal from './Record360Modal';
 import CrmReportsView from './reports/CrmReportsView';
 import { BulkActivityModal, BulkActivityTemplate } from '../../components/common/BulkActivityModal';
 import { SectorAutocomplete } from '../../components/common/SectorAutocomplete';
+import { SectorMultiSelect } from '../../components/common/SectorMultiSelect';
+import { ManageSectorsModal } from '../../components/common/ManageSectorsModal';
+import { sectorsService, SectorItem } from '../../services/sectors.service';
 import { useAuth } from '../../contexts/AuthContext';
 
 import { ImportSuccessOverlay } from '../../components/animations/UI/ImportSuccessOverlay';
@@ -396,10 +399,10 @@ export default function CrmView() {
   };
   
   // Advanced Filters State
-  const [accountsFilters, setAccountsFilters] = useState({ name: '', cif: '', sector: '', activityStatus: 'ALL', city: '', email: '', phone: '', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
+  const [accountsFilters, setAccountsFilters] = useState({ name: '', cif: '', sector: '', sectors: [] as string[], activityStatus: 'ALL', city: '', email: '', phone: '', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
   const debouncedAccountsFilters = useDebounce(accountsFilters, 500);
 
-  const [contactsFilters, setContactsFilters] = useState({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
+  const [contactsFilters, setContactsFilters] = useState({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [] as string[], activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
   const debouncedContactsFilters = useDebounce(contactsFilters, 500);
 
   const [dealsFilters, setDealsFilters] = useState({ name: '', amountMin: '', amountMax: '', stage: '', userId: '', accountId: '', contactId: '', startDate: '', endDate: '', closeDateFrom: '', closeDateTo: '' });
@@ -582,6 +585,20 @@ export default function CrmView() {
   const [deletingId, setDeletingId] = useState<{ id: string, type: 'account' | 'contact' | 'activity' | 'deal' } | null>(null);
   const [record360, setRecord360] = useState<{ id: string, type: 'account' | 'contact' | 'deal' | 'activity' | 'quotation', accountId: string } | null>(null);
   
+  // Note Modal State
+  const [activeNoteModal, setActiveNoteModal] = useState<{
+    title: string;
+    entityName: string;
+    subtitle?: string;
+    notes: string;
+    onEdit?: () => void;
+  } | null>(null);
+  const [copiedNote, setCopiedNote] = useState(false);
+
+  // Sectors Management State
+  const [sectorsList, setSectorsList] = useState<SectorItem[]>([]);
+  const [showManageSectorsModal, setShowManageSectorsModal] = useState(false);
+
   // Bulk Selection State
   const [showBulkActivityModal, setShowBulkActivityModal] = useState(false);
   const [isBulkSelectionMode, setIsBulkSelectionMode] = useState(false);
@@ -659,7 +676,12 @@ export default function CrmView() {
   const [editingDeal, setEditingDeal] = useState<Partial<Deal> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const existingSectors = Array.from(new Set(accounts.map(a => a.sector).filter(Boolean))) as string[];
+  const existingSectors = sectorsList.length > 0 
+    ? sectorsList.map(s => s.name)
+    : Array.from(new Set([
+        ...accounts.map(a => a.sector),
+        ...contacts.map(c => c.account?.sector)
+      ].filter(Boolean))) as string[];
 
   // Fetch Data
   const fetchData = async () => {
@@ -684,30 +706,42 @@ export default function CrmView() {
         if (actParams.plannedDateFrom) { actParams.plannedDateFrom = actParams.plannedDateFrom + 'T00:00:00.000Z'; }
         if (actParams.plannedDateTo) { actParams.plannedDateTo = actParams.plannedDateTo + 'T23:59:59.999Z'; }
 
-        const accParams = { search: debouncedSearchQuery, ...debouncedAccountsFilters } as any;
+        const accParams = { 
+          search: debouncedSearchQuery, 
+          ...debouncedAccountsFilters,
+          sectors: debouncedAccountsFilters.sectors.length > 0 ? debouncedAccountsFilters.sectors.join(',') : (debouncedAccountsFilters.sector || undefined)
+        } as any;
         if (accParams.startDate) accParams.startDate += 'T00:00:00.000Z';
         if (accParams.endDate) accParams.endDate += 'T23:59:59.999Z';
 
-        const conParams = { search, ...debouncedContactsFilters } as any;
+        const conParams = { 
+          search, 
+          ...debouncedContactsFilters,
+          sectors: debouncedContactsFilters.sectors.length > 0 ? debouncedContactsFilters.sectors.join(',') : (debouncedContactsFilters.sector || undefined)
+        } as any;
         if (conParams.startDate) conParams.startDate += 'T00:00:00.000Z';
         if (conParams.endDate) conParams.endDate += 'T23:59:59.999Z';
 
-        const [accountsData, contactsData, activitiesData, dealsData, usersData, businessLinesRes, projectsData] = await Promise.all([
+        const [accountsData, contactsData, activitiesData, dealsData, usersData, businessLinesRes, projectsData, sectorsData] = await Promise.all([
           accountsService.getAll(accParams),
           contactsService.getAll(conParams),
           activitiesService.getAll(actParams),
           dealsService.getAll(dealsParams),
-        usersService.getUsers(),
-        api.get('/business-lines').catch(() => ({ data: [] })),
-        projectsService.getAll()
-      ]);
-      setAccounts(accountsData);
-      setContacts(contactsData);
-      setActivities(activitiesData);
-      setDeals(dealsData);
-      setUsers(usersData.data || []);
-      setBusinessLines(businessLinesRes.data || []);
-      setProjects(projectsData || []);
+          usersService.getUsers(),
+          api.get('/business-lines').catch(() => ({ data: [] })),
+          projectsService.getAll(),
+          sectorsService.getAll().catch(() => [])
+        ]);
+        setAccounts(accountsData);
+        setContacts(contactsData);
+        setActivities(activitiesData);
+        setDeals(dealsData);
+        setUsers(usersData.data || []);
+        setBusinessLines(businessLinesRes.data || []);
+        setProjects(projectsData || []);
+        if (sectorsData && Array.isArray(sectorsData) && sectorsData.length > 0) {
+          setSectorsList(sectorsData);
+        }
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Error al obtener los datos del CRM');
     } finally {
@@ -995,6 +1029,16 @@ export default function CrmView() {
 
   // Filters (Ahora delegados al Backend, excepto los locales)
   const filteredAccounts = accounts.filter(acc => {
+    if (accountsFilters.sectors && accountsFilters.sectors.length > 0) {
+      const accSector = (acc.sector || '').trim().toLowerCase();
+      if (!accountsFilters.sectors.some(s => s.trim().toLowerCase() === accSector)) {
+        return false;
+      }
+    } else if (accountsFilters.sector && accountsFilters.sector.trim()) {
+      const targetSector = accountsFilters.sector.trim().toLowerCase();
+      const accSector = (acc.sector || '').trim().toLowerCase();
+      if (!accSector.includes(targetSector)) return false;
+    }
     if (accountsFilters.activityStatus && accountsFilters.activityStatus !== 'ALL') {
       const accActivities = activities.filter(a => a.accountId === acc.id);
       if (accountsFilters.activityStatus === 'NO_ACTIVITIES') {
@@ -1010,6 +1054,18 @@ export default function CrmView() {
     return true;
   });
   const filteredContacts = contacts.filter(contact => {
+    if (contactsFilters.sectors && contactsFilters.sectors.length > 0) {
+      const contactSector = (contact.account?.sector || '').trim().toLowerCase();
+      if (!contactsFilters.sectors.some(s => s.trim().toLowerCase() === contactSector)) {
+        return false;
+      }
+    } else if (contactsFilters.sector && contactsFilters.sector.trim()) {
+      const targetSector = contactsFilters.sector.trim().toLowerCase();
+      const accountSector = (contact.account?.sector || '').trim().toLowerCase();
+      if (!accountSector.includes(targetSector)) {
+        return false;
+      }
+    }
     if (contactsFilters.activityStatus && contactsFilters.activityStatus !== 'ALL') {
       const contactActivities = activities.filter(a => a.contactId === contact.id);
       if (contactsFilters.activityStatus === 'NO_ACTIVITIES') {
@@ -2229,15 +2285,12 @@ export default function CrmView() {
               
                                                         {activeTab === 'accounts' && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Sector:</span>
-                    <SectorAutocomplete 
-                        value={accountsFilters.sector} 
-                        onChange={(val) => setAccountsFilters({...accountsFilters, sector: val})} 
-                        existingSectors={existingSectors}
-                        className="text-sm font-medium text-slate-700 bg-transparent border-none focus:outline-none w-28 placeholder-slate-300" 
-                      />
-                  </div>
+                  <SectorMultiSelect 
+                    selectedSectors={accountsFilters.sectors}
+                    onChange={(sectors) => setAccountsFilters({...accountsFilters, sectors})}
+                    sectors={sectorsList}
+                    onOpenManageModal={() => setShowManageSectorsModal(true)}
+                  />
                   <div className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-2">
                     <span className="text-xs font-semibold text-slate-500 uppercase">Actividades:</span>
                     <select 
@@ -2259,9 +2312,9 @@ export default function CrmView() {
                     <Filter size={14} /> Más filtros
                   </button>
                   
-                  {(accountsFilters.name || accountsFilters.cif || accountsFilters.city || accountsFilters.email || accountsFilters.phone || accountsFilters.startDate || accountsFilters.endDate || accountsFilters.sector || accountsFilters.activityStatus !== 'ALL') && (
+                  {(accountsFilters.name || accountsFilters.cif || accountsFilters.city || accountsFilters.email || accountsFilters.phone || accountsFilters.startDate || accountsFilters.endDate || accountsFilters.sector || (accountsFilters.sectors && accountsFilters.sectors.length > 0) || accountsFilters.activityStatus !== 'ALL') && (
                     <button 
-                      onClick={() => setAccountsFilters({ name: '', cif: '', sector: '', city: '', email: '', phone: '', startDate: '', endDate: '', activityStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' })}
+                      onClick={() => setAccountsFilters({ name: '', cif: '', sector: '', sectors: [], city: '', email: '', phone: '', startDate: '', endDate: '', activityStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' })}
                       className="text-xs font-medium text-slate-500 hover:text-red-600 underline ml-2 transition-colors"
                     >
                       Limpiar filtros
@@ -2272,15 +2325,12 @@ export default function CrmView() {
 
                                           {activeTab === 'contacts' && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Sector:</span>
-                    <SectorAutocomplete 
-                        value={contactsFilters.sector} 
-                        onChange={(val) => setContactsFilters({...contactsFilters, sector: val})} 
-                        existingSectors={existingSectors}
-                        className="text-sm font-medium text-slate-700 bg-transparent border-none focus:outline-none w-28 placeholder-slate-300" 
-                      />
-                  </div>
+                  <SectorMultiSelect 
+                    selectedSectors={contactsFilters.sectors}
+                    onChange={(sectors) => setContactsFilters({...contactsFilters, sectors})}
+                    sectors={sectorsList}
+                    onOpenManageModal={() => setShowManageSectorsModal(true)}
+                  />
                   <div className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-2">
                     <span className="text-xs font-semibold text-slate-500 uppercase">Actividades:</span>
                     <select 
@@ -2302,9 +2352,9 @@ export default function CrmView() {
                     <Filter size={14} /> Más filtros
                   </button>
                   
-                  {(contactsFilters.name || contactsFilters.email || contactsFilters.phone || contactsFilters.position || contactsFilters.accountId || contactsFilters.sector || contactsFilters.startDate || contactsFilters.endDate || contactsFilters.activityStatus !== 'ALL') && (
+                  {(contactsFilters.name || contactsFilters.email || contactsFilters.phone || contactsFilters.position || contactsFilters.accountId || contactsFilters.sector || (contactsFilters.sectors && contactsFilters.sectors.length > 0) || contactsFilters.startDate || contactsFilters.endDate || contactsFilters.activityStatus !== 'ALL') && (
                     <button 
-                      onClick={() => setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', startDate: '', endDate: '', activityStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' })}
+                      onClick={() => setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], startDate: '', endDate: '', activityStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' })}
                       className="text-xs font-medium text-slate-500 hover:text-red-600 underline ml-2 transition-colors"
                     >
                       Limpiar filtros
@@ -2446,6 +2496,11 @@ export default function CrmView() {
 
                       let filtersInfo = '';
                       if (debouncedSearchQuery) filtersInfo += `Búsqueda: "${debouncedSearchQuery}" | `;
+                      if (debouncedContactsFilters.sectors && debouncedContactsFilters.sectors.length > 0) {
+                        filtersInfo += `Sectores: ${debouncedContactsFilters.sectors.join(', ')} | `;
+                      } else if (debouncedContactsFilters.sector) {
+                        filtersInfo += `Sector: ${debouncedContactsFilters.sector} | `;
+                      }
                       if (debouncedContactsFilters.accountId) filtersInfo += `Filtro Empresa Aplicado | `;
                       if (debouncedContactsFilters.position) filtersInfo += `Cargo: ${debouncedContactsFilters.position} | `;
                       if (debouncedContactsFilters.activityStatus && debouncedContactsFilters.activityStatus !== 'ALL') filtersInfo += `Actividades: ${debouncedContactsFilters.activityStatus} | `;
@@ -2752,8 +2807,35 @@ export default function CrmView() {
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="p-5 text-slate-500 text-sm max-w-[150px] truncate" title={acc.notes || ''}>
-                            {acc.notes || '-'}
+                          <td 
+                            className="p-5 text-slate-500 text-sm max-w-[150px] truncate" 
+                            title={acc.notes ? `${acc.notes}\n(Clic para ver la nota completa)` : ''}
+                          >
+                            {acc.notes ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveNoteModal({
+                                    title: 'Nota de la Empresa',
+                                    entityName: acc.name,
+                                    subtitle: acc.cif ? `CIF: ${acc.cif}` : undefined,
+                                    notes: acc.notes || '',
+                                    onEdit: () => {
+                                      setActiveNoteModal(null);
+                                      setEditingAccount(acc);
+                                      setShowAccountModal(true);
+                                    }
+                                  });
+                                }}
+                                className="inline-flex items-center gap-1.5 max-w-full text-slate-700 hover:text-blue-600 transition-colors group/note font-medium text-left cursor-pointer focus:outline-none"
+                              >
+                                <FileText size={13} className="shrink-0 text-slate-400 group-hover/note:text-blue-500 transition-colors" />
+                                <span className="truncate group-hover/note:underline">{acc.notes}</span>
+                              </button>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
                           </td>
                           <td className="p-5 text-slate-500 text-sm">
                             {new Date(acc.createdAt).toLocaleDateString()}
@@ -2882,8 +2964,35 @@ export default function CrmView() {
                               <Phone size={14} className="text-slate-400"/> {contact.phone || '-'}
                             </div>
                           </td>
-                          <td className="p-5 text-slate-500 text-sm max-w-[150px] truncate" title={contact.notes || ''}>
-                            {contact.notes || '-'}
+                          <td 
+                            className="p-5 text-slate-500 text-sm max-w-[150px] truncate" 
+                            title={contact.notes ? `${contact.notes}\n(Clic para ver la nota completa)` : ''}
+                          >
+                            {contact.notes ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveNoteModal({
+                                    title: 'Nota del Contacto',
+                                    entityName: contact.name,
+                                    subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
+                                    notes: contact.notes || '',
+                                    onEdit: () => {
+                                      setActiveNoteModal(null);
+                                      setEditingContact(contact);
+                                      setShowContactModal(true);
+                                    }
+                                  });
+                                }}
+                                className="inline-flex items-center gap-1.5 max-w-full text-slate-700 hover:text-blue-600 transition-colors group/note font-medium text-left cursor-pointer focus:outline-none"
+                              >
+                                <FileText size={13} className="shrink-0 text-slate-400 group-hover/note:text-blue-500 transition-colors" />
+                                <span className="truncate group-hover/note:underline">{contact.notes}</span>
+                              </button>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
                           </td>
                           <td className="p-5">
                             <div className="flex items-center gap-2 text-sm font-medium text-[#001c3a]">
@@ -2939,6 +3048,113 @@ export default function CrmView() {
         )}
         </motion.div>
       )}
+
+      {/* --- MODAL: NOTA COMPLETA --- */}
+      <AnimatePresence>
+        {activeNoteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setActiveNoteModal(null)} 
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} 
+              animate={{ opacity: 1, scale: 1, y: 0 }} 
+              exit={{ opacity: 0, scale: 0.95, y: 10 }} 
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-2xl shadow-2xl p-6 md:p-7 w-full max-w-lg relative z-10 border border-slate-200 flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">
+                      {activeNoteModal.title}
+                    </span>
+                    <h3 className="text-lg font-bold text-slate-800 leading-snug">
+                      {activeNoteModal.entityName}
+                    </h3>
+                    {activeNoteModal.subtitle && (
+                      <span className="text-xs text-slate-400 font-medium">
+                        {activeNoteModal.subtitle}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setActiveNoteModal(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="py-4 flex-1 overflow-hidden flex flex-col">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>Detalle de la nota</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(activeNoteModal.notes);
+                      setCopiedNote(true);
+                      toast.success('Nota copiada al portapapeles');
+                      setTimeout(() => setCopiedNote(false), 2000);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 hover:text-[#001c3a] bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                  >
+                    {copiedNote ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                    {copiedNote ? 'Copiado' : 'Copiar texto'}
+                  </button>
+                </div>
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 overflow-y-auto custom-scrollbar flex-1 max-h-[50vh]">
+                  <p className="whitespace-pre-wrap break-words text-sm text-slate-700 leading-relaxed font-normal select-text">
+                    {activeNoteModal.notes}
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                {activeNoteModal.onEdit && (
+                  <button
+                    type="button"
+                    onClick={activeNoteModal.onEdit}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <Edit2 size={15} />
+                    Editar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveNoteModal(null)}
+                  className="px-5 py-2 text-sm font-semibold text-white bg-[#001c3a] hover:bg-blue-900 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- MODAL: GESTIÓN DE SECTORES --- */}
+      <ManageSectorsModal
+        isOpen={showManageSectorsModal}
+        onClose={() => setShowManageSectorsModal(false)}
+        sectors={sectorsList}
+        onSectorsUpdated={(newSectors) => {
+          setSectorsList(newSectors);
+          fetchData();
+        }}
+      />
 
       {/* --- MODAL: EMPRESA --- */}
       <AnimatePresence>
