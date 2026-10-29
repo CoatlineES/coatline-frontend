@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Users, Search, Plus, Edit2, Trash2, 
   AlertCircle, CheckCircle, RefreshCw, X, Mail, Phone, Briefcase,
-  LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, Download, History, User, Filter,
+  LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, ChevronRight, ExternalLink, Download, History, User, Filter,
   Copy, Check, Target } from 'lucide-react';
 import { accountsService, contactsService, Account, Contact } from '../../services/crm.service';
 import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus } from '../../services/activities.service';
@@ -580,6 +580,8 @@ export default function CrmView() {
   const [viewingDeal, setViewingDeal] = useState<Deal | null>(null);
   const [highlightedActivityId, setHighlightedActivityId] = useState<string | null>(null);
   const [highlightedDealId, setHighlightedDealId] = useState<string | null>(null);
+  const [highlightedContactId, setHighlightedContactId] = useState<string | null>(null);
+  const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(null);
   const [viewingQuotationId, setViewingQuotationId] = useState<string | null>(null);
   const [dealActivities, setDealActivities] = useState<Activity[]>([]);
   const [deletingId, setDeletingId] = useState<{ id: string, type: 'account' | 'contact' | 'activity' | 'deal' } | null>(null);
@@ -598,6 +600,9 @@ export default function CrmView() {
   // Sectors Management State
   const [sectorsList, setSectorsList] = useState<SectorItem[]>([]);
   const [showManageSectorsModal, setShowManageSectorsModal] = useState(false);
+
+  // Contact Breakdown Expanded State
+  const [expandedContactId, setExpandedContactId] = useState<string | null>(null);
 
   // Bulk Selection State
   const [showBulkActivityModal, setShowBulkActivityModal] = useState(false);
@@ -805,6 +810,38 @@ export default function CrmView() {
       return () => clearInterval(interval);
     }
   }, [highlightedDealId, activeTab, dealsView]);
+
+  useEffect(() => {
+    if (highlightedContactId) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        const el = document.getElementById(`contact-row-${highlightedContactId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          clearInterval(interval);
+        }
+        attempts++;
+        if (attempts >= 15) clearInterval(interval);
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [highlightedContactId, activeTab, contactsPage]);
+
+  useEffect(() => {
+    if (highlightedAccountId) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        const el = document.getElementById(`account-row-${highlightedAccountId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          clearInterval(interval);
+        }
+        attempts++;
+        if (attempts >= 15) clearInterval(interval);
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [highlightedAccountId, activeTab, accountsPage]);
 
   const showNotification = (msg: string, type: 'success' | 'error' = 'success') => {
     if (type === 'success') {
@@ -2751,9 +2788,16 @@ export default function CrmView() {
                         return (
                         <motion.tr 
                           key={acc.id}
+                          id={`account-row-${acc.id}`}
                           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                           onClick={() => isBulkSelectionMode ? toggleAccountSelection(acc.id) : null}
-                          className={`transition-colors group ${isBulkSelectionMode ? 'cursor-pointer hover:bg-slate-100' : 'hover:bg-slate-50/80'} ${selectedAccounts.has(acc.id) ? 'bg-[#001c3a]/5' : ''}`}
+                          className={`transition-all duration-300 group ${
+                            highlightedAccountId === acc.id
+                              ? 'bg-blue-100/70 border-blue-400 ring-2 ring-blue-500 shadow-md'
+                              : isBulkSelectionMode 
+                                ? 'cursor-pointer hover:bg-slate-100' 
+                                : 'hover:bg-slate-50/80'
+                          } ${selectedAccounts.has(acc.id) ? 'bg-[#001c3a]/5' : ''}`}
                           onDoubleClick={() => !isBulkSelectionMode && setRecord360({ id: acc.id, type: 'account', accountId: acc.id })}
                         >
                           {isBulkSelectionMode && (
@@ -2888,11 +2932,14 @@ export default function CrmView() {
             {/* DATA TABLE: CONTACTS */}
             {activeTab === 'contacts' && (
               <>
-              <table className="w-full text-left border-collapse min-w-[800px]">
+              <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                    <th className="w-10 px-3 py-3.5 border-b border-slate-200 text-center">
+                      <span className="sr-only">Desplegar</span>
+                    </th>
                     {isBulkSelectionModeContacts && (
-                      <th className="p-5 border-b border-slate-200 w-12 text-center">
+                      <th className="w-10 px-2 py-3.5 border-b border-slate-200 text-center">
                         <input type="checkbox" className="w-4 h-4 rounded text-[#001c3a] focus:ring-[#001c3a] border-slate-300 cursor-pointer"
                           checked={paginatedContacts.length > 0 && selectedContacts.size === filteredContacts.length}
                           onChange={toggleAllFilteredContacts}
@@ -2900,7 +2947,7 @@ export default function CrmView() {
                       </th>
                     )}
                     <th 
-                      className="p-5 border-b border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                      className="px-3.5 py-3.5 border-b border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
                       onClick={() => handleSortContacts('name')}
                     >
                       <div className="flex items-center gap-2">
@@ -2910,111 +2957,440 @@ export default function CrmView() {
                         )}
                       </div>
                     </th>
-                    <th className="p-5 border-b border-slate-200">Email</th>
-                    <th className="p-5 border-b border-slate-200 text-center">Actividades</th>
-                    <th className="p-5 border-b border-slate-200">Cargo</th>
-                    <th className="p-5 border-b border-slate-200">Teléfono</th>
-                    <th className="p-5 border-b border-slate-200">Notas</th>
-                    <th className="p-5 border-b border-slate-200">Empresa (Cuenta)</th>
-                    <th className="p-5 border-b border-slate-200 text-right">Acciones</th>
+                    <th className="px-3.5 py-3.5 border-b border-slate-200">Email</th>
+                    <th className="px-3 py-3.5 border-b border-slate-200 hidden sm:table-cell">Cargo</th>
+                    <th className="px-3 py-3.5 border-b border-slate-200">Teléfono</th>
+                    <th className="px-3.5 py-3.5 border-b border-slate-200">Empresa</th>
+                    <th className="px-2 py-3.5 border-b border-slate-200 text-center">Actividades</th>
+                    <th className="px-3 py-3.5 border-b border-slate-200">Notas</th>
+                    <th className="px-3.5 py-3.5 border-b border-slate-200 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   <AnimatePresence>
                     {filteredContacts.length > 0 ? (
                       paginatedContacts.map((contact) => {
-                        const contactActivitiesCount = activities.filter(a => a.contactId === contact.id).length;
+                        const contactActivities = activities.filter(a => a.contactId === contact.id);
+                        const isExpanded = expandedContactId === contact.id;
                         return (
-                        <motion.tr 
-                          key={contact.id}
-                          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                          onClick={() => isBulkSelectionModeContacts ? toggleContactSelection(contact.id) : null}
-                          className={`transition-colors group ${isBulkSelectionModeContacts ? 'cursor-pointer hover:bg-slate-100' : 'hover:bg-slate-50/80'} ${selectedContacts.has(contact.id) ? 'bg-[#001c3a]/5' : ''}`}
-                          onDoubleClick={() => !isBulkSelectionModeContacts && setRecord360({ id: contact.id, type: 'contact', accountId: contact.accountId })}
-                        >
-                          {isBulkSelectionModeContacts && (
-                            <td className="p-5 text-center" onClick={(e) => e.stopPropagation()}>
-                              <input type="checkbox" className="w-4 h-4 rounded text-[#001c3a] focus:ring-[#001c3a] border-slate-300 cursor-pointer"
-                                checked={selectedContacts.has(contact.id)}
-                                onChange={() => toggleContactSelection(contact.id)}
-                              />
-                            </td>
-                          )}
-                          <td className="p-5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">
-                                {(contact.name || '?').charAt(0).toUpperCase()}
-                              </div>
-                              <span className="text-slate-800 font-bold">{contact.name || 'Sin Nombre'}</span>
-                            </div>
-                          </td>
-                          <td className="p-5 text-slate-500 text-sm flex items-center gap-2">
-                            <Mail size={14} className="text-slate-400"/> {contact.email || '-'}
-                          </td>
-                          <td className="p-5 text-center">
-                            <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full bg-blue-50 text-blue-600 text-xs font-bold border border-blue-100">
-                              {contactActivitiesCount}
-                            </span>
-                          </td>
-                          <td className="p-5 text-slate-500 text-sm">
-                            {contact.position || '-'}
-                          </td>
-                          <td className="p-5 text-slate-500 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Phone size={14} className="text-slate-400"/> {contact.phone || '-'}
-                            </div>
-                          </td>
-                          <td 
-                            className="p-5 text-slate-500 text-sm max-w-[150px] truncate" 
-                            title={contact.notes ? `${contact.notes}\n(Clic para ver la nota completa)` : ''}
-                          >
-                            {contact.notes ? (
-                              <button
-                                type="button"
-                                onClick={(e) => {
+                          <React.Fragment key={contact.id}>
+                            <motion.tr 
+                              id={`contact-row-${contact.id}`}
+                              initial={{ opacity: 0 }} 
+                              animate={{ opacity: 1 }}
+                              onClick={() => {
+                                if (isBulkSelectionModeContacts) {
+                                  toggleContactSelection(contact.id);
+                                } else {
+                                  setExpandedContactId(prev => prev === contact.id ? null : contact.id);
+                                }
+                              }}
+                              className={`transition-all duration-300 group cursor-pointer ${
+                                highlightedContactId === contact.id
+                                  ? 'bg-blue-100/70 border-blue-400 ring-2 ring-blue-500 shadow-md'
+                                  : isExpanded 
+                                    ? 'bg-blue-50/50 hover:bg-blue-50/80 border-b-transparent' 
+                                    : isBulkSelectionModeContacts 
+                                      ? 'hover:bg-slate-100' 
+                                      : 'hover:bg-slate-50/80'
+                              } ${selectedContacts.has(contact.id) ? 'bg-[#001c3a]/5' : ''}`}
+                              onDoubleClick={() => !isBulkSelectionModeContacts && setRecord360({ id: contact.id, type: 'contact', accountId: contact.accountId })}
+                            >
+                              {/* Chevron Col */}
+                              <td className="w-10 px-3 py-3 text-center" onClick={(e) => {
+                                if (!isBulkSelectionModeContacts) {
                                   e.stopPropagation();
-                                  setActiveNoteModal({
-                                    title: 'Nota del Contacto',
-                                    entityName: contact.name,
-                                    subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
-                                    notes: contact.notes || '',
-                                    onEdit: () => {
-                                      setActiveNoteModal(null);
-                                      setEditingContact(contact);
-                                      setShowContactModal(true);
-                                    }
-                                  });
-                                }}
-                                className="inline-flex items-center gap-1.5 max-w-full text-slate-700 hover:text-blue-600 transition-colors group/note font-medium text-left cursor-pointer focus:outline-none"
+                                  setExpandedContactId(prev => prev === contact.id ? null : contact.id);
+                                }
+                              }}>
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                                  isExpanded ? 'bg-[#001c3a] text-white shadow-sm' : 'text-slate-400 group-hover:text-slate-600 group-hover:bg-slate-100'
+                                }`}>
+                                  <ChevronRight size={15} className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                </div>
+                              </td>
+
+                              {/* Bulk Selection Checkbox */}
+                              {isBulkSelectionModeContacts && (
+                                <td className="w-10 px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                  <input type="checkbox" className="w-4 h-4 rounded text-[#001c3a] focus:ring-[#001c3a] border-slate-300 cursor-pointer"
+                                    checked={selectedContacts.has(contact.id)}
+                                    onChange={() => toggleContactSelection(contact.id)}
+                                  />
+                                </td>
+                              )}
+
+                              {/* Contacto Avatar + Name */}
+                              <td className="px-3.5 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                    {(contact.name || '?').charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-slate-900 font-bold text-sm truncate flex items-center gap-1.5">
+                                      <span>{contact.name || 'Sin Nombre'}</span>
+                                      {isExpanded && (
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
+                                          Abierto
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-slate-400 sm:hidden truncate">{contact.position || contact.account?.name || '-'}</div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Email */}
+                              <td className="px-3.5 py-3 text-slate-600 text-sm">
+                                {contact.email ? (
+                                  <a 
+                                    href={`mailto:${contact.email}`} 
+                                    onClick={(e) => e.stopPropagation()} 
+                                    className="inline-flex items-center gap-1.5 hover:text-blue-600 transition-colors truncate max-w-[190px]"
+                                    title={contact.email}
+                                  >
+                                    <Mail size={13} className="text-slate-400 shrink-0"/> 
+                                    <span className="truncate">{contact.email}</span>
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+
+                              {/* Cargo */}
+                              <td className="px-3 py-3 text-slate-500 text-sm hidden sm:table-cell max-w-[130px] truncate" title={contact.position || ''}>
+                                {contact.position || '-'}
+                              </td>
+
+                              {/* Teléfono */}
+                              <td className="px-3 py-3 text-slate-600 text-sm whitespace-nowrap">
+                                {contact.phone ? (
+                                  <a 
+                                    href={`tel:${contact.phone}`} 
+                                    onClick={(e) => e.stopPropagation()} 
+                                    className="inline-flex items-center gap-1.5 hover:text-blue-600 transition-colors"
+                                  >
+                                    <Phone size={13} className="text-slate-400 shrink-0"/> {contact.phone}
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+
+                              {/* Empresa */}
+                              <td className="px-3.5 py-3 max-w-[160px]">
+                                <div className="flex items-center gap-1.5 text-sm font-medium text-[#001c3a] truncate" title={contact.account?.name || 'Desconocida'}>
+                                  <Briefcase size={13} className="text-slate-400 shrink-0" />
+                                  <span className="truncate">{contact.account?.name || 'Desconocida'}</span>
+                                </div>
+                              </td>
+
+                              {/* Actividades */}
+                              <td className="px-2 py-3 text-center">
+                                <span className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold border ${
+                                  contactActivities.length > 0 
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                    : 'bg-slate-50 text-slate-400 border-slate-200'
+                                }`}>
+                                  {contactActivities.length}
+                                </span>
+                              </td>
+
+                              {/* Notas */}
+                              <td 
+                                className="px-3 py-3 text-slate-500 text-sm max-w-[140px] truncate" 
+                                title={contact.notes ? `${contact.notes}\n(Clic para ver la nota completa)` : ''}
                               >
-                                <FileText size={13} className="shrink-0 text-slate-400 group-hover/note:text-blue-500 transition-colors" />
-                                <span className="truncate group-hover/note:underline">{contact.notes}</span>
-                              </button>
-                            ) : (
-                              <span className="text-slate-300">-</span>
+                                {contact.notes ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveNoteModal({
+                                        title: 'Nota del Contacto',
+                                        entityName: contact.name,
+                                        subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
+                                        notes: contact.notes || '',
+                                        onEdit: () => {
+                                          setActiveNoteModal(null);
+                                          setEditingContact(contact);
+                                          setShowContactModal(true);
+                                        }
+                                      });
+                                    }}
+                                    className="inline-flex items-center gap-1 max-w-full text-slate-700 hover:text-blue-600 transition-colors group/note font-medium text-left cursor-pointer focus:outline-none"
+                                  >
+                                    <FileText size={13} className="shrink-0 text-slate-400 group-hover/note:text-blue-500 transition-colors" />
+                                    <span className="truncate group-hover/note:underline">{contact.notes}</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+
+                              {/* Acciones */}
+                              <td className="px-3.5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-all">
+                                  <button 
+                                    onClick={() => { setEditingContact(contact); setShowContactModal(true); }} 
+                                    className="p-1.5 text-slate-400 hover:text-secondary bg-white border border-slate-200 rounded-lg hover:shadow-sm active:scale-95 transition-all"
+                                    title="Editar contacto"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={() => setDeletingId({ id: contact.id, type: 'contact' })} 
+                                    className="p-1.5 text-slate-400 hover:text-red-600 bg-white border border-slate-200 rounded-lg hover:bg-red-50 hover:border-red-200 active:scale-95 transition-all"
+                                    title="Eliminar contacto"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </motion.tr>
+
+                            {/* DESGLOSE DEL CONTACTO AL HACER CLIC */}
+                            {isExpanded && (
+                              <tr className="bg-slate-50/90 border-b border-slate-200">
+                                <td colSpan={isBulkSelectionModeContacts ? 10 : 9} className="p-0">
+                                  <div className="p-4 sm:p-5 border-l-4 border-l-[#001c3a] bg-gradient-to-r from-slate-50 via-white to-slate-50/70 space-y-4 shadow-inner">
+                                    
+                                    {/* Cabecera del desglose */}
+                                    <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-[#001c3a] text-white flex items-center justify-center font-bold text-sm shadow">
+                                          {(contact.name || '?').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <h4 className="font-bold text-slate-900 text-base">{contact.name || 'Sin Nombre'}</h4>
+                                            {contact.position && (
+                                              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                                {contact.position}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <p className="text-xs text-slate-500">
+                                            Empresa: <strong className="text-slate-700">{contact.account?.name || 'No asociada'}</strong>
+                                            {contact.account?.sector && ` • Sector: ${contact.account.sector}`}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => setRecord360({ id: contact.id, type: 'contact', accountId: contact.accountId })}
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-semibold shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+                                        >
+                                          <ExternalLink size={13} /> Ficha 360°
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingActivity({
+                                              subject: '',
+                                              activityType: ActivityType.CALL,
+                                              accountId: contact.accountId,
+                                              contactId: contact.id,
+                                              userId: user?.id || ''
+                                            });
+                                            setShowActivityModal(true);
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#001c3a] hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-all active:scale-95"
+                                        >
+                                          <Plus size={13} /> Nueva Actividad
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => { setEditingContact(contact); setShowContactModal(true); }}
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-semibold shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+                                        >
+                                          <Edit2 size={13} /> Editar Contacto
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Grid de 3 Columnas con Desglose Detallado */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                      
+                                      {/* Columna 1: Información de Contacto y Empresa */}
+                                      <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm space-y-3">
+                                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                            <User size={13} className="text-slate-500" /> Información de Contacto
+                                          </span>
+                                        </div>
+                                        <div className="space-y-2.5 text-xs">
+                                          <div>
+                                            <span className="text-slate-400 block font-medium">Email Directo:</span>
+                                            {contact.email ? (
+                                              <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline font-semibold flex items-center gap-1.5 mt-0.5 break-all">
+                                                <Mail size={12} className="shrink-0" /> {contact.email}
+                                              </a>
+                                            ) : (
+                                              <span className="text-slate-400 italic">No especificado</span>
+                                            )}
+                                          </div>
+                                          <div>
+                                            <span className="text-slate-400 block font-medium">Teléfono / Celular:</span>
+                                            {contact.phone ? (
+                                              <a href={`tel:${contact.phone}`} className="text-slate-800 hover:text-blue-600 font-semibold flex items-center gap-1.5 mt-0.5">
+                                                <Phone size={12} className="shrink-0 text-slate-400" /> {contact.phone}
+                                              </a>
+                                            ) : (
+                                              <span className="text-slate-400 italic">No especificado</span>
+                                            )}
+                                          </div>
+                                          <div>
+                                            <span className="text-slate-400 block font-medium">Empresa Vinculada:</span>
+                                            <span className="text-slate-800 font-semibold flex items-center gap-1.5 mt-0.5">
+                                              <Building2 size={12} className="shrink-0 text-slate-400" /> {contact.account?.name || 'Sin empresa'}
+                                            </span>
+                                            {contact.account?.cif && (
+                                              <span className="text-slate-400 block text-[11px] mt-0.5">CIF: {contact.account.cif}</span>
+                                            )}
+                                          </div>
+                                          {contact.account?.city && (
+                                            <div>
+                                              <span className="text-slate-400 block font-medium">Ciudad:</span>
+                                              <span className="text-slate-700">{contact.account.city}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Columna 2: Notas y Observaciones */}
+                                      <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                                        <div>
+                                          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                              <FileText size={13} className="text-slate-500" /> Notas y Observaciones
+                                            </span>
+                                            {contact.notes && (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  navigator.clipboard.writeText(contact.notes || '');
+                                                  toast.success('Nota copiada al portapapeles');
+                                                }}
+                                                className="text-[11px] text-slate-400 hover:text-slate-700 flex items-center gap-1"
+                                                title="Copiar nota"
+                                              >
+                                                <Copy size={11} /> Copiar
+                                              </button>
+                                            )}
+                                          </div>
+                                          <div className="mt-3">
+                                            {contact.notes ? (
+                                              <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                                                {contact.notes}
+                                              </p>
+                                            ) : (
+                                              <div className="py-6 text-center">
+                                                <p className="text-xs italic text-slate-400">Sin notas registradas para este contacto.</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="pt-3 border-t border-slate-100 mt-2 flex justify-end">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setActiveNoteModal({
+                                                title: 'Nota del Contacto',
+                                                entityName: contact.name,
+                                                subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
+                                                notes: contact.notes || '',
+                                                onEdit: () => {
+                                                  setActiveNoteModal(null);
+                                                  setEditingContact(contact);
+                                                  setShowContactModal(true);
+                                                }
+                                              });
+                                            }}
+                                            className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+                                          >
+                                            {contact.notes ? 'Ver en ventana completa →' : '+ Añadir nota'}
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* Columna 3: Actividades Asociadas */}
+                                      <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                                        <div>
+                                          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                              <Clock size={13} className="text-slate-500" /> Actividades ({contactActivities.length})
+                                            </span>
+                                            <span className="text-[11px] text-slate-400">
+                                              {contactActivities.filter(a => a.status === ActivityStatus.COMPLETED || !!a.completedAt).length} completadas
+                                            </span>
+                                          </div>
+                                          <div className="mt-2.5 space-y-2 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                                            {contactActivities.length > 0 ? (
+                                              contactActivities.slice(0, 4).map((act) => {
+                                                const isCompleted = act.status === ActivityStatus.COMPLETED || !!act.completedAt;
+                                                return (
+                                                  <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs gap-2">
+                                                    <div className="min-w-0 flex-1">
+                                                      <div className="font-semibold text-slate-800 truncate">{act.subject || 'Sin asunto'}</div>
+                                                      <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                                        <span>{act.activityType}</span>
+                                                        <span>•</span>
+                                                        <span>{act.plannedDate ? new Date(act.plannedDate).toLocaleDateString('es-ES') : 'Sin fecha'}</span>
+                                                      </div>
+                                                    </div>
+                                                    <span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                      isCompleted 
+                                                        ? 'bg-emerald-100 text-emerald-800' 
+                                                        : 'bg-amber-100 text-amber-800'
+                                                    }`}>
+                                                      {isCompleted ? 'Hecha' : 'Pendiente'}
+                                                    </span>
+                                                  </div>
+                                                );
+                                              })
+                                            ) : (
+                                              <div className="py-6 text-center">
+                                                <p className="text-xs italic text-slate-400">No hay actividades vinculadas a este contacto.</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center">
+                                          {contactActivities.length > 4 && (
+                                            <span className="text-[11px] text-slate-400">+{contactActivities.length - 4} más</span>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setEditingActivity({
+                                                subject: '',
+                                                activityType: ActivityType.CALL,
+                                                accountId: contact.accountId,
+                                                contactId: contact.id,
+                                                userId: user?.id || ''
+                                              });
+                                              setShowActivityModal(true);
+                                            }}
+                                            className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 ml-auto"
+                                          >
+                                            + Programar actividad
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
                             )}
-                          </td>
-                          <td className="p-5">
-                            <div className="flex items-center gap-2 text-sm font-medium text-[#001c3a]">
-                              <Briefcase size={14} className="text-slate-400" />
-                              {contact.account?.name || 'Desconocida'}
-                            </div>
-                          </td>
-                          <td className="p-5 text-right">
-                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                              <button onClick={() => { setEditingContact(contact); setShowContactModal(true); }} className="p-2 text-slate-400 hover:text-secondary bg-white border border-slate-200 rounded-lg hover:shadow active:scale-95">
-                                <Edit2 size={16} />
-                              </button>
-                              <button onClick={() => setDeletingId({ id: contact.id, type: 'contact' })} className="p-2 text-slate-400 hover:text-red-600 bg-white border border-slate-200 rounded-lg hover:bg-red-50 active:scale-95">
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </motion.tr>
+                          </React.Fragment>
                         );
                       })
                     ) : (
-                      <tr><td colSpan={8} className="p-10 text-center text-slate-400 text-sm">No se encontraron contactos.</td></tr>
+                      <tr><td colSpan={isBulkSelectionModeContacts ? 10 : 9} className="p-10 text-center text-slate-400 text-sm">No se encontraron contactos.</td></tr>
                     )}
                   </AnimatePresence>
                 </tbody>
@@ -3813,12 +4189,43 @@ export default function CrmView() {
             const prevRecord = record360;
             setRecord360(null);
             switch (type) {
-              case 'account':
+              case 'account': {
                 setActiveTab('accounts');
+                const targetId = id;
+                const filteredIdx = filteredAccounts.findIndex(a => a.id === targetId);
+                if (filteredIdx !== -1) {
+                  setAccountsPage(Math.floor(filteredIdx / ITEMS_PER_PAGE) + 1);
+                } else {
+                  setAccountsFilters({ name: '', cif: '', sector: '', sectors: [], city: '', activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
+                  setSearchQuery('');
+                  const allIdx = accounts.findIndex(a => a.id === targetId);
+                  if (allIdx !== -1) {
+                    setAccountsPage(Math.floor(allIdx / ITEMS_PER_PAGE) + 1);
+                  }
+                }
+                setHighlightedAccountId(targetId);
+                setTimeout(() => setHighlightedAccountId(null), 3500);
                 break;
-              case 'contact':
+              }
+              case 'contact': {
                 setActiveTab('contacts');
+                const targetId = id;
+                const filteredIdx = filteredContacts.findIndex(c => c.id === targetId);
+                if (filteredIdx !== -1) {
+                  setContactsPage(Math.floor(filteredIdx / ITEMS_PER_PAGE) + 1);
+                } else {
+                  setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], startDate: '', endDate: '', activityStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' });
+                  setSearchQuery('');
+                  const allIdx = contacts.findIndex(c => c.id === targetId);
+                  if (allIdx !== -1) {
+                    setContactsPage(Math.floor(allIdx / ITEMS_PER_PAGE) + 1);
+                  }
+                }
+                setExpandedContactId(targetId);
+                setHighlightedContactId(targetId);
+                setTimeout(() => setHighlightedContactId(null), 3500);
                 break;
+              }
               case 'deal':
                 setActiveTab('deals');
                 const deal = deals.find(d => d.id === id);
@@ -3837,6 +4244,9 @@ export default function CrmView() {
                 break;
               case 'activity':
                 setActiveTab('dashboard');
+                setExpandedDashboardActivityId(id);
+                setHighlightedActivityId(id);
+                setTimeout(() => setHighlightedActivityId(null), 3500);
                 break;
             }
           }}
