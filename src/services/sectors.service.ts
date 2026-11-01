@@ -5,6 +5,19 @@ export interface SectorItem {
   count: number;
 }
 
+export interface NormalizeSectorsResult {
+  data: SectorItem[];
+  message: string;
+  fixedCount: number;
+  duplicatesMerged: Array<{ from: string; to: string; count: number }>;
+}
+
+export interface MergeSectorsResult {
+  data: SectorItem[];
+  message: string;
+  updatedAccounts: number;
+}
+
 export const sectorsService = {
   getAll: async (): Promise<SectorItem[]> => {
     const res = await api.get('/sectors');
@@ -24,5 +37,21 @@ export const sectorsService = {
   cleanEmpty: async (): Promise<{ data: SectorItem[]; message: string }> => {
     const res = await api.post('/sectors/clean-empty');
     return res.data;
+  },
+
+  merge: async (sourceSector: string, targetSector: string): Promise<MergeSectorsResult> => {
+    const res = await api.post('/sectors/merge', { sourceSector, targetSector });
+    return res.data;
+  },
+
+  rename: async (oldName: string, newName: string): Promise<{ data: SectorItem[]; message: string }> => {
+    const res = await api.put('/sectors/rename', { oldName, newName });
+    return res.data;
+  },
+
+  normalize: async (): Promise<NormalizeSectorsResult> => {
+    const res = await api.post('/sectors/normalize');
+    return res.data;
   }
 };
+
