@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -6,7 +6,7 @@ import {
   Building2, Users, Search, Plus, Edit2, Trash2, 
   AlertCircle, CheckCircle, RefreshCw, X, Mail, Phone, Briefcase,
   LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, ChevronRight, ExternalLink, Download, History, User, Filter,
-  Copy, Check, Target } from 'lucide-react';
+  Copy, Check, Target, GitMerge } from 'lucide-react';
 import { accountsService, contactsService, Account, Contact } from '../../services/crm.service';
 import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus } from '../../services/activities.service';
 import { dealsService, Deal, DealStage } from '../../services/deals.service';
@@ -38,6 +38,7 @@ import { sectorsService, SectorItem } from '../../services/sectors.service';
 import { useAuth } from '../../contexts/AuthContext';
 
 import { ImportSuccessOverlay } from '../../components/animations/UI/ImportSuccessOverlay';
+import { MergeEntitiesModal } from '../../components/common/MergeEntitiesModal';
 
 
 type Tab = 'dashboard' | 'accounts' | 'contacts' | 'deals' | 'quotations' | 'reports' | 'library';
@@ -145,6 +146,258 @@ function SearchableAccountSelect({
   );
 }
 
+function SearchableAccountFilter({ 
+  accounts, 
+  value, 
+  onChange, 
+  disabled = false,
+  placeholder = "Todas las empresas",
+  allValue = "ALL",
+  className = "",
+  activitiesCount = {}
+}: { 
+  accounts: Account[], 
+  value: string, 
+  onChange: (id: string) => void,
+  disabled?: boolean,
+  placeholder?: string,
+  allValue?: string,
+  className?: string,
+  activitiesCount?: Record<string, number>
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  const isAll = value === allValue || !value;
+  const selectedAccount = isAll ? null : accounts.find(a => a.id === value);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearch('');
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  const validAccounts = useMemo(() => {
+    return accounts.filter(a => {
+      if (!a || !a.name) return false;
+      const t = a.name.trim();
+      return t.length > 0 && !/^[-_.\s…]+$/.test(t);
+    });
+  }, [accounts]);
+
+  const sortedAccounts = useMemo(() => {
+    return [...validAccounts].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+  }, [validAccounts]);
+
+  const filteredAccounts = useMemo(() => {
+    if (!search.trim()) return sortedAccounts;
+    const q = search.toLowerCase().trim();
+    return sortedAccounts.filter(a => 
+      a.name.toLowerCase().includes(q) || 
+      (a.cif && a.cif.toLowerCase().includes(q)) ||
+      (a.city && a.city.toLowerCase().includes(q)) ||
+      (a.sector && a.sector.toLowerCase().includes(q))
+    );
+  }, [sortedAccounts, search]);
+
+  return (
+    <div className={`relative ${className}`}>
+      <div 
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`px-3 py-2 min-w-[210px] h-[38px] bg-white border rounded-xl text-sm font-medium flex items-center justify-between cursor-pointer shadow-sm transition-all select-none ${
+          disabled 
+            ? 'opacity-50 cursor-not-allowed border-slate-200 text-slate-400' 
+            : selectedAccount 
+              ? 'border-[#001c3a]/40 bg-blue-50/40 text-[#001c3a] font-semibold ring-2 ring-[#001c3a]/10 hover:bg-blue-50/60' 
+              : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+        }`}
+      >
+        <div className="flex items-center gap-2 truncate mr-1">
+          <Building2 size={15} className={`shrink-0 ${selectedAccount ? 'text-[#001c3a]' : 'text-slate-400'}`} />
+          <span className="truncate">
+            {selectedAccount ? selectedAccount.name : placeholder}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {selectedAccount && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(allValue);
+                setSearch('');
+              }}
+              className="p-0.5 rounded-md hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
+              title="Borrar filtro de empresa"
+            >
+              <X size={14} />
+            </button>
+          )}
+          <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </div>
+      
+      <AnimatePresence>
+        {isOpen && !disabled && (
+          <>
+            <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)}></div>
+            <motion.div 
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+              className="absolute z-[110] left-0 mt-1.5 w-80 sm:w-96 bg-white border border-slate-200/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Search Box */}
+              <div className="p-2.5 border-b border-slate-100 bg-slate-50/70">
+                <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-[#001c3a]/20 focus-within:border-[#001c3a]/40 shadow-inner">
+                  <Search size={15} className="text-slate-400 shrink-0" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Buscar empresa por nombre, CIF, ciudad..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && filteredAccounts.length > 0) {
+                        onChange(filteredAccounts[0].id);
+                        setIsOpen(false);
+                        setSearch('');
+                      }
+                    }}
+                    className="w-full text-sm bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearch('');
+                        searchInputRef.current?.focus();
+                      }}
+                      className="text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Account list options */}
+              <div className="max-h-64 overflow-y-auto custom-scrollbar divide-y divide-slate-50">
+                {/* Todas las empresas Option */}
+                {(!search.trim() || 'todas las empresas'.includes(search.toLowerCase())) && (
+                  <div
+                    onClick={() => {
+                      onChange(allValue);
+                      setIsOpen(false);
+                      setSearch('');
+                    }}
+                    className={`px-3.5 py-2.5 text-sm cursor-pointer hover:bg-slate-50 flex items-center justify-between transition-colors ${
+                      isAll ? 'bg-blue-50/70 text-[#001c3a] font-bold' : 'text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isAll ? 'bg-[#001c3a] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <Building2 size={14} />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium">Todas las empresas</span>
+                        <span className="text-[11px] text-slate-400 font-normal">Sin filtro de empresa ({validAccounts.length})</span>
+                      </div>
+                    </div>
+                    {isAll && <Check size={16} className="text-[#001c3a] shrink-0" />}
+                  </div>
+                )}
+
+                {/* Filtered Accounts */}
+                {filteredAccounts.length === 0 ? (
+                  <div className="p-6 text-center flex flex-col items-center justify-center gap-2">
+                    <Building2 size={28} className="text-slate-300" />
+                    <p className="text-xs text-slate-500 font-medium">No se encontró ninguna empresa que coincida con "{search}"</p>
+                    <button 
+                      type="button" 
+                      onClick={() => { setSearch(''); searchInputRef.current?.focus(); }}
+                      className="text-xs font-semibold text-blue-600 hover:underline mt-1"
+                    >
+                      Limpiar búsqueda
+                    </button>
+                  </div>
+                ) : (
+                  filteredAccounts.map(acc => {
+                    const isSelected = value === acc.id;
+                    const actCount = activitiesCount[acc.id] || 0;
+                    return (
+                      <div
+                        key={acc.id}
+                        onClick={() => {
+                          onChange(acc.id);
+                          setIsOpen(false);
+                          setSearch('');
+                        }}
+                        className={`px-3.5 py-2.5 text-sm cursor-pointer hover:bg-blue-50/40 flex items-center justify-between gap-3 transition-colors ${
+                          isSelected ? 'bg-blue-50/80 text-[#001c3a] font-semibold' : 'text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#001c3a] text-white shadow-sm' : 'bg-slate-100 text-slate-500'}`}>
+                            <Building2 size={14} />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="truncate text-sm font-medium text-slate-800">{acc.name}</span>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 font-normal mt-0.5">
+                              {acc.cif && <span className="font-mono text-slate-500">CIF: {acc.cif}</span>}
+                              {acc.city && <span>• {acc.city}</span>}
+                              {acc.sector && (
+                                <span className="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded text-[10px] font-medium truncate max-w-[120px]">
+                                  {acc.sector}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {actCount > 0 && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                              {actCount} {actCount === 1 ? 'act.' : 'act.'}
+                            </span>
+                          )}
+                          {isSelected && <Check size={16} className="text-[#001c3a]" />}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer status */}
+              <div className="px-3.5 py-2 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
+                <span>{filteredAccounts.length} de {validAccounts.length} empresas</span>
+                <span className="text-[10px] text-slate-400 hidden sm:inline">↵ Selecciona primera</span>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function SearchableContactFilter({ 
   contacts, 
   value, 
@@ -160,37 +413,76 @@ function SearchableContactFilter({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
-  const selectedContact = value === 'ALL' ? null : contacts.find(c => c.id === value);
-  const filteredContacts = contacts.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
-  );
+  const selectedContact = value === 'ALL' || !value ? null : contacts.find(c => c.id === value);
+  const isAll = value === 'ALL' || !value;
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearch('');
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  const filteredContacts = useMemo(() => {
+    if (!search.trim()) return contacts;
+    const q = search.toLowerCase().trim();
+    return contacts.filter(c => 
+      c.name.toLowerCase().includes(q) || 
+      (c.email && c.email.toLowerCase().includes(q)) ||
+      (c.phone && c.phone.toLowerCase().includes(q)) ||
+      (c.position && c.position.toLowerCase().includes(q))
+    );
+  }, [contacts, search]);
 
   return (
     <div className="relative">
       <div 
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`px-3 py-2 min-w-[200px] h-[38px] bg-white border border-slate-200 rounded-xl text-sm font-medium flex items-center justify-between cursor-pointer shadow-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'focus-within:ring-2 focus-within:ring-[#001c3a]/20 text-slate-600'}`}
+        className={`px-3 py-2 min-w-[200px] h-[38px] bg-white border rounded-xl text-sm font-medium flex items-center justify-between cursor-pointer shadow-sm transition-all select-none ${
+          disabled 
+            ? 'opacity-50 cursor-not-allowed border-slate-200 text-slate-400' 
+            : selectedContact 
+              ? 'border-[#001c3a]/40 bg-blue-50/40 text-[#001c3a] font-semibold ring-2 ring-[#001c3a]/10 hover:bg-blue-50/60' 
+              : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+        }`}
       >
-        <span className="truncate mr-2">
-          {selectedContact ? selectedContact.name : placeholder}
-        </span>
+        <div className="flex items-center gap-2 truncate mr-1">
+          <User size={15} className={`shrink-0 ${selectedContact ? 'text-[#001c3a]' : 'text-slate-400'}`} />
+          <span className="truncate">
+            {selectedContact ? selectedContact.name : placeholder}
+          </span>
+        </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {selectedContact && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onChange('ALL');
                 setSearch('');
               }}
-              className="p-0.5 rounded hover:bg-slate-100 text-slate-400 hover:text-red-500 transition-colors"
-              title="Borrar filtro"
+              className="p-0.5 rounded-md hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
+              title="Borrar filtro de contacto"
             >
               <X size={14} />
             </button>
           )}
-          <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </div>
       
@@ -199,50 +491,114 @@ function SearchableContactFilter({
           <>
             <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)}></div>
             <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute z-[110] w-64 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden"
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+              className="absolute z-[110] left-0 mt-1.5 w-72 sm:w-80 bg-white border border-slate-200/90 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             >
-              <div className="p-2 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
-                <Search size={14} className="text-slate-400" />
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Buscar contacto..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full text-sm bg-transparent outline-none text-slate-700"
-                />
-              </div>
-              <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                <div
-                  onClick={() => {
-                    onChange('ALL');
-                    setIsOpen(false);
-                    setSearch('');
-                  }}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 flex flex-col border-b border-slate-50 transition-colors ${value === 'ALL' ? 'bg-blue-50/50 text-[#001c3a] font-bold' : 'text-slate-700'}`}
-                >
-                  <span>Todos los contactos</span>
-                </div>
-                {filteredContacts.length === 0 ? (
-                  <div className="p-3 text-xs text-slate-500 text-center">No se encontraron contactos</div>
-                ) : (
-                  filteredContacts.map(contact => (
-                    <div
-                      key={contact.id}
-                      onClick={() => {
-                        onChange(contact.id);
+              <div className="p-2.5 border-b border-slate-100 bg-slate-50/70">
+                <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl focus-within:ring-2 focus-within:ring-[#001c3a]/20 focus-within:border-[#001c3a]/40 shadow-inner">
+                  <Search size={14} className="text-slate-400 shrink-0" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Buscar contacto..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && filteredContacts.length > 0) {
+                        onChange(filteredContacts[0].id);
                         setIsOpen(false);
                         setSearch('');
+                      }
+                    }}
+                    className="w-full text-sm bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearch('');
+                        searchInputRef.current?.focus();
                       }}
-                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 flex flex-col border-b border-slate-50 last:border-none transition-colors ${value === contact.id ? 'bg-blue-50/50 text-[#001c3a] font-bold' : 'text-slate-700'}`}
+                      className="text-slate-400 hover:text-slate-600 p-0.5 rounded"
                     >
-                      <span>{contact.name}</span>
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto custom-scrollbar divide-y divide-slate-50">
+                {(!search.trim() || 'todos los contactos'.includes(search.toLowerCase())) && (
+                  <div
+                    onClick={() => {
+                      onChange('ALL');
+                      setIsOpen(false);
+                      setSearch('');
+                    }}
+                    className={`px-3.5 py-2.5 text-sm cursor-pointer hover:bg-slate-50 flex items-center justify-between transition-colors ${
+                      isAll ? 'bg-blue-50/70 text-[#001c3a] font-bold' : 'text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isAll ? 'bg-[#001c3a] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <User size={14} />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium">Todos los contactos</span>
+                        <span className="text-[11px] text-slate-400 font-normal">Sin filtro de contacto ({contacts.length})</span>
+                      </div>
                     </div>
-                  ))
+                    {isAll && <Check size={16} className="text-[#001c3a]" />}
+                  </div>
                 )}
+
+                {filteredContacts.length === 0 ? (
+                  <div className="p-6 text-center flex flex-col items-center justify-center gap-2">
+                    <User size={28} className="text-slate-300" />
+                    <p className="text-xs text-slate-500 font-medium">No se encontraron contactos</p>
+                  </div>
+                ) : (
+                  filteredContacts.map(contact => {
+                    const isSelected = value === contact.id;
+                    return (
+                      <div
+                        key={contact.id}
+                        onClick={() => {
+                          onChange(contact.id);
+                          setIsOpen(false);
+                          setSearch('');
+                        }}
+                        className={`px-3.5 py-2.5 text-sm cursor-pointer hover:bg-blue-50/40 flex items-center justify-between transition-colors ${
+                          isSelected ? 'bg-blue-50/80 text-[#001c3a] font-semibold' : 'text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#001c3a] text-white' : 'bg-slate-100 text-slate-500'}`}>
+                            <User size={14} />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="truncate text-sm font-medium text-slate-800">{contact.name}</span>
+                            {(contact.email || contact.phone || contact.position) && (
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                                {contact.position && <span className="text-slate-500">{contact.position}</span>}
+                                {contact.email && <span>• {contact.email}</span>}
+                                {contact.phone && <span>• {contact.phone}</span>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {isSelected && <Check size={16} className="text-[#001c3a] shrink-0 ml-2" />}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="px-3.5 py-1.5 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-400">
+                {filteredContacts.length} contactos disponibles
               </div>
             </motion.div>
           </>
@@ -341,7 +697,7 @@ export default function CrmView() {
               phone: String(row['Teléfono'] || row['Telefono'] || row['phone'] || ''),
               city: row['Ciudad'] || row['city'],
               notes: row['Notas'] || row['notas'] || row['Notes'] || row['notes'] || '',
-            })).filter(item => !!item.name); // Filter out empty rows
+            })).filter(item => !!item.name && item.name.trim().length > 0 && !/^[-_.\s…]+$/.test(item.name.trim())); // Filter out empty or symbol-only rows
 
             totalAttempted = mappedData.length;
               response = await accountsService.bulkCreate(mappedData);
@@ -445,6 +801,16 @@ export default function CrmView() {
     const hasPerm = (perm: string) => perms.includes(perm) || isSuperadmin;
     return isSuperadmin || (isAdmin && (isComercial || isAdministracion)) || hasPerm('crm') || hasPerm('admin');
   });
+
+  const accountActivitiesCount = useMemo(() => {
+    const counts: Record<string, number> = {};
+    activities.forEach(act => {
+      if (act.accountId) {
+        counts[act.accountId] = (counts[act.accountId] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [activities]);
 
   const [exportingTarget, setExportingTarget] = useState<'excel' | 'pdf' | null>(null);
   const pdfRef = React.useRef<HTMLDivElement>(null);
@@ -587,6 +953,26 @@ export default function CrmView() {
   const [deletingId, setDeletingId] = useState<{ id: string, type: 'account' | 'contact' | 'activity' | 'deal' } | null>(null);
   const [record360, setRecord360] = useState<{ id: string, type: 'account' | 'contact' | 'deal' | 'activity' | 'quotation', accountId: string } | null>(null);
   
+  // Inline Note Editing State (para comentarios de actividades)
+  const [editingNoteActivityId, setEditingNoteActivityId] = useState<string | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState<string>('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
+
+  const handleSaveInlineNote = async (activityId: string) => {
+    try {
+      setIsSavingNote(true);
+      const updated = await activitiesService.update(activityId, { notes: editingNoteText.trim() || null });
+      setActivities(prev => prev.map(a => a.id === activityId ? { ...a, notes: updated.notes } : a));
+      showNotification('Comentario actualizado correctamente');
+      setEditingNoteActivityId(null);
+    } catch (err: any) {
+      console.error(err);
+      showNotification(err?.response?.data?.message || 'Error al guardar el comentario', 'error');
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
   // Note Modal State
   const [activeNoteModal, setActiveNoteModal] = useState<{
     title: string;
@@ -611,6 +997,37 @@ export default function CrmView() {
   
   const [isBulkSelectionModeContacts, setIsBulkSelectionModeContacts] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
+
+  // Merge Entities State
+  const [mergeModalConfig, setMergeModalConfig] = useState<{
+    isOpen: boolean;
+    type: 'account' | 'contact';
+    entityA: Account | Contact | null;
+    entityB?: Account | Contact | null;
+  }>({
+    isOpen: false,
+    type: 'account',
+    entityA: null,
+    entityB: null,
+  });
+
+  const handleOpenMergeAccounts = (accA: Account, accB?: Account) => {
+    setMergeModalConfig({
+      isOpen: true,
+      type: 'account',
+      entityA: accA,
+      entityB: accB || null,
+    });
+  };
+
+  const handleOpenMergeContacts = (conA: Contact, conB?: Contact) => {
+    setMergeModalConfig({
+      isOpen: true,
+      type: 'contact',
+      entityA: conA,
+      entityB: conB || null,
+    });
+  };
 
   const toggleBulkSelectionMode = () => {
     if (activeTab === 'contacts') {
@@ -1185,12 +1602,16 @@ export default function CrmView() {
       filteredActivities.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
 
-    const getActivityIcon = (type: ActivityType) => {
+    const getActivityIcon = (type: ActivityType, size: number = 18) => {
     switch(type) {
-      case ActivityType.CALL: return <PhoneCall size={14} />;
-      case ActivityType.EMAIL: return <Mail size={14} />;
-      case ActivityType.TASK: return <CheckSquare size={14} />;
-      default: return <Clock size={14} />;
+      case ActivityType.CALL: 
+      case ActivityType.LLAMADA: return <PhoneCall size={size} />;
+      case ActivityType.EMAIL: return <Mail size={size} />;
+      case ActivityType.TASK: return <CheckSquare size={size} />;
+      case ActivityType.COTIZACION: return <FileText size={size} />;
+      case ActivityType.REUNION_COMERCIAL:
+      case ActivityType.REUNION_SEGUIMIENTO: return <Users size={size} />;
+      default: return <Clock size={size} />;
     }
   };
 
@@ -1225,6 +1646,134 @@ export default function CrmView() {
       case ActivityType.EMAIL: return 'text-blue-600 bg-blue-100';
       case ActivityType.TASK: return 'text-amber-600 bg-amber-100';
       default: return 'text-slate-600 bg-slate-100';
+    }
+  };
+
+  const parsePlannedDate = (dateStr: string) => {
+    if (dateStr.includes('T')) {
+      return new Date(dateStr);
+    }
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    return new Date(dateStr);
+  };
+
+  const getActivityTimeStatus = (act: Activity): 'overdue' | 'today' | 'future' | 'completed' => {
+    if (act.completedAt || act.status === 'COMPLETED') return 'completed';
+    if (!act.plannedDate) return 'future';
+    const planned = parsePlannedDate(act.plannedDate);
+    if (isNaN(planned.getTime())) return 'future';
+
+    const now = new Date();
+    const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const today1 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+    const t = planned.getTime();
+    if (t < today0) return 'overdue';
+    if (t <= today1) return 'today';
+    return 'future';
+  };
+
+  const getActivityColorTheme = (status: 'overdue' | 'today' | 'future' | 'completed', isExpanded: boolean) => {
+    switch (status) {
+      case 'overdue':
+        return {
+          unselectedRow: 'bg-red-50/35 hover:bg-red-50/60 border-b border-red-100/90',
+          expandedRow: 'bg-red-50/50 relative z-10',
+          firstCell: isExpanded 
+            ? 'border-t-2 border-t-red-500 border-l-4 border-l-red-600 border-b border-b-red-200/80 bg-red-50/50' 
+            : 'border-b border-red-100/90',
+          midCell: isExpanded 
+            ? 'border-t-2 border-t-red-500 border-b border-b-red-200/80 bg-red-50/50' 
+            : 'border-b border-red-100/90',
+          lastCell: isExpanded 
+            ? 'border-t-2 border-t-red-500 border-r-2 border-r-red-500 border-b border-b-red-200/80 bg-red-50/50' 
+            : 'bg-[#fff5f5] group-hover:bg-red-50/60 border-b border-red-100/90',
+          drawerRow: 'bg-red-50/20',
+          drawerTd: 'border-l-4 border-l-red-600 border-r-2 border-r-red-500 border-b-2 border-b-red-500 shadow-sm bg-red-50/15',
+          drawerTitle: 'text-red-950',
+          drawerIcon: 'text-red-600',
+          drawerBadge: 'text-red-800 bg-red-100 border-red-300',
+          drawerNotesCard: 'border-red-200 shadow-xs',
+          iconBox: 'bg-red-100/80 text-red-700 border-red-300',
+          dateBadge: 'text-xs font-bold text-red-800 bg-red-100/90 border border-red-300 px-2.5 py-0.5 rounded-md flex items-center gap-1.5 w-fit shadow-xs',
+          dateIcon: 'text-red-600',
+          datePrefix: 'Vencida'
+        };
+      case 'today':
+        return {
+          unselectedRow: 'bg-blue-50/35 hover:bg-blue-50/60 border-b border-blue-100/90',
+          expandedRow: 'bg-blue-50/50 relative z-10',
+          firstCell: isExpanded 
+            ? 'border-t-2 border-t-blue-500 border-l-4 border-l-blue-600 border-b border-b-blue-200/80 bg-blue-50/50' 
+            : 'border-b border-blue-100/90',
+          midCell: isExpanded 
+            ? 'border-t-2 border-t-blue-500 border-b border-b-blue-200/80 bg-blue-50/50' 
+            : 'border-b border-blue-100/90',
+          lastCell: isExpanded 
+            ? 'border-t-2 border-t-blue-500 border-r-2 border-r-blue-500 border-b border-b-blue-200/80 bg-blue-50/50' 
+            : 'bg-[#f4f8ff] group-hover:bg-blue-50/60 border-b border-blue-100/90',
+          drawerRow: 'bg-blue-50/20',
+          drawerTd: 'border-l-4 border-l-blue-600 border-r-2 border-r-blue-500 border-b-2 border-b-blue-500 shadow-sm bg-blue-50/15',
+          drawerTitle: 'text-blue-950',
+          drawerIcon: 'text-blue-600',
+          drawerBadge: 'text-blue-800 bg-blue-100 border-blue-300',
+          drawerNotesCard: 'border-blue-200 shadow-xs',
+          iconBox: 'bg-blue-100/80 text-blue-700 border-blue-300',
+          dateBadge: 'text-xs font-bold text-blue-800 bg-blue-100/90 border border-blue-300 px-2.5 py-0.5 rounded-md flex items-center gap-1.5 w-fit shadow-xs',
+          dateIcon: 'text-blue-600',
+          datePrefix: 'Hoy'
+        };
+      case 'completed':
+        return {
+          unselectedRow: 'hover:bg-emerald-50/30 border-b border-slate-100',
+          expandedRow: 'bg-emerald-50/30 relative z-10',
+          firstCell: isExpanded 
+            ? 'border-t-2 border-t-emerald-500 border-l-4 border-l-emerald-600 border-b border-b-emerald-200 bg-emerald-50/30' 
+            : 'border-b border-slate-100',
+          midCell: isExpanded 
+            ? 'border-t-2 border-t-emerald-500 border-b border-b-emerald-200 bg-emerald-50/30' 
+            : 'border-b border-slate-100',
+          lastCell: isExpanded 
+            ? 'border-t-2 border-t-emerald-500 border-r-2 border-r-emerald-500 border-b border-b-emerald-200 bg-emerald-50/30' 
+            : 'bg-[#f4fbf7] group-hover:bg-emerald-50/40 border-b border-slate-100',
+          drawerRow: 'bg-emerald-50/15',
+          drawerTd: 'border-l-4 border-l-emerald-600 border-r-2 border-r-emerald-500 border-b-2 border-b-emerald-500 shadow-sm bg-emerald-50/10',
+          drawerTitle: 'text-emerald-950',
+          drawerIcon: 'text-emerald-600',
+          drawerBadge: 'text-emerald-800 bg-emerald-100 border-emerald-300',
+          drawerNotesCard: 'border-emerald-200 shadow-xs',
+          iconBox: 'bg-emerald-100/80 text-emerald-700 border-emerald-300',
+          dateBadge: 'text-xs font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-0.5 rounded-md flex items-center gap-1.5 w-fit shadow-xs',
+          dateIcon: 'text-emerald-600',
+          datePrefix: 'Completada'
+        };
+      case 'future':
+      default:
+        return {
+          unselectedRow: 'hover:bg-slate-50/80 border-b border-slate-100',
+          expandedRow: 'bg-slate-50/90 relative z-10',
+          firstCell: isExpanded 
+            ? 'border-t-2 border-t-slate-400 border-l-4 border-l-slate-600 border-b border-b-slate-200 bg-slate-50/80' 
+            : 'border-b border-slate-100',
+          midCell: isExpanded 
+            ? 'border-t-2 border-t-slate-400 border-b border-b-slate-200 bg-slate-50/80' 
+            : 'border-b border-slate-100',
+          lastCell: isExpanded 
+            ? 'border-t-2 border-t-slate-400 border-r-2 border-r-slate-400 border-b border-b-slate-200 bg-slate-50/80' 
+            : 'bg-white group-hover:bg-slate-50 border-b border-slate-100',
+          drawerRow: 'bg-slate-50/40',
+          drawerTd: 'border-l-4 border-l-slate-600 border-r-2 border-r-slate-400 border-b-2 border-b-slate-400 shadow-sm bg-slate-50/25',
+          drawerTitle: 'text-slate-800',
+          drawerIcon: 'text-slate-500',
+          drawerBadge: 'text-slate-700 bg-slate-100/90 border-slate-300',
+          drawerNotesCard: 'border-slate-200 shadow-xs',
+          iconBox: 'bg-slate-100 text-[#001c3a] border-slate-200/60',
+          dateBadge: 'text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md flex items-center gap-1.5 w-fit',
+          dateIcon: 'text-slate-400',
+          datePrefix: 'Planeada'
+        };
     }
   };
 
@@ -1601,6 +2150,18 @@ export default function CrmView() {
                       {/* Filters Bar */}
             <div className="p-3 border-b border-slate-100 bg-slate-50 flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-3 w-full">
+                  <SearchableAccountFilter
+                    value={dashboardActivityAccountFilter}
+                    onChange={(id) => {
+                      setDashboardActivityAccountFilter(id);
+                      if (id === 'ALL' || (dashboardActivityContactFilter !== 'ALL' && contacts.find(c => c.id === dashboardActivityContactFilter)?.accountId !== id)) {
+                        setDashboardActivityContactFilter('ALL');
+                      }
+                    }}
+                    accounts={accounts}
+                    activitiesCount={accountActivitiesCount}
+                  />
+
                   <SearchableContactFilter
                     value={dashboardActivityContactFilter}
                     onChange={(id) => setDashboardActivityContactFilter(id)}
@@ -1701,19 +2262,7 @@ export default function CrmView() {
                         </div>
                       )}
   
-                      <select 
-                        value={dashboardActivityAccountFilter}
-                        onChange={(e) => {
-                          setDashboardActivityAccountFilter(e.target.value);
-                          if (e.target.value === 'ALL') setDashboardActivityContactFilter('ALL');
-                        }}
-                        className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]"
-                      >
-                        <option value="ALL">Todas las empresas</option>
-                        {accounts.map(a => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                      </select>
+
   
                       <select value={activitiesFilters.activityType} onChange={(e) => setActivitiesFilters({...activitiesFilters, activityType: e.target.value})} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]">
                         <option value="">Tipo: Todos</option>
@@ -1760,15 +2309,15 @@ export default function CrmView() {
             </div>
           ) : (
             <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-left border-collapse table-fixed">
+              <table className="w-full text-left border-collapse table-fixed min-w-[1150px]">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
-                    <th className="p-3 border-b border-slate-200 text-center w-12">St</th>
-                    <th className="p-3 border-b border-slate-200 w-40">Actividad</th>
-                    <th className="p-3 border-b border-slate-200 w-64">Contacto</th>
-                    <th className="p-3 border-b border-slate-200 w-64">Contexto</th>
-                    <th className="p-3 border-b border-slate-200 w-auto">Asunto y Resp.</th>
-                    <th className="p-3 border-b border-slate-200 text-right sticky right-0 bg-slate-50 z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-12"></th>
+                  <tr className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider font-bold">
+                    <th className="p-3.5 border-b border-slate-200 text-center w-14">St</th>
+                    <th className="p-3.5 border-b border-slate-200 w-52">Actividad</th>
+                    <th className="p-3.5 border-b border-slate-200 w-80">Contacto</th>
+                    <th className="p-3.5 border-b border-slate-200 w-72">Contexto</th>
+                    <th className="p-3.5 border-b border-slate-200 w-auto">Asunto y Resp.</th>
+                    <th className="p-3.5 border-b border-slate-200 text-right sticky right-0 bg-slate-50 z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-28"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1776,15 +2325,17 @@ export default function CrmView() {
                     {filteredActivities.length > 0 ? (
                       filteredActivities.map((act) => {
                         const isExpanded = expandedDashboardActivityId === act.id;
+                        const timeStatus = getActivityTimeStatus(act);
+                        const theme = getActivityColorTheme(timeStatus, isExpanded);
                         return (
                           <React.Fragment key={act.id}>
                             <motion.tr 
                               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                              className={`border-b border-slate-100 cursor-pointer transition-colors group ${isExpanded ? 'bg-slate-50' : 'hover:bg-slate-50/80'}`}
+                              className={`cursor-pointer transition-colors group ${isExpanded ? theme.expandedRow : theme.unselectedRow}`}
                               onClick={() => setExpandedDashboardActivityId(isExpanded ? null : act.id)}
                               onDoubleClick={(e) => { e.stopPropagation(); setRecord360({ id: act.id, type: 'activity', accountId: act.accountId }); }}
                             >
-                              <td className="p-3 text-center align-middle" onClick={e => e.stopPropagation()}>
+                              <td className={`p-3.5 text-center align-middle transition-colors ${theme.firstCell}`} onClick={e => e.stopPropagation()}>
                                 <button
                                   onClick={(e) => { 
                                     e.stopPropagation();
@@ -1799,84 +2350,124 @@ export default function CrmView() {
                                     setNextActivityUserId(user?.id || '');
                                     setNextActivitySubject(`Seguimiento: ${act.subject}`);
                                   }}
-                                  title="Completar Actividad"
-                                  className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-green-600 inline-flex"
+                                  title={act.completedAt ? "Actividad completada" : "Completar Actividad"}
+                                  className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-emerald-600 inline-flex transition-colors"
                                 >
-                                  <CheckCircle size={16} className={act.completedAt ? "text-emerald-500" : ""} />
+                                  <CheckCircle size={20} className={act.completedAt ? "text-emerald-500" : ""} />
                                 </button>
                               </td>
-                              <td className="p-3 align-middle whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 text-slate-500 shrink-0 shadow-sm border border-slate-200/50">
-                                    {getActivityIcon(act.activityType)}
+                              <td className={`p-3.5 align-middle whitespace-nowrap transition-colors ${theme.midCell}`}>
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs border ${theme.iconBox}`}>
+                                    {getActivityIcon(act.activityType, 20)}
                                   </div>
                                   <div>
-                                    <div className="text-xs font-bold text-slate-800">{getActivityTypeLabel(act.activityType)}</div>
-                                    <div className="flex flex-col gap-0.5 mt-1">
-                                      <div className="text-[10px] font-medium text-slate-500 flex items-center gap-1" title="Fecha de Creación">
-                                        <Clock size={10} className="text-slate-400" />
-                                        Creada: {new Date(act.createdAt).toLocaleDateString()}
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-bold text-slate-900 tracking-tight">{getActivityTypeLabel(act.activityType)}</span>
+                                      {timeStatus === 'overdue' && (
+                                        <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-red-100 text-red-700 border border-red-300 shadow-2xs">
+                                          Vencida
+                                        </span>
+                                      )}
+                                      {timeStatus === 'today' && (
+                                        <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 border border-blue-300 shadow-2xs">
+                                          Hoy
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col gap-1 mt-1">
+                                      <div className="text-xs font-medium text-slate-500 flex items-center gap-1.5" title="Fecha de Creación">
+                                        <Clock size={12} className="text-slate-400 shrink-0" />
+                                        <span>Creada: <span className="font-semibold text-slate-700">{new Date(act.createdAt).toLocaleDateString()}</span></span>
                                       </div>
                                       {(act.status === 'COMPLETED' || act.completedAt) ? (
-                                      <div className="text-[10px] font-medium text-emerald-600 flex items-center gap-1" title="Fecha Completada">
-                                        <Calendar size={10} className="text-emerald-400" />
-                                        Completada: {new Date(act.completedAt || act.plannedDate || act.createdAt).toLocaleDateString()}
-                                      </div>
-                                    ) : act.plannedDate && (
-                                      <div className="text-[10px] font-medium text-blue-600 flex items-center gap-1" title="Fecha Planeada">
-                                        <Calendar size={10} className="text-blue-400" />
-                                        Planeada: {new Date(act.plannedDate).toLocaleDateString()}
-                                      </div>
-                                    )}
+                                        <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md flex items-center gap-1.5 w-fit" title="Fecha Completada">
+                                          <Calendar size={12} className="text-emerald-500 shrink-0" />
+                                          <span>Completada: {new Date(act.completedAt || act.plannedDate || act.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                      ) : act.plannedDate && (
+                                        <div className={theme.dateBadge} title={`Fecha ${theme.datePrefix}`}>
+                                          <Calendar size={12} className={`${theme.dateIcon} shrink-0`} />
+                                          <span>{theme.datePrefix}: {parsePlannedDate(act.plannedDate).toLocaleDateString()}</span>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
                               </td>
-                              <td className="p-3 align-middle">
+                              <td className={`p-3.5 align-middle overflow-hidden transition-colors ${theme.midCell}`}>
                                 {act.contact?.name ? (
-                                  <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
-                                      <Users size={12} className="text-[#001c3a] shrink-0" />
+                                  <div className="flex flex-col gap-1.5 max-w-full">
+                                    <div className="flex items-center gap-2 text-[15px] font-bold text-slate-900">
+                                      <Users size={17} className="text-[#001c3a] shrink-0" />
                                       <span className="truncate" title={act.contact.name}>{act.contact.name}</span>
                                     </div>
-                                    {act.contact.position && <div className="text-[10px] text-slate-500 truncate ml-5">{act.contact.position}</div>}
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 mt-0.5 ml-5">
-                                      {act.contact.phone && <a href={`tel:${act.contact.phone}`} onClick={e => e.stopPropagation()} className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs font-bold hover:bg-green-100 transition-colors" title="Llamar"><Phone size={12} /> <span className="truncate">{act.contact.phone}</span></a>}
-                                      {act.contact.email && <a href={`mailto:${act.contact.email}`} onClick={e => e.stopPropagation()} className="flex items-center gap-1 hover:text-[#001c3a] transition-colors" title="Email"><Mail size={10} className="text-slate-400" /> <span className="truncate">{act.contact.email}</span></a>}
+                                    {act.contact.position && (
+                                      <div className="text-xs text-slate-500 font-medium truncate ml-6 -mt-0.5">
+                                        {act.contact.position}
+                                      </div>
+                                    )}
+                                    <div className="flex flex-col gap-1.5 mt-1 ml-6">
+                                      {act.contact.phone && (
+                                        <a 
+                                          href={`tel:${act.contact.phone}`} 
+                                          onClick={e => e.stopPropagation()} 
+                                          className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-950 border border-emerald-300 px-3 py-1.5 rounded-lg text-[15px] font-extrabold tracking-wide transition-all shadow-xs w-fit max-w-full group/phone" 
+                                          title="Llamar"
+                                        >
+                                          <Phone size={16} className="text-emerald-600 group-hover/phone:scale-110 transition-transform shrink-0" />
+                                          <span className="truncate">{act.contact.phone}</span>
+                                        </a>
+                                      )}
+                                      {act.contact.email && (
+                                        <a 
+                                          href={`mailto:${act.contact.email}`} 
+                                          onClick={e => e.stopPropagation()} 
+                                          className="inline-flex items-center gap-2 bg-sky-50 text-sky-900 hover:bg-sky-100 hover:text-sky-950 border border-sky-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-xs w-fit max-w-full group/email" 
+                                          title="Enviar Email"
+                                        >
+                                          <Mail size={15} className="text-sky-600 group-hover/email:scale-110 transition-transform shrink-0" />
+                                          <span className="truncate">{act.contact.email}</span>
+                                        </a>
+                                      )}
                                     </div>
                                   </div>
                                 ) : (
-                                  <span className="text-xs text-slate-400 italic font-medium ml-5">Sin contacto</span>
+                                  <span className="text-xs text-slate-400 italic font-medium ml-6">Sin contacto</span>
                                 )}
                               </td>
-                              <td className="p-3 align-middle">
-                                <div className="flex flex-col gap-1.5">
+                              <td className={`p-3.5 align-middle overflow-hidden transition-colors ${theme.midCell}`}>
+                                <div className="flex flex-col gap-1.5 max-w-full">
                                   {act.account?.name ? (
-                                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#001c3a]">
-                                      <Building2 size={12} className="text-slate-400 shrink-0" />
+                                    <div className="flex items-center gap-2 text-sm font-bold text-[#001c3a] truncate">
+                                      <Building2 size={16} className="text-slate-500 shrink-0" />
                                       <span className="truncate" title={act.account.name}>{act.account.name}</span>
                                     </div>
                                   ) : (
                                     <span className="text-xs text-slate-400 italic font-medium">Sin empresa</span>
                                   )}
                                   {act.dealId && (
-                                    <div onClick={() => { setActiveTab('deals'); setHighlightedDealId(act.dealId || null); }} className="flex items-center gap-1.5 text-[10px] text-slate-600 bg-slate-100 rounded-md px-2 py-0.5 w-fit ml-5 border border-slate-200/50 hover:bg-amber-100 transition-colors cursor-pointer">
-                                      <Briefcase size={10} className="text-slate-400 shrink-0" />
-                                      <span className="truncate font-medium max-w-[120px]" title={act.deal?.name || 'Negocio'}>{act.deal?.name || 'Negocio'}</span>
-                                      {act.deal?.stage && <span className="text-slate-400 shrink-0 font-bold">&bull; {act.deal.stage}</span>}
+                                    <div 
+                                      onClick={() => { setActiveTab('deals'); setHighlightedDealId(act.dealId || null); }} 
+                                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 rounded-lg px-2.5 py-1 w-fit max-w-full ml-5 border border-slate-200/80 transition-colors cursor-pointer shadow-xs overflow-hidden"
+                                      title={`${act.deal?.name || 'Negocio'}${act.deal?.stage ? ` • ${act.deal.stage}` : ''}`}
+                                    >
+                                      <Briefcase size={13} className="text-slate-500 shrink-0" />
+                                      <span className="truncate max-w-[100px]">{act.deal?.name || 'Negocio'}</span>
+                                      {act.deal?.stage && <span className="text-slate-400 shrink-0 font-bold text-[10px] uppercase truncate">&bull; {act.deal.stage}</span>}
                                     </div>
                                   )}
                                 </div>
                               </td>
-                              <td className="p-3 align-middle">
-                                <div className="text-xs font-bold text-slate-800 line-clamp-1" title={act.subject}>{act.subject}</div>
-                                <div className="flex items-center gap-1.5 mt-1 mb-1 text-[10px] font-semibold text-slate-600">
-                                  <User size={10} className="text-slate-400" />
+                              <td className={`p-3.5 align-middle overflow-hidden transition-colors ${theme.midCell}`}>
+                                <div className="text-sm font-bold text-slate-900 line-clamp-1" title={act.subject}>{act.subject}</div>
+                                <div className="flex items-center gap-1.5 mt-1 mb-1 text-xs font-medium text-slate-600">
+                                  <User size={13} className="text-slate-400 shrink-0" />
                                   <span className="truncate">{act.user?.name || 'Sin responsable'}</span>
                                 </div>
-                                {act.notes && <div className="text-[10px] text-slate-500 line-clamp-2 mt-0.5 leading-relaxed bg-slate-50 p-1.5 rounded border border-slate-100" title={act.notes}>{act.notes}</div>}
+                                {act.notes && <div className="text-xs text-slate-600 line-clamp-2 mt-1 leading-relaxed bg-slate-50/90 p-2 rounded-lg border border-slate-200/60 max-w-full break-words" title={act.notes}>{act.notes}</div>}
                               </td>
-                              <td className="p-3 text-right sticky right-0 bg-white group-hover:bg-slate-50 transition-colors z-10 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                              <td className={`p-3.5 text-right sticky right-0 transition-colors z-10 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] ${theme.lastCell}`}>
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                   {!act.dealId && (
                                     <button onClick={() => { 
@@ -1890,31 +2481,124 @@ export default function CrmView() {
                                           userId: user?.id || ''
                                         }); 
                                       setShowDealModal(true); 
-                                    }} className="p-1.5 text-slate-400 hover:text-purple-600 rounded" title="Convertir a Negocio">
-                                      <Briefcase size={14} />
+                                    }} className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Convertir a Negocio">
+                                      <Briefcase size={16} />
                                     </button>
                                   )}
-                                  <button onClick={() => { setEditingActivity({ accountId: act.accountId, dealId: act.dealId, parentActivityId: act.id, activityType: ActivityType.SEGUIMIENTO, userId: user?.id || '' }); setShowActivityModal(true); }} className="p-1.5 text-slate-400 hover:text-secondary rounded" title="Añadir Seguimiento">
-                                    <Plus size={14} />
+                                  <button onClick={() => { setEditingActivity({ accountId: act.accountId, dealId: act.dealId, parentActivityId: act.id, activityType: ActivityType.SEGUIMIENTO, userId: user?.id || '' }); setShowActivityModal(true); }} className="p-1.5 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-colors" title="Añadir Seguimiento">
+                                    <Plus size={16} />
                                   </button>
-                                  <button onClick={() => { setEditingActivity(act); setShowActivityModal(true); }} className="p-1.5 text-slate-400 hover:text-secondary rounded" title="Editar">
-                                    <Edit2 size={14} />
+                                  <button onClick={() => { setEditingActivity(act); setShowActivityModal(true); }} className="p-1.5 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-colors" title="Editar">
+                                    <Edit2 size={16} />
                                   </button>
                                   {canDeleteActivity && (
-                                    <button onClick={() => setDeletingId({ id: act.id, type: 'activity' })} className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50" title="Eliminar">
-                                      <Trash2 size={14} />
+                                    <button onClick={() => setDeletingId({ id: act.id, type: 'activity' })} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors" title="Eliminar">
+                                      <Trash2 size={16} />
                                     </button>
                                   )}
                                 </div>
                               </td>
                             </motion.tr>
                             
-                            {/* HISTORIAL EXPANDIDO */}
+                            {/* HISTORIAL Y DETALLES EXPANDIDOS */}
                             {isExpanded && (
-                              <tr className="bg-slate-50 border-b border-slate-100 shadow-inner">
-                                <td colSpan={6} className="p-4 pl-12">
-                                  <div className="flex items-center gap-1.5 mb-3 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                                    <History size={12} /> Historial de actividades del registro
+                              <tr className={theme.drawerRow}>
+                                <td colSpan={6} className={`p-4 pl-12 ${theme.drawerTd}`}>
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className={`flex items-center gap-2 text-xs uppercase tracking-wider font-bold ${theme.drawerTitle}`}>
+                                      <History size={14} className={theme.drawerIcon} /> Historial de actividades del registro
+                                    </div>
+                                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-xs border ${theme.drawerBadge}`}>
+                                      Actividad seleccionada
+                                    </span>
+                                  </div>
+
+                                  {/* Tarjeta de Nota / Comentario de la Actividad Seleccionada */}
+                                  <div className={`mb-3.5 bg-white p-3.5 rounded-xl border shadow-xs ${theme.drawerNotesCard}`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className={`text-xs font-bold flex items-center gap-1.5 ${theme.drawerTitle}`}>
+                                        <FileText size={14} className={theme.drawerIcon} />
+                                        <span>Comentario / Nota de la actividad seleccionada:</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        {editingNoteActivityId !== act.id ? (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingNoteActivityId(act.id);
+                                              setEditingNoteText(act.notes || '');
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-blue-700 bg-slate-50 hover:bg-blue-50 rounded-lg border border-slate-200 hover:border-blue-200 transition-colors shadow-2xs"
+                                            title="Editar este comentario directamente aquí"
+                                          >
+                                            <Edit2 size={12} className="text-slate-500" />
+                                            <span>{act.notes ? 'Editar comentario' : '+ Añadir comentario'}</span>
+                                          </button>
+                                        ) : null}
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingActivity(act);
+                                            setShowActivityModal(true);
+                                          }}
+                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-purple-700 bg-slate-50 hover:bg-purple-50 rounded-lg border border-slate-200 hover:border-purple-200 transition-colors shadow-2xs"
+                                          title="Abrir ficha completa de la actividad"
+                                        >
+                                          <ExternalLink size={12} className="text-slate-500" />
+                                          <span>Abrir actividad</span>
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {editingNoteActivityId === act.id ? (
+                                      <div className="mt-2 space-y-2">
+                                        <textarea
+                                          value={editingNoteText}
+                                          onChange={(e) => setEditingNoteText(e.target.value)}
+                                          placeholder="Escribe el comentario de la actividad..."
+                                          rows={3}
+                                          className="w-full text-xs p-3 rounded-lg border-2 border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 bg-white leading-relaxed custom-scrollbar shadow-inner"
+                                          autoFocus
+                                        />
+                                        <div className="flex items-center justify-end gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingNoteActivityId(null);
+                                            }}
+                                            className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors"
+                                            disabled={isSavingNote}
+                                          >
+                                            Cancelar
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleSaveInlineNote(act.id);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors disabled:opacity-50"
+                                            disabled={isSavingNote}
+                                          >
+                                            {isSavingNote ? <RefreshCw size={12} className="animate-spin" /> : <Check size={13} />}
+                                            <span>Guardar comentario</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      act.notes ? (
+                                        <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed p-2.5 bg-slate-50/70 rounded-lg border border-slate-100">
+                                          {act.notes}
+                                        </div>
+                                      ) : (
+                                        <div className="text-xs text-slate-400 italic p-2 bg-slate-50/40 rounded-lg border border-dashed border-slate-200">
+                                          Esta actividad no tiene comentarios aún. Haz clic en "+ Añadir comentario" para escribir uno directamente.
+                                        </div>
+                                      )
+                                    )}
                                   </div>
                                   
                                   {(() => {
@@ -1928,35 +2612,163 @@ export default function CrmView() {
                                     }).sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
 
                                     if (history.length === 0) {
-                                      return <p className="text-xs text-slate-400 italic">Sin actividades registradas con notas.</p>;
+                                      return <p className="text-xs text-slate-400 italic">Sin otras actividades registradas con notas.</p>;
                                     }
 
                                     return (
                                       <div className="space-y-3">
                                         {history.map((h) => (
-                                          <div key={h.id} className="bg-white p-3 rounded-lg border border-slate-200 text-xs relative">
-                                            <div className="flex items-center justify-between mb-1.5">
-                                              <div className="flex items-center gap-2">
-                                                <div className="font-semibold text-slate-700 flex items-center gap-1.5">
-                                                  {getActivityIcon(h.activityType)}
+                                          <div key={h.id} className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs relative shadow-xs hover:border-slate-300 transition-all group/hist">
+                                            <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                                              <div className="flex items-center gap-2 flex-wrap">
+                                                <div className="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
+                                                  {getActivityIcon(h.activityType, 16)}
                                                   {getActivityTypeLabel(h.activityType)}
                                                 </div>
                                                 <span className="text-slate-400">&bull;</span>
-                                                <div className="text-slate-500 flex items-center gap-1">
-                                                  <Calendar size={12}/>
+                                                <div className="text-slate-500 font-medium flex items-center gap-1 text-xs">
+                                                  <Calendar size={13} className="text-slate-400" />
                                                   {new Date(h.completedAt!).toLocaleDateString()} a las {new Date(h.completedAt!).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                 </div>
+                                                {h.result && (
+                                                  <span className="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider border border-slate-200">
+                                                    {getActivityResultLabel(h.result)}
+                                                  </span>
+                                                )}
                                               </div>
-                                              {h.result && (
-                                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-200">
-                                                  {getActivityResultLabel(h.result)}
-                                                </span>
+
+                                              {/* Botones de acción: ir a la actividad dueña del comentario o ver 360 */}
+                                              <div className="flex items-center gap-1.5 shrink-0">
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setRecord360({ id: h.id, type: 'activity', accountId: h.accountId });
+                                                  }}
+                                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 rounded-lg border border-slate-200 hover:border-emerald-200 transition-colors shadow-2xs"
+                                                  title="Ver trazabilidad completa de esta actividad en Visión 360°"
+                                                >
+                                                  <Target size={12} className="text-emerald-600" />
+                                                  <span>Visión 360°</span>
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingActivity(h);
+                                                    setShowActivityModal(true);
+                                                  }}
+                                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-blue-700 bg-slate-50 hover:bg-blue-50 rounded-lg border border-slate-200 hover:border-blue-200 transition-colors shadow-2xs"
+                                                  title="Ir a esta actividad para verla o editarla en detalle"
+                                                >
+                                                  <ExternalLink size={12} className="text-blue-600" />
+                                                  <span>Ir a actividad</span>
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {/* Asunto de la actividad histórica */}
+                                            <div className="text-slate-900 font-bold text-sm mb-1.5 flex items-center justify-between">
+                                              <span>{h.subject}</span>
+                                            </div>
+
+                                            {/* Comentario / Nota de la actividad previa con edición directa */}
+                                            <div className="mt-1">
+                                              {editingNoteActivityId === h.id ? (
+                                                <div className="space-y-2 mt-1">
+                                                  <textarea
+                                                    value={editingNoteText}
+                                                    onChange={(e) => setEditingNoteText(e.target.value)}
+                                                    placeholder="Escribe el comentario de esta actividad previa..."
+                                                    rows={3}
+                                                    className="w-full text-xs p-3 rounded-lg border-2 border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 bg-white leading-relaxed custom-scrollbar shadow-inner"
+                                                    autoFocus
+                                                  />
+                                                  <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                      type="button"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingNoteActivityId(null);
+                                                      }}
+                                                      className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors"
+                                                      disabled={isSavingNote}
+                                                    >
+                                                      Cancelar
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSaveInlineNote(h.id);
+                                                      }}
+                                                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors disabled:opacity-50"
+                                                      disabled={isSavingNote}
+                                                    >
+                                                      {isSavingNote ? <RefreshCw size={12} className="animate-spin" /> : <Check size={13} />}
+                                                      <span>Guardar comentario</span>
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <div className="relative group/note">
+                                                  {h.notes ? (
+                                                    <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-start justify-between gap-3">
+                                                      <span className="flex-1">{h.notes}</span>
+                                                      <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          setEditingNoteActivityId(h.id);
+                                                          setEditingNoteText(h.notes || '');
+                                                        }}
+                                                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-slate-600 hover:text-blue-700 bg-white hover:bg-blue-50 rounded border border-slate-200 hover:border-blue-300 transition-all shrink-0 shadow-2xs"
+                                                        title="Editar este comentario directamente aquí"
+                                                      >
+                                                        <Edit2 size={11} className="text-slate-500" />
+                                                        <span>Editar</span>
+                                                      </button>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="flex items-center justify-between text-xs text-slate-400 italic bg-slate-50/50 p-2 rounded-lg border border-dashed border-slate-200">
+                                                      <span>Sin comentario registrado en esta actividad.</span>
+                                                      <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          setEditingNoteActivityId(h.id);
+                                                          setEditingNoteText('');
+                                                        }}
+                                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                                                      >
+                                                        <Plus size={11} />
+                                                        <span>Añadir comentario</span>
+                                                      </button>
+                                                    </div>
+                                                  )}
+                                                </div>
                                               )}
                                             </div>
-                                            <div className="text-slate-800 font-medium mb-0.5">{h.subject}</div>
-                                            {h.notes && <div className="text-slate-600 mt-1 whitespace-pre-wrap leading-relaxed">{h.notes}</div>}
-                                            <div className="flex items-center gap-1 mt-2 text-[10px] text-slate-400 font-medium">
-                                              <User size={10} /> Por: {h.user?.name || h.userId}
+
+                                            {/* Pie con Responsable y acceso directo a edición */}
+                                            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500 font-medium">
+                                              <div className="flex items-center gap-1.5">
+                                                <User size={13} className="text-slate-400" /> Por: {h.user?.name || h.userId}
+                                              </div>
+                                              {h.notes && editingNoteActivityId !== h.id && (
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingNoteActivityId(h.id);
+                                                    setEditingNoteText(h.notes || '');
+                                                  }}
+                                                  className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-blue-600 hover:underline transition-colors"
+                                                >
+                                                  <Edit2 size={11} />
+                                                  <span>Editar comentario</span>
+                                                </button>
+                                              )}
                                             </div>
                                           </div>
                                         ))}
@@ -2607,6 +3419,20 @@ export default function CrmView() {
                 </button>
               )}
 
+              {isBulkSelectionMode && selectedAccounts.size === 2 && activeTab === 'accounts' && (
+                <button
+                  onClick={() => {
+                    const [idA, idB] = Array.from(selectedAccounts);
+                    const accA = accounts.find(a => a.id === idA);
+                    const accB = accounts.find(a => a.id === idB);
+                    if (accA && accB) handleOpenMergeAccounts(accA, accB);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white hover:bg-indigo-700 shadow-md active:scale-95"
+                >
+                  <GitMerge size={16} /> Fusionar empresas (2)
+                </button>
+              )}
+
               {isBulkSelectionMode && selectedAccounts.size > 0 && activeTab === 'accounts' && (
                 <button
                   onClick={() => setShowBulkActivityModal(true)}
@@ -2627,6 +3453,20 @@ export default function CrmView() {
                 >
                   <CheckSquare size={16} /> 
                   {isBulkSelectionModeContacts ? 'Cancelar Selección' : 'Selección Múltiple'}
+                </button>
+              )}
+
+              {isBulkSelectionModeContacts && selectedContacts.size === 2 && activeTab === 'contacts' && (
+                <button
+                  onClick={() => {
+                    const [idA, idB] = Array.from(selectedContacts);
+                    const conA = contacts.find(c => c.id === idA);
+                    const conB = contacts.find(c => c.id === idB);
+                    if (conA && conB) handleOpenMergeContacts(conA, conB);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white hover:bg-indigo-700 shadow-md active:scale-95"
+                >
+                  <GitMerge size={16} /> Fusionar contactos (2)
                 </button>
               )}
 
@@ -2702,12 +3542,13 @@ export default function CrmView() {
                     <span className="text-xs font-semibold text-slate-500 uppercase">Teléfono:</span>
                     <input type="text" value={contactsFilters.phone} onChange={(e) => setContactsFilters({...contactsFilters, phone: e.target.value})} className="text-sm font-medium text-slate-700 bg-transparent border-none focus:outline-none w-full placeholder-slate-400" placeholder="Teléfono..." />
                   </div>
-                  <div className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm flex items-center gap-2 flex-1 min-w-[200px]">
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Empresa:</span>
-                    <select value={contactsFilters.accountId} onChange={(e) => setContactsFilters({...contactsFilters, accountId: e.target.value})} className="text-sm font-medium text-slate-700 bg-transparent border-none focus:outline-none w-full cursor-pointer">
-                      <option value="">Todas las empresas</option>
-                      {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                    </select>
+                  <div className="flex-1 min-w-[210px]">
+                    <SearchableAccountFilter
+                      value={contactsFilters.accountId || 'ALL'}
+                      onChange={(id) => setContactsFilters({...contactsFilters, accountId: id === 'ALL' ? '' : id})}
+                      accounts={accounts}
+                      placeholder="Todas las empresas"
+                    />
                   </div>
                   <div className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm flex items-center gap-2 flex-1 min-w-[150px]">
                     <span className="text-xs font-semibold text-slate-500 uppercase">Cargo:</span>
@@ -2888,6 +3729,9 @@ export default function CrmView() {
                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                               <button onClick={() => { setEditingAccount(acc); setShowAccountModal(true); }} className="p-2 text-slate-400 hover:text-secondary bg-white border border-slate-200 rounded-lg hover:shadow active:scale-95">
                                 <Edit2 size={16} />
+                              </button>
+                              <button onClick={() => handleOpenMergeAccounts(acc)} title="Fusionar con otra empresa..." className="p-2 text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 active:scale-95 transition-colors">
+                                <GitMerge size={16} />
                               </button>
                               <button onClick={() => setDeletingId({ id: acc.id, type: 'account' })} className="p-2 text-slate-400 hover:text-red-600 bg-white border border-slate-200 rounded-lg hover:bg-red-50 active:scale-95">
                                 <Trash2 size={16} />
@@ -3137,6 +3981,13 @@ export default function CrmView() {
                                     title="Editar contacto"
                                   >
                                     <Edit2 size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleOpenMergeContacts(contact)} 
+                                    className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 active:scale-95 transition-all"
+                                    title="Fusionar con otro contacto..."
+                                  >
+                                    <GitMerge size={14} />
                                   </button>
                                   <button 
                                     onClick={() => setDeletingId({ id: contact.id, type: 'contact' })} 
@@ -4389,6 +5240,25 @@ export default function CrmView() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Modal de Fusión de Empresas o Contactos */}
+      <MergeEntitiesModal
+        isOpen={mergeModalConfig.isOpen}
+        onClose={() => setMergeModalConfig(prev => ({ ...prev, isOpen: false }))}
+        type={mergeModalConfig.type}
+        entityA={mergeModalConfig.entityA}
+        entityB={mergeModalConfig.entityB}
+        allEntities={mergeModalConfig.type === 'account' ? accounts : contacts}
+        onSuccess={(msg) => {
+          showNotification(msg, 'success');
+          setSelectedAccounts(new Set());
+          setSelectedContacts(new Set());
+          setIsBulkSelectionMode(false);
+          setIsBulkSelectionModeContacts(false);
+          fetchData();
+        }}
+      />
+
       <div className="hidden">
         <ActivityKpiPdfReport ref={pdfRef} data={pdfData?.data} filtersInfo={pdfData?.filtersInfo || ''} />
       </div>

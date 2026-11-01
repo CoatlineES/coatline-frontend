@@ -12,7 +12,9 @@ import {
   Phone,
   Mail,
   MapPin,
-  Clock
+  Clock,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { accountsService, contactsService } from '../../services/crm.service';
 
@@ -27,6 +29,16 @@ interface Record360ModalProps {
   onClose: () => void;
   onNavigate: (type: 'account' | 'contact' | 'deal' | 'quotation' | 'activity', id: string) => void;
 }
+
+const parseDateSafe = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr) return null;
+  if (dateStr.includes('T')) return new Date(dateStr);
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  }
+  return new Date(dateStr);
+};
 
 export default function Record360Modal({ focus, onClose, onNavigate }: Record360ModalProps) {
   const [data, setData] = useState<any>(null);
@@ -536,59 +548,145 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
                   count={filteredActivities.length}
                 >
                   <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                    {filteredActivities.map((activity: any, idx: number) => (
-                      <div key={activity.id} className={`relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active ${focus.id === activity.id ? 'z-10' : ''}`}>
-                        {/* Timeline dot */}
-                        <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm ${
-                          focus.id === activity.id 
-                            ? 'bg-[#001c3a] border-white text-white' 
-                            : activity.completedAt ? 'bg-emerald-500 border-white text-white' : 'bg-slate-100 border-white text-slate-400'
-                        }`}>
-                          {activity.completedAt ? <Clock size={16} /> : <Calendar size={16} />}
-                        </div>
-                        
-                        {/* Card */}
-                        <div 
-                          onClick={() => onNavigate('activity', activity.id)}
-                          className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl border transition-all cursor-pointer group/act ${
-                            focus.id === activity.id 
-                              ? 'bg-blue-50/80 border-blue-200 shadow-md ring-2 ring-blue-500/20' 
-                              : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-blue-300'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <h4 className={`font-bold text-sm ${focus.id === activity.id ? 'text-[#001c3a]' : 'text-slate-800 group-hover/act:text-blue-700'}`}>{activity.subject}</h4>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onNavigate('activity', activity.id);
-                              }}
-                              className="p-1 text-slate-400 group-hover/act:text-[#001c3a] group-hover/act:bg-slate-100 rounded-lg transition-colors ml-2"
-                            >
-                              <ArrowRight size={14} />
-                            </button>
+                    {filteredActivities.map((activity: any, idx: number) => {
+                      const isCompleted = !!(activity.completedAt || activity.status === 'COMPLETED');
+                      
+                      // Determinar estado de la fecha planificada
+                      let timeStatus: 'overdue' | 'today' | 'future' | 'none' = 'none';
+                      let plannedDateObj: Date | null = null;
+                      if (activity.plannedDate) {
+                        plannedDateObj = parseDateSafe(activity.plannedDate);
+                        if (plannedDateObj && !isNaN(plannedDateObj.getTime())) {
+                          const now = new Date();
+                          const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                          const today1 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+                          const t = plannedDateObj.getTime();
+                          if (t < today0) timeStatus = 'overdue';
+                          else if (t <= today1) timeStatus = 'today';
+                          else timeStatus = 'future';
+                        }
+                      }
+
+                      // Dot color
+                      const dotBg = focus.id === activity.id
+                        ? 'bg-[#001c3a] border-white text-white'
+                        : isCompleted
+                        ? 'bg-emerald-500 border-white text-white'
+                        : timeStatus === 'overdue'
+                        ? 'bg-red-500 border-white text-white'
+                        : timeStatus === 'today'
+                        ? 'bg-blue-500 border-white text-white'
+                        : 'bg-slate-100 border-white text-slate-500';
+
+                      return (
+                        <div key={activity.id} className={`relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active ${focus.id === activity.id ? 'z-10' : ''}`}>
+                          {/* Timeline dot */}
+                          <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm ${dotBg}`}>
+                            {isCompleted ? <CheckCircle size={16} /> : timeStatus === 'overdue' ? <AlertCircle size={16} /> : <Calendar size={16} />}
                           </div>
-                          <div className="flex flex-wrap gap-2 mb-2 mt-2">
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md">
-                              {activity.activityType}
-                            </span>
-                            {activity.result && (
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-md border border-emerald-100">
-                                {activity.result}
+                          
+                          {/* Card */}
+                          <div 
+                            onClick={() => onNavigate('activity', activity.id)}
+                            className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl border transition-all cursor-pointer group/act ${
+                              focus.id === activity.id 
+                                ? 'bg-blue-50/80 border-blue-200 shadow-md ring-2 ring-blue-500/20' 
+                                : isCompleted
+                                ? 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-300'
+                                : timeStatus === 'overdue'
+                                ? 'bg-red-50/20 border-red-100 shadow-sm hover:shadow-md hover:border-red-300'
+                                : timeStatus === 'today'
+                                ? 'bg-blue-50/20 border-blue-100 shadow-sm hover:shadow-md hover:border-blue-300'
+                                : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-blue-300'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <h4 className={`font-bold text-sm ${focus.id === activity.id ? 'text-[#001c3a]' : 'text-slate-800 group-hover/act:text-blue-700'}`}>{activity.subject}</h4>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onNavigate('activity', activity.id);
+                                }}
+                                className="p-1 text-slate-400 group-hover/act:text-[#001c3a] group-hover/act:bg-slate-100 rounded-lg transition-colors ml-2"
+                              >
+                                <ArrowRight size={14} />
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 mb-2 mt-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">
+                                {activity.activityType}
                               </span>
+                              {activity.result && (
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
+                                  {activity.result}
+                                </span>
+                              )}
+                              {!isCompleted && timeStatus === 'overdue' && (
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-red-100 text-red-700 rounded-md border border-red-200">
+                                  Vencida
+                                </span>
+                              )}
+                              {!isCompleted && timeStatus === 'today' && (
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md border border-blue-200">
+                                  Para Hoy
+                                </span>
+                              )}
+                              {isCompleted && (
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md border border-emerald-300">
+                                  Completada
+                                </span>
+                              )}
+                            </div>
+                            {activity.notes && (
+                              <p className="text-xs text-slate-600 line-clamp-2 bg-slate-50 p-2.5 rounded-lg mt-2 border border-slate-100 leading-relaxed">{activity.notes}</p>
                             )}
-                          </div>
-                          {activity.notes && (
-                            <p className="text-xs text-slate-500 line-clamp-2 bg-slate-50 p-2 rounded-lg mt-2">{activity.notes}</p>
-                          )}
-                          <div className="mt-3 text-[10px] text-slate-400 font-medium flex justify-between">
-                            <span>{new Date(activity.createdAt).toLocaleDateString()}</span>
-                            {activity.completedAt && <span className="text-emerald-500 font-bold">Completado</span>}
+
+                            {/* Fechas de Creación, Planificación y Completada */}
+                            <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs">
+                              {/* Fecha de Creación */}
+                              <div className="inline-flex items-center gap-1.5 text-slate-500 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/70" title="Fecha de Creación">
+                                <Clock size={12} className="text-slate-400 shrink-0" />
+                                <span>Creada: <strong className="text-slate-700 font-semibold">{new Date(activity.createdAt).toLocaleDateString()}</strong></span>
+                              </div>
+
+                              {/* Fecha de Planificación (si existe) */}
+                              {plannedDateObj && (
+                                isCompleted ? (
+                                  <div className="inline-flex items-center gap-1.5 text-slate-600 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/70" title="Fecha Planificada original">
+                                    <Calendar size={12} className="text-slate-400 shrink-0" />
+                                    <span>Planeada: <strong className="text-slate-700 font-semibold">{plannedDateObj.toLocaleDateString()}</strong></span>
+                                  </div>
+                                ) : timeStatus === 'overdue' ? (
+                                  <div className="inline-flex items-center gap-1.5 text-red-700 font-semibold bg-red-50 px-2 py-0.5 rounded-md border border-red-200" title="Actividad Vencida">
+                                    <Calendar size={12} className="text-red-500 shrink-0" />
+                                    <span>Vencida: <strong className="font-bold">{plannedDateObj.toLocaleDateString()}</strong></span>
+                                  </div>
+                                ) : timeStatus === 'today' ? (
+                                  <div className="inline-flex items-center gap-1.5 text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200" title="Actividad para Hoy">
+                                    <Calendar size={12} className="text-blue-500 shrink-0" />
+                                    <span>Para Hoy: <strong className="font-bold">{plannedDateObj.toLocaleDateString()}</strong></span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5 text-slate-600 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/70" title="Fecha Planificada">
+                                    <Calendar size={12} className="text-slate-400 shrink-0" />
+                                    <span>Planeada: <strong className="text-slate-700 font-semibold">{plannedDateObj.toLocaleDateString()}</strong></span>
+                                  </div>
+                                )
+                              )}
+
+                              {/* Fecha de Completada (en caso de que fue completada) */}
+                              {isCompleted && (
+                                <div className="inline-flex items-center gap-1.5 text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-300" title="Fecha en que fue completada">
+                                  <CheckCircle size={12} className="text-emerald-600 shrink-0" />
+                                  <span>Completada: <strong className="font-bold">{(activity.completedAt && parseDateSafe(activity.completedAt)?.toLocaleDateString()) || new Date(activity.updatedAt || activity.createdAt).toLocaleDateString()}</strong></span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {filteredActivities.length === 0 && (
                       <div className="p-6 text-center text-slate-400 bg-white/50 backdrop-blur-sm rounded-2xl border border-slate-100 border-dashed relative z-10">
                         {focus.type === 'contact' ? 'No hay actividades registradas para este contacto' : 'No hay actividades registradas'}
