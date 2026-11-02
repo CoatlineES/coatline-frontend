@@ -8,7 +8,7 @@ import {
   LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, ChevronRight, ExternalLink, Download, History, User, Filter,
   Copy, Check, Target, GitMerge } from 'lucide-react';
 import { accountsService, contactsService, Account, Contact } from '../../services/crm.service';
-import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus } from '../../services/activities.service';
+import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus, ACTIVITY_RESULT_OPTIONS, ACTIVITY_RESULT_LABELS } from '../../services/activities.service';
 import { dealsService, Deal, DealStage } from '../../services/deals.service';
 import { usersService } from '../../services/users.service';
 import { projectsService } from '../../services/projects.service';
@@ -1733,14 +1733,10 @@ export default function CrmView() {
   };
 
   const getActivityResultLabel = (result: string) => {
-    switch(result) {
-      case ActivityResult.SUCCESSFUL: return 'Exitoso';
-      case ActivityResult.UNSUCCESSFUL: return 'No exitoso';
-      case ActivityResult.INTERESTED: return 'Interesado';
-      case ActivityResult.NO_ANSWER: return 'Sin respuesta';
-      case ActivityResult.CALL_BACK: return 'Llamar luego';
-      default: return result ? result.replace(/_/g, ' ') : '';
+    if ((result as ActivityResult) in ACTIVITY_RESULT_LABELS) {
+      return ACTIVITY_RESULT_LABELS[result as ActivityResult];
     }
+    return result ? result.replace(/_/g, ' ') : '';
   };
 
   const getActivityColor = (type: ActivityType) => {
@@ -2389,12 +2385,10 @@ export default function CrmView() {
                       </select>
   
                       <select value={activitiesFilters.result} onChange={(e) => setActivitiesFilters({...activitiesFilters, result: e.target.value})} className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]">
-                        <option value="">Result: Cualquiera</option>
-                        <option value={ActivityResult.CALL_BACK}>Llamar más tarde</option>
-                        <option value={ActivityResult.INTERESTED}>Interesado</option>
-                        <option value={ActivityResult.NO_ANSWER}>No contesta</option>
-                        <option value={ActivityResult.SUCCESSFUL}>Exitoso</option>
-                        <option value={ActivityResult.UNSUCCESSFUL}>No exitoso</option>
+                        <option value="">Resultado: Todos</option>
+                        {ACTIVITY_RESULT_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
                       </select>
   
                       <div className="flex items-center bg-white border border-slate-200 rounded-xl h-10 px-3 shadow-sm gap-2">
@@ -4808,9 +4802,9 @@ export default function CrmView() {
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50"
                     >
                       <option value="">Sin resultado</option>
-                      <option value={ActivityResult.CALL_BACK}>Llamar más tarde</option>
-                      <option value={ActivityResult.INTERESTED}>Interesado</option>
-                      <option value={ActivityResult.NO_ANSWER}>No responde</option>
+                      {ACTIVITY_RESULT_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -5239,13 +5233,7 @@ export default function CrmView() {
 
               <form onSubmit={handleCompleteActivity}>
                 <div className="grid grid-cols-2 gap-2 mb-4">
-                  {[
-                    { label: 'No contesta', value: ActivityResult.NO_ANSWER },
-                    { label: 'Llamar otro día', value: ActivityResult.CALL_BACK },
-                    { label: 'Interesado', value: ActivityResult.INTERESTED },
-                    { label: 'Reunión agendada', value: ActivityResult.SUCCESSFUL },
-                    { label: 'No interesado', value: ActivityResult.UNSUCCESSFUL }
-                  ].map(res => (
+                  {ACTIVITY_RESULT_OPTIONS.map(res => (
                     <button
                       key={res.value}
                       type="button"

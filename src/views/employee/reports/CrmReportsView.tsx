@@ -9,6 +9,7 @@ import api from '../../../services/api';
 import { UserResponse } from '../../../services/types';
 import { exportActivitiesToExcel } from '../../../utils/exportActivityReport';
 import { ActivityKpiPdfReport } from '../../../components/ActivityKpiPdfReport';
+import { ACTIVITY_RESULT_LABELS, ActivityResult } from '../../../services/activities.service';
 import { AccountsReportTab } from './AccountsReportTab';
 import { ProjectsKpiReportTab } from './ProjectsKpiReportTab';
 // @ts-ignore
@@ -946,7 +947,10 @@ export default function CrmReportsView({ users }: Props) {
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={data.activityResultsDistribution}
+                              data={data.activityResultsDistribution?.map((entry: any) => ({
+                                ...entry,
+                                result: ACTIVITY_RESULT_LABELS[entry.result as ActivityResult] || entry.result
+                              }))}
                               cx="50%" cy="50%" innerRadius={70} outerRadius={95} paddingAngle={4}
                               dataKey="count" nameKey="result"
                               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}

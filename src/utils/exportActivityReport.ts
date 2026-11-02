@@ -20,11 +20,12 @@ const ACTIVITY_STATUS_LABELS: Record<string, string> = {
 };
 
 const ACTIVITY_RESULT_LABELS: Record<string, string> = {
-  'CALL_BACK': 'Devolver Llamada',
+  'NO_ANSWER': 'No contesta',
+  'CALL_BACK': 'Llamar otro día',
   'INTERESTED': 'Interesado',
-  'NO_ANSWER': 'Sin Respuesta',
-  'SUCCESSFUL': 'Exitoso',
-  'UNSUCCESSFUL': 'No Exitoso'
+  'SUCCESSFUL': 'Reunión agendada',
+  'UNSUCCESSFUL': 'No interesado',
+  'NO_TARGET': 'No target'
 };
 
 export const exportActivitiesToExcel = async (data: any, filtersInfo: string) => {
@@ -99,7 +100,15 @@ export const exportActivitiesToExcel = async (data: any, filtersInfo: string) =>
   statusRow++;
 
   if (metrics.resultDistribution) {
-    const resultLabels: any = { CALL_BACK: 'Llamar más tarde', INTERESTED: 'Interesado', NO_ANSWER: 'No responde', SUCCESSFUL: 'Exitoso', UNSUCCESSFUL: 'Fallido', NO_RESULT: 'Sin resultado' };
+    const resultLabels: any = { 
+      NO_ANSWER: 'No contesta', 
+      CALL_BACK: 'Llamar otro día', 
+      INTERESTED: 'Interesado', 
+      SUCCESSFUL: 'Reunión agendada', 
+      UNSUCCESSFUL: 'No interesado', 
+      NO_TARGET: 'No target',
+      NO_RESULT: 'Sin resultado' 
+    };
     Object.entries(metrics.resultDistribution).forEach(([res, count]) => {
       summarySheet.addRow([resultLabels[res] || res, count]);
       summarySheet.getCell(`A${statusRow}`).font = { bold: true };

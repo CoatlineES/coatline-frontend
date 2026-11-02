@@ -16,8 +16,27 @@ export enum ActivityResult {
   INTERESTED = 'INTERESTED',
   NO_ANSWER = 'NO_ANSWER',
   SUCCESSFUL = 'SUCCESSFUL',
-  UNSUCCESSFUL = 'UNSUCCESSFUL'
+  UNSUCCESSFUL = 'UNSUCCESSFUL',
+  NO_TARGET = 'NO_TARGET'
 }
+
+export const ACTIVITY_RESULT_OPTIONS: { label: string; value: ActivityResult }[] = [
+  { label: 'No contesta', value: ActivityResult.NO_ANSWER },
+  { label: 'Llamar otro día', value: ActivityResult.CALL_BACK },
+  { label: 'Interesado', value: ActivityResult.INTERESTED },
+  { label: 'Reunión agendada', value: ActivityResult.SUCCESSFUL },
+  { label: 'No interesado', value: ActivityResult.UNSUCCESSFUL },
+  { label: 'No target', value: ActivityResult.NO_TARGET },
+];
+
+export const ACTIVITY_RESULT_LABELS: Record<ActivityResult, string> = {
+  [ActivityResult.NO_ANSWER]: 'No contesta',
+  [ActivityResult.CALL_BACK]: 'Llamar otro día',
+  [ActivityResult.INTERESTED]: 'Interesado',
+  [ActivityResult.SUCCESSFUL]: 'Reunión agendada',
+  [ActivityResult.UNSUCCESSFUL]: 'No interesado',
+  [ActivityResult.NO_TARGET]: 'No target',
+};
 
 export enum ActivityStatus {
   PLANNED = 'PLANNED',

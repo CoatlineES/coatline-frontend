@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 
 export const ActivityKpiPdfReport = React.forwardRef<HTMLDivElement, { data: any, filtersInfo: string }>(({ data, filtersInfo }, ref) => {
   if (!data || !data.metrics) return null;
@@ -61,7 +61,15 @@ export const ActivityKpiPdfReport = React.forwardRef<HTMLDivElement, { data: any
           <h2 className="text-lg font-bold border-b pb-2 mb-4 uppercase tracking-wider text-sm" style={{ color: '#1e293b', borderColor: '#e2e8f0' }}>Por Resultado</h2>
           <div className="grid grid-cols-3 gap-2">
             {Object.entries(metrics.resultDistribution || {}).map(([result, count]: any) => {
-              const labels: any = { CALL_BACK: 'Llamar más tarde', INTERESTED: 'Interesado', NO_ANSWER: 'No responde', SUCCESSFUL: 'Exitoso', UNSUCCESSFUL: 'Fallido', NO_RESULT: 'Sin resultado' };
+              const labels: any = { 
+                NO_ANSWER: 'No contesta', 
+                CALL_BACK: 'Llamar otro día', 
+                INTERESTED: 'Interesado', 
+                SUCCESSFUL: 'Reunión agendada', 
+                UNSUCCESSFUL: 'No interesado', 
+                NO_TARGET: 'No target',
+                NO_RESULT: 'Sin resultado' 
+              };
               const label = labels[result] || result;
               return (
                 <div key={result} className="p-2 rounded-lg border text-center" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}>
