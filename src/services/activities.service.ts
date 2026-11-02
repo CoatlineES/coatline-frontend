@@ -42,9 +42,9 @@ export interface Activity {
   parentActivityId: string | null;
   createdAt: string;
   updatedAt: string;
-  account?: { name: string };
+  account?: { id?: string; name: string; phone?: string | null; email?: string | null; cif?: string | null };
   user?: { name: string, email: string };
-  contact?: { name: string, email?: string | null, phone?: string | null, position?: string | null };
+  contact?: { id?: string; name: string, email?: string | null, phone?: string | null, position?: string | null };
   deal?: { name: string, stage?: string, businessLineId?: string };
   parentActivity?: { subject: string, id: string };
 }

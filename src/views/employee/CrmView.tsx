@@ -1481,8 +1481,32 @@ export default function CrmView() {
     }
   };
 
-  // Filters (Ahora delegados al Backend, excepto los locales)
+  // Filters (Ahora con búsqueda instantánea en memoria mientras sincroniza el Backend)
   const filteredAccounts = accounts.filter(acc => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const qDigits = searchQuery.replace(/\D/g, '');
+      const matchName = acc.name?.toLowerCase().includes(q);
+      const matchCif = acc.cif?.toLowerCase().includes(q);
+      const matchEmail = acc.email?.toLowerCase().includes(q);
+      const matchCity = acc.city?.toLowerCase().includes(q);
+      const matchSector = acc.sector?.toLowerCase().includes(q);
+      const matchNotes = acc.notes?.toLowerCase().includes(q);
+      const matchPhone = acc.phone && (
+        acc.phone.toLowerCase().includes(q) || 
+        (qDigits.length >= 3 && acc.phone.replace(/\D/g, '').includes(qDigits))
+      );
+      const matchContact = acc.contacts?.some(c => 
+        c.name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.position?.toLowerCase().includes(q) ||
+        (c.phone && (c.phone.toLowerCase().includes(q) || (qDigits.length >= 3 && c.phone.replace(/\D/g, '').includes(qDigits))))
+      );
+
+      if (!matchName && !matchCif && !matchEmail && !matchCity && !matchSector && !matchNotes && !matchPhone && !matchContact) {
+        return false;
+      }
+    }
     if (accountsFilters.sectors && accountsFilters.sectors.length > 0) {
       const accSector = (acc.sector || '').trim().toLowerCase();
       if (!accountsFilters.sectors.some(s => s.trim().toLowerCase() === accSector)) {
@@ -1507,7 +1531,32 @@ export default function CrmView() {
     }
     return true;
   });
+
   const filteredContacts = contacts.filter(contact => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const qDigits = searchQuery.replace(/\D/g, '');
+      const matchName = contact.name?.toLowerCase().includes(q);
+      const matchEmail = contact.email?.toLowerCase().includes(q);
+      const matchPosition = contact.position?.toLowerCase().includes(q);
+      const matchNotes = contact.notes?.toLowerCase().includes(q);
+      const matchPhone = contact.phone && (
+        contact.phone.toLowerCase().includes(q) || 
+        (qDigits.length >= 3 && contact.phone.replace(/\D/g, '').includes(qDigits))
+      );
+      const matchAccountName = contact.account?.name?.toLowerCase().includes(q);
+      const matchAccountCif = contact.account?.cif?.toLowerCase().includes(q);
+      const matchAccountEmail = contact.account?.email?.toLowerCase().includes(q);
+      const matchAccountCity = contact.account?.city?.toLowerCase().includes(q);
+      const matchAccountPhone = contact.account?.phone && (
+        contact.account.phone.toLowerCase().includes(q) ||
+        (qDigits.length >= 3 && contact.account.phone.replace(/\D/g, '').includes(qDigits))
+      );
+
+      if (!matchName && !matchEmail && !matchPhone && !matchPosition && !matchNotes && !matchAccountName && !matchAccountCif && !matchAccountEmail && !matchAccountCity && !matchAccountPhone) {
+        return false;
+      }
+    }
     if (contactsFilters.sectors && contactsFilters.sectors.length > 0) {
       const contactSector = (contact.account?.sector || '').trim().toLowerCase();
       if (!contactsFilters.sectors.some(s => s.trim().toLowerCase() === contactSector)) {
@@ -1534,7 +1583,61 @@ export default function CrmView() {
     }
     return true;
   });
+
   let filteredActivities = activities;
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.trim().toLowerCase();
+    const qDigits = searchQuery.replace(/\D/g, '');
+    filteredActivities = filteredActivities.filter(a => {
+      if (a.subject?.toLowerCase().includes(q)) return true;
+      if (a.notes?.toLowerCase().includes(q)) return true;
+      if (a.deal?.name?.toLowerCase().includes(q)) return true;
+      if (a.user?.name?.toLowerCase().includes(q)) return true;
+      if (a.user?.email?.toLowerCase().includes(q)) return true;
+
+      // Contact matching: name, email, phone, position
+      if (a.contact) {
+        if (a.contact.name?.toLowerCase().includes(q)) return true;
+        if (a.contact.email?.toLowerCase().includes(q)) return true;
+        if (a.contact.position?.toLowerCase().includes(q)) return true;
+        if (a.contact.phone) {
+          if (a.contact.phone.toLowerCase().includes(q)) return true;
+          if (qDigits.length >= 3 && a.contact.phone.replace(/\D/g, '').includes(qDigits)) return true;
+        }
+      }
+
+      // Account matching: name, email, phone, cif
+      if (a.account) {
+        if (a.account.name?.toLowerCase().includes(q)) return true;
+        if (a.account.email?.toLowerCase().includes(q)) return true;
+        if (a.account.cif?.toLowerCase().includes(q)) return true;
+        if (a.account.phone) {
+          if (a.account.phone.toLowerCase().includes(q)) return true;
+          if (qDigits.length >= 3 && a.account.phone.replace(/\D/g, '').includes(qDigits)) return true;
+        }
+      }
+
+      return false;
+    });
+  }
+
+  let filteredDeals = deals;
+  if (searchQuery.trim()) {
+    const q = searchQuery.trim().toLowerCase();
+    const qDigits = searchQuery.replace(/\D/g, '');
+    filteredDeals = filteredDeals.filter(d => {
+      if (d.name?.toLowerCase().includes(q)) return true;
+      if (d.description?.toLowerCase().includes(q)) return true;
+      if (d.account?.name?.toLowerCase().includes(q)) return true;
+      if (d.account?.email?.toLowerCase().includes(q)) return true;
+      if (d.account?.phone && (d.account.phone.toLowerCase().includes(q) || (qDigits.length >= 3 && d.account.phone.replace(/\D/g, '').includes(qDigits)))) return true;
+      if (d.contact?.name?.toLowerCase().includes(q)) return true;
+      if (d.contact?.email?.toLowerCase().includes(q)) return true;
+      if (d.contact?.phone && (d.contact.phone.toLowerCase().includes(q) || (qDigits.length >= 3 && d.contact.phone.replace(/\D/g, '').includes(qDigits)))) return true;
+      return false;
+    });
+  }
 
   if (dashboardActivityStatusFilter === 'PLANNED') {
     filteredActivities = filteredActivities.filter(a => a.status === ActivityStatus.PLANNED && !a.completedAt);
@@ -1931,11 +2034,21 @@ export default function CrmView() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
-                placeholder="Buscar en CRM..."
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#001c3a] transition-all shadow-sm"
+                placeholder="Buscar por nombre, teléfono, email, CIF..."
+                className="w-full pl-9 pr-9 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#001c3a] transition-all shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                  title="Limpiar búsqueda"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -2802,7 +2915,7 @@ export default function CrmView() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-slate-800">Pipeline de Negocios</h2>
-              <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">{deals.length}</span>
+              <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">{filteredDeals.length}</span>
             </div>
             <div className="flex items-center gap-2">
               {/* View Toggle */}
@@ -2890,11 +3003,11 @@ export default function CrmView() {
                         <div className={`w-2 h-2 rounded-full ${stage.color}`}></div> {stage.label}
                       </h3>
                       <span className="bg-slate-200 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                        {deals.filter(d => d.stage === stage.value).length}
+                        {filteredDeals.filter(d => d.stage === stage.value).length}
                       </span>
                     </div>
                     <div className="flex flex-col gap-3 min-h-[100px]">
-                      {deals.filter(d => d.stage === stage.value).map(deal => (
+                      {filteredDeals.filter(d => d.stage === stage.value).map(deal => (
                         <div 
                           key={deal.id}
                           id={`deal-card-${deal.id}`}
@@ -2982,7 +3095,7 @@ export default function CrmView() {
                 </thead>
                 <tbody>
                   <AnimatePresence>
-                    {deals.length > 0 ? deals.map((deal) => {
+                    {filteredDeals.length > 0 ? filteredDeals.map((deal) => {
                       const stageInfo = DEAL_STAGES.find(s => s.value === deal.stage);
                       return (
                         <motion.tr
