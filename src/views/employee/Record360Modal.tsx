@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { accountsService, contactsService } from '../../services/crm.service';
+import { activitiesService, ACTIVITY_RESULT_LABELS, ActivityResult } from '../../services/activities.service';
 
 export interface Record360Focus {
   type: 'account' | 'contact' | 'deal' | 'activity' | 'quotation';
@@ -45,8 +46,10 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
   const [contactDetails, setContactDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [activityScope, setActivityScope] = useState<'thread' | 'all'>('thread');
 
   useEffect(() => {
+    setActivityScope('thread');
     if (focus) {
       loadData(focus.accountId, focus.type === 'contact' ? focus.id : undefined);
       
@@ -68,8 +71,21 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
     try {
       setIsLoading(true);
       let accData = null;
-      if (accountId) {
-        accData = await accountsService.get360(accountId);
+      let targetAccId = accountId;
+
+      if (!targetAccId && focus?.type === 'activity' && focus?.id) {
+        try {
+          const act = await activitiesService.getById(focus.id);
+          if (act?.accountId) {
+            targetAccId = act.accountId;
+          }
+        } catch (e) {
+          console.warn('Could not fetch activity details for 360:', e);
+        }
+      }
+
+      if (targetAccId) {
+        accData = await accountsService.get360(targetAccId);
         setData(accData);
       }
       if (contactId) {
@@ -107,11 +123,14 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
     ).values()
   ) as any[];
 
-  // Helper to extract all activities
-  const allActivities = [
-    ...(data?.activities || []),
-    ...(data?.deals?.flatMap((d: any) => d.activities) || [])
-  ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Helper to extract all activities (evitando duplicados)
+  const allActivities = Array.from(
+    new Map(
+      [...(data?.activities || []), ...(data?.deals?.flatMap((d: any) => d.activities) || [])]
+        .filter(Boolean)
+        .map((a: any) => [a.id, a])
+    ).values()
+  ).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Contacto en foco (si aplica)
   const targetContact = contactDetails || data?.contacts?.find((c: any) => c.id === focus.id);
@@ -121,6 +140,7 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
   let filteredDeals = data?.deals || [];
   let filteredQuotations = allQuotations;
   let filteredActivities = allActivities;
+  let threadActivities: any[] = [];
 
   if (focus?.type === 'contact') {
     // 1. Mostrar ÚNICAMENTE el contacto en específico
@@ -155,31 +175,86 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
   } else if (focus?.type === 'activity') {
     const targetActivity = allActivities.find((a: any) => a.id === focus.id);
     if (targetActivity) {
-      // Si la actividad tiene un padre, el ID raíz de la familia es el de su padre. Si no, es ella misma.
-      const familyParentId = targetActivity.parentActivityId || targetActivity.id;
-      
-      // Mostramos el padre y todos los hijos que compartan ese parentActivityId
-      filteredActivities = allActivities.filter((a: any) => 
-        a.id === familyParentId || a.parentActivityId === familyParentId
-      );
+      const threadIds = new Set<string>();
+      threadIds.add(targetActivity.id);
 
-      // Filtramos los contactos asociados a esta familia de actividades (padre, objetivo y hermanos)
-      const activityContactIds = new Set(filteredActivities.map((a: any) => a.contactId).filter(Boolean));
-      filteredContacts = (data?.contacts || []).filter((c: any) => activityContactIds.has(c.id));
+      // 1. Recorrer la cadena hacia arriba (todos los ancestros / padres recursivamente)
+      let currentParentId = targetActivity.parentActivityId;
+      const visitedParents = new Set<string>([targetActivity.id]);
+      while (currentParentId && !visitedParents.has(currentParentId)) {
+        visitedParents.add(currentParentId);
+        threadIds.add(currentParentId);
+        const parentAct = allActivities.find((a: any) => a.id === currentParentId);
+        currentParentId = parentAct?.parentActivityId || null;
+      }
 
-      // Si la actividad está ligada a un negocio, filtramos ese negocio y sus cotizaciones
-      if (targetActivity.dealId) {
-        filteredDeals = data?.deals?.filter((d: any) => d.id === targetActivity.dealId) || [];
-        filteredQuotations = allQuotations.filter((q: any) => q.dealId === targetActivity.dealId);
+      // 2. Recorrer la cadena hacia abajo (todos los descendientes / hijos recursivamente)
+      let addedNew = true;
+      while (addedNew) {
+        addedNew = false;
+        allActivities.forEach((a: any) => {
+          if (a.parentActivityId && threadIds.has(a.parentActivityId) && !threadIds.has(a.id)) {
+            threadIds.add(a.id);
+            addedNew = true;
+          }
+        });
+      }
+
+      // 3. Actividades del mismo negocio (si la actividad o su cadena pertenecen a un negocio)
+      const dealIds = new Set<string>();
+      if (targetActivity.dealId) dealIds.add(targetActivity.dealId);
+      allActivities.forEach((a: any) => {
+        if (threadIds.has(a.id) && a.dealId) dealIds.add(a.dealId);
+      });
+      if (dealIds.size > 0) {
+        allActivities.forEach((a: any) => {
+          if (a.dealId && dealIds.has(a.dealId)) {
+            threadIds.add(a.id);
+          }
+        });
+      }
+
+      // 4. Actividades del mismo contacto (si la actividad o su cadena pertenecen a un contacto)
+      const contactIds = new Set<string>();
+      if (targetActivity.contactId) contactIds.add(targetActivity.contactId);
+      allActivities.forEach((a: any) => {
+        if (threadIds.has(a.id) && a.contactId) contactIds.add(a.contactId);
+      });
+      if (contactIds.size > 0) {
+        allActivities.forEach((a: any) => {
+          if (a.contactId && contactIds.has(a.contactId)) {
+            threadIds.add(a.id);
+          }
+        });
+      }
+
+      threadActivities = allActivities.filter((a: any) => threadIds.has(a.id));
+      if (threadActivities.length === 0) {
+        threadActivities = [targetActivity];
+      }
+
+      filteredActivities = activityScope === 'all' ? allActivities : threadActivities;
+
+      // Contactos asociados a la actividad/hilo
+      const activityContactIds = new Set(threadActivities.map((a: any) => a.contactId).filter(Boolean));
+      if (activityContactIds.size > 0) {
+        filteredContacts = (data?.contacts || []).filter((c: any) => activityContactIds.has(c.id));
+        if (filteredContacts.length === 0) filteredContacts = data?.contacts || [];
       } else {
-        // Si no está ligada a un negocio, no mostramos negocios ni cotizaciones para esta vista específica
-        filteredDeals = [];
-        filteredQuotations = [];
+        filteredContacts = data?.contacts || [];
+      }
+
+      // Negocios y cotizaciones asociadas
+      if (dealIds.size > 0) {
+        filteredDeals = (data?.deals || []).filter((d: any) => dealIds.has(d.id));
+        filteredQuotations = allQuotations.filter((q: any) => q.dealId && dealIds.has(q.dealId));
+      } else {
+        filteredDeals = data?.deals || [];
+        filteredQuotations = allQuotations;
       }
     } else {
-      filteredActivities = allActivities.filter((a: any) => a.id === focus.id);
-      const activityContactIds = new Set(filteredActivities.map((a: any) => a.contactId).filter(Boolean));
-      filteredContacts = (data?.contacts || []).filter((c: any) => activityContactIds.has(c.id));
+      threadActivities = allActivities.filter((a: any) => a.id === focus.id);
+      filteredActivities = activityScope === 'all' ? allActivities : threadActivities;
     }
   }
 
@@ -541,12 +616,44 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
 
                 {/* Historial de Actividades */}
                 <SectionAccordion
-                  title={focus.type === 'contact' ? "Historial de Actividades de este Contacto" : "Historial de Actividades"}
+                  title={
+                    focus.type === 'contact' 
+                      ? "Historial de Actividades de este Contacto" 
+                      : focus.type === 'activity' && activityScope === 'thread'
+                      ? "Historial de Actividades de este Hilo"
+                      : "Historial de Actividades"
+                  }
                   icon={<Calendar size={20} />}
                   isOpen={openSection === 'activities' || focus.type === 'activity' || focus.type === 'contact' || focus.type === 'deal' || focus.type === 'quotation'}
                   onToggle={() => toggleSection('activities')}
                   count={filteredActivities.length}
                 >
+                  {focus.type === 'activity' && allActivities.length > threadActivities.length && (
+                    <div className="flex items-center gap-2 mb-4 p-1 bg-slate-100 rounded-xl w-fit">
+                      <button
+                        type="button"
+                        onClick={() => setActivityScope('thread')}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                          activityScope === 'thread' 
+                            ? 'bg-white text-[#001c3a] shadow-xs' 
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Hilo de esta actividad ({threadActivities.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActivityScope('all')}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                          activityScope === 'all' 
+                            ? 'bg-white text-[#001c3a] shadow-xs' 
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Todas de la empresa ({allActivities.length})
+                      </button>
+                    </div>
+                  )}
                   <div className="space-y-3 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
                     {filteredActivities.map((activity: any, idx: number) => {
                       const isCompleted = !!(activity.completedAt || activity.status === 'COMPLETED');
@@ -619,7 +726,7 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
                               </span>
                               {activity.result && (
                                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-200">
-                                  {activity.result}
+                                  {ACTIVITY_RESULT_LABELS[activity.result as ActivityResult] || activity.result}
                                 </span>
                               )}
                               {!isCompleted && timeStatus === 'overdue' && (
