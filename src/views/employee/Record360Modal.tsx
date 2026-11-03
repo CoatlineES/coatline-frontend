@@ -46,10 +46,10 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
   const [contactDetails, setContactDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const [activityScope, setActivityScope] = useState<'thread' | 'all'>('thread');
+  const [activityScope, setActivityScope] = useState<'thread' | 'all'>('all');
 
   useEffect(() => {
-    setActivityScope('thread');
+    setActivityScope('all');
     if (focus) {
       loadData(focus.accountId, focus.type === 'contact' ? focus.id : undefined);
       
@@ -141,6 +141,7 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
   let filteredQuotations = allQuotations;
   let filteredActivities = allActivities;
   let threadActivities: any[] = [];
+  let contactSpecificActivities: any[] = [];
 
   if (focus?.type === 'contact') {
     // 1. Mostrar ÚNICAMENTE el contacto en específico
@@ -160,8 +161,14 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
       (q.dealId && contactDealIds.has(q.dealId))
     );
 
-    // 4. Mostrar ÚNICAMENTE actividades de este contacto
-    filteredActivities = allActivities.filter((a: any) => a.contactId === focus.id);
+    // 4. Actividades vinculadas al contacto o a sus negocios asociados
+    contactSpecificActivities = allActivities.filter((a: any) => 
+      a.contactId === focus.id || 
+      (a.dealId && contactDealIds.has(a.dealId))
+    );
+
+    // Por defecto mostramos todas las de la empresa (o las del contacto según el scope)
+    filteredActivities = activityScope === 'all' ? allActivities : contactSpecificActivities;
 
   } else if (focus?.type === 'deal') {
     filteredQuotations = allQuotations.filter((q: any) => q.dealId === focus.id);
@@ -618,9 +625,13 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
                 <SectionAccordion
                   title={
                     focus.type === 'contact' 
-                      ? "Historial de Actividades de este Contacto" 
-                      : focus.type === 'activity' && activityScope === 'thread'
-                      ? "Historial de Actividades de este Hilo"
+                      ? activityScope === 'all'
+                        ? `Historial de Actividades de la Empresa (${allActivities.length})`
+                        : `Historial de Actividades de este Contacto (${contactSpecificActivities.length})`
+                      : focus.type === 'activity'
+                      ? activityScope === 'all'
+                        ? `Historial de Actividades de la Empresa (${allActivities.length})`
+                        : `Historial de Actividades de este Hilo (${threadActivities.length})`
                       : "Historial de Actividades"
                   }
                   icon={<Calendar size={20} />}
@@ -632,6 +643,17 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
                     <div className="flex items-center gap-2 mb-4 p-1 bg-slate-100 rounded-xl w-fit">
                       <button
                         type="button"
+                        onClick={() => setActivityScope('all')}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                          activityScope === 'all' 
+                            ? 'bg-white text-[#001c3a] shadow-xs' 
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Todas de la empresa ({allActivities.length})
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setActivityScope('thread')}
                         className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
                           activityScope === 'thread' 
@@ -641,6 +663,10 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
                       >
                         Hilo de esta actividad ({threadActivities.length})
                       </button>
+                    </div>
+                  )}
+                  {focus.type === 'contact' && allActivities.length > contactSpecificActivities.length && (
+                    <div className="flex items-center gap-2 mb-4 p-1 bg-slate-100 rounded-xl w-fit">
                       <button
                         type="button"
                         onClick={() => setActivityScope('all')}
@@ -651,6 +677,17 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
                         }`}
                       >
                         Todas de la empresa ({allActivities.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActivityScope('thread')}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                          activityScope === 'thread' 
+                            ? 'bg-white text-[#001c3a] shadow-xs' 
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Solo de este contacto ({contactSpecificActivities.length})
                       </button>
                     </div>
                   )}

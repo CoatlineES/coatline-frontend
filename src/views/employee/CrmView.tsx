@@ -2209,12 +2209,36 @@ export default function CrmView() {
         >
           {/* Dashboard Header */}
           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Calendar className="text-[#001c3a]" size={20} />
               <h2 className="text-lg font-bold text-slate-800">
-                Mis actividades pendientes
+                {dashboardActivityStatusFilter === 'PLANNED' 
+                  ? 'Mis actividades pendientes' 
+                  : dashboardActivityStatusFilter === 'COMPLETED' 
+                  ? 'Actividades completadas' 
+                  : 'Todas las actividades'}
               </h2>
               <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">{filteredActivities.length}</span>
+              {dashboardActivityStatusFilter !== 'ALL' && (
+                <button
+                  type="button"
+                  onClick={() => setDashboardActivityStatusFilter('ALL')}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 transition-all cursor-pointer ml-1"
+                  title="Mostrar todas las actividades registradas"
+                >
+                  Ver todas ({activities.length})
+                </button>
+              )}
+              {dashboardActivityUserFilter !== 'ALL' && (
+                <button
+                  type="button"
+                  onClick={() => setDashboardActivityUserFilter('ALL')}
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg border border-slate-200 transition-all cursor-pointer"
+                  title="Ver actividades de todo el equipo"
+                >
+                  Ver todo el equipo
+                </button>
+              )}
             </div>
             
             <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
@@ -3921,7 +3945,11 @@ export default function CrmView() {
                   <AnimatePresence>
                     {filteredContacts.length > 0 ? (
                       paginatedContacts.map((contact) => {
-                        const contactActivities = activities.filter(a => a.contactId === contact.id);
+                        const contactDealIds = new Set(deals.filter(d => d.contactId === contact.id).map(d => d.id));
+                        const contactActivities = activities.filter(a => 
+                          a.contactId === contact.id || 
+                          (a.dealId && contactDealIds.has(a.dealId))
+                        );
                         const isExpanded = expandedContactId === contact.id;
                         return (
                           <React.Fragment key={contact.id}>
@@ -4285,12 +4313,12 @@ export default function CrmView() {
                                               {contactActivities.filter(a => a.status === ActivityStatus.COMPLETED || !!a.completedAt).length} completadas
                                             </span>
                                           </div>
-                                          <div className="mt-2.5 space-y-2 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                                          <div className="mt-2.5 space-y-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
                                             {contactActivities.length > 0 ? (
-                                              contactActivities.slice(0, 4).map((act) => {
+                                              contactActivities.map((act) => {
                                                 const isCompleted = act.status === ActivityStatus.COMPLETED || !!act.completedAt;
                                                 return (
-                                                  <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs gap-2">
+                                                  <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs gap-2 hover:bg-slate-100/60 transition-colors">
                                                     <div className="min-w-0 flex-1">
                                                       <div className="font-semibold text-slate-800 truncate">{act.subject || 'Sin asunto'}</div>
                                                       <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
@@ -4316,10 +4344,16 @@ export default function CrmView() {
                                             )}
                                           </div>
                                         </div>
-                                        <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center">
-                                          {contactActivities.length > 4 && (
-                                            <span className="text-[11px] text-slate-400">+{contactActivities.length - 4} más</span>
-                                          )}
+                                        <div className="pt-3 border-t border-slate-100 mt-2 flex justify-between items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => setRecord360({ id: contact.id, type: 'contact', accountId: contact.accountId })}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#001c3a] hover:text-blue-700 bg-slate-100 hover:bg-blue-50 rounded-lg transition-all cursor-pointer border border-slate-200/60"
+                                            title="Ver historial completo en Visión 360°"
+                                          >
+                                            <Eye size={12} className="text-slate-500" />
+                                            <span>Ficha 360° ({contactActivities.length})</span>
+                                          </button>
                                           <button
                                             type="button"
                                             onClick={() => {
