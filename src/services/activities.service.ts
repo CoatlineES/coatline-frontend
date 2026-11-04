@@ -91,5 +91,15 @@ export const activitiesService = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/activities/${id}`);
+  },
+
+  bulkUpdate: async (activityIds: string[], updates: any): Promise<{ count: number }> => {
+    const response = await api.patch('/activities/bulk-update', { activityIds, updates });
+    return response.data;
+  },
+
+  bulkDelete: async (activityIds: string[]): Promise<{ count: number }> => {
+    const response = await api.post('/activities/bulk-delete', { activityIds });
+    return response.data;
   }
 };

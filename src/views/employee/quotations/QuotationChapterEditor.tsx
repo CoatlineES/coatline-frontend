@@ -13,9 +13,10 @@ interface QuotationChapterEditorProps {
   chapter: QuotationChapter;
   index: number;
   onUpdate: () => void; // Trigger reload
+  allChapters?: { id: string; title: string }[];
 }
 
-export default function QuotationChapterEditor({ quotationId, chapter, index, onUpdate }: QuotationChapterEditorProps) {
+export default function QuotationChapterEditor({ quotationId, chapter, index, onUpdate, allChapters }: QuotationChapterEditorProps) {
   const { formatCurrency } = useCurrency();
   const [editingChapter, setEditingChapter] = useState(false);
   const [chapterTitle, setChapterTitle] = useState(chapter.title);
@@ -202,75 +203,194 @@ export default function QuotationChapterEditor({ quotationId, chapter, index, on
     }
   };
 
-  const handleSelectApu = (apu: Resource) => {
-    const [title, ...descParts] = (apu.name || '').split('\n');
-    setLineForm(prev => ({
-      ...prev,
-      title,
-      description: descParts.join('\n'),
-      unit: apu.unit,
-      unitPrice: apu.salesPrice || apu.unitCost,
-      quantity: (apu as any).defaultQuantity ?? 1,
-      resourceId: apu.id,
-    }));
-    setIsAddingLine(true);
-    setEditingLineId(null);
+  const handleSelectApu = async (apu: Resource, targetChapterId?: string) => {
+    try {
+      const destChapterId = targetChapterId || chapter.id;
+
+      // If user selected another chapter in the modal dropdown, insert into that chapter
+      if (destChapterId !== chapter.id) {
+        const [title, ...descParts] = (apu.name || '').split('\n');
+        const fullConcept = `${title}${descParts.length > 0 ? '\n' + descParts.join('\n') : (apu.notes ? '\n' + apu.notes : '')}`;
+
+        await quotationsService.addLine(quotationId, destChapterId, {
+          concept: fullConcept,
+          unit: apu.unit || 'ud',
+          quantity: (apu as any).defaultQuantity ?? 1,
+          unitPrice: apu.salesPrice || apu.unitCost || 0,
+          resourceId: apu.id,
+          isGroup: (apu as any).isGroup || false,
+          code: apu.code || null
+        });
+
+        toast.success('Partida importada en el capítulo seleccionado');
+        setPickerType(null);
+        setLineForm({});
+        onUpdate();
+        return;
+      }
+
+      // If inserting into current chapter:
+      const [title, ...descParts] = (apu.name || '').split('\n');
+      setLineForm(prev => ({
+        ...prev,
+        title,
+        description: descParts.join('\n') || apu.notes || '',
+        unit: apu.unit,
+        unitPrice: apu.salesPrice || apu.unitCost,
+        quantity: (apu as any).defaultQuantity ?? 1,
+        resourceId: apu.id,
+      }));
+      setIsAddingLine(true);
+      setEditingLineId(null);
+      setPickerType(null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al importar');
+    }
   };
 
   return (
     <div className="border border-slate-200 bg-white rounded-xl overflow-hidden shadow-sm mb-4 transition-all hover:border-slate-300">
       {/* Chapter Header */}
-      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center group">
+      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 group">
         {editingChapter ? (
-          <div className="flex-1 flex gap-2 items-center mr-4">
+          <form 
+            onSubmit={(e) => { e.preventDefault(); saveChapterTitle(); }}
+            className="flex-1 flex flex-wrap gap-2.5 items-center mr-2"
+          >
             <span className="font-bold text-slate-800 text-sm whitespace-nowrap">Capítulo {index + 1}:</span>
             <input 
               autoFocus
-              className="flex-1 px-3 py-1 text-sm border border-primary rounded outline-none focus:ring-2 focus:ring-primary/20 font-bold"
+              className="flex-1 min-w-[220px] px-3 py-1.5 text-sm bg-white border border-primary rounded-xl outline-none focus:ring-2 focus:ring-primary/20 font-bold shadow-2xs text-slate-800"
               value={chapterTitle}
               onChange={e => setChapterTitle(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  saveChapterTitle();
+                } else if (e.key === 'Escape') {
+                  setEditingChapter(false);
+                  setChapterTitle(chapter.title);
+                }
+              }}
               placeholder="Nombre del capítulo..."
             />
-            <div className="flex items-center gap-1 text-slate-500">
-              <Calendar size={14} />
-              <input type="date" className="text-xs px-2 py-1 border rounded" value={startDate} onChange={e => setStartDate(e.target.value)} title="Fecha inicio" />
-              <span>-</span>
-              <input type="date" className="text-xs px-2 py-1 border rounded" value={endDate} onChange={e => setEndDate(e.target.value)} title="Fecha fin" />
+            <div className="flex items-center gap-1.5 text-slate-500 bg-white border border-slate-200 rounded-xl px-2.5 py-1 shadow-2xs">
+              <Calendar size={13} className="text-slate-400" />
+              <input type="date" className="text-xs bg-transparent outline-none cursor-pointer" value={startDate} onChange={e => setStartDate(e.target.value)} title="Fecha inicio" />
+              <span className="text-slate-300">-</span>
+              <input type="date" className="text-xs bg-transparent outline-none cursor-pointer" value={endDate} onChange={e => setEndDate(e.target.value)} title="Fecha fin" />
             </div>
-            <button onClick={saveChapterTitle} className="p-1.5 text-green-600 hover:bg-green-50 rounded"><Check size={16} /></button>
-            <button onClick={() => { setEditingChapter(false); setChapterTitle(chapter.title); }} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded"><X size={16} /></button>
-          </div>
+            
+            <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+              <button 
+                type="submit"
+                onClick={saveChapterTitle} 
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                title="Guardar cambios del capítulo (Enter)"
+              >
+                <Check size={14} />
+                <span>Guardar</span>
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setEditingChapter(false); setChapterTitle(chapter.title); }} 
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-200 hover:bg-slate-300 rounded-xl transition-all cursor-pointer"
+                title="Cancelar edición (Esc)"
+              >
+                <X size={14} />
+                <span>Cancelar</span>
+              </button>
+            </div>
+          </form>
         ) : (
           <>
-            <div className="flex items-center gap-3">
-              <GripVertical size={18} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-slate-600" />
-              <h4 className="font-bold text-slate-800 text-sm">Capítulo {index + 1}: {chapter.title}</h4>
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <GripVertical size={18} className="text-slate-300 opacity-60 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing hover:text-slate-600 shrink-0" />
+              
+              {/* Clickable Title to edit directly */}
+              <div 
+                onClick={() => setEditingChapter(true)}
+                className="flex items-center gap-2 cursor-pointer group/title min-w-0"
+                title="Haz clic para editar el nombre de este capítulo"
+              >
+                <h4 className="font-bold text-slate-800 text-sm group-hover/title:text-primary transition-colors truncate">
+                  Capítulo {index + 1}: {chapter.title}
+                </h4>
+                <div className="p-1 rounded-md text-slate-400 group-hover/title:text-primary group-hover/title:bg-blue-50 transition-all shrink-0">
+                  <Edit2 size={13} />
+                </div>
+              </div>
+
               {(chapter.startDate || chapter.endDate) && (
-                <div className="text-xs font-medium text-slate-500 bg-slate-200/50 px-2 py-0.5 rounded flex items-center gap-1">
-                  <Calendar size={12} />
+                <div className="text-xs font-medium text-slate-500 bg-slate-200/60 px-2.5 py-0.5 rounded-md flex items-center gap-1 shrink-0 ml-1">
+                  <Calendar size={12} className="text-slate-400" />
                   {chapter.startDate ? new Date(chapter.startDate).toLocaleDateString() : '?'} - {chapter.endDate ? new Date(chapter.endDate).toLocaleDateString() : '?'}
                 </div>
               )}
             </div>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={async () => {
-                if (savingChapter) return;
-                try {
-                  setSavingChapter(true);
-                  await quotationsService.saveChapterToLibrary(quotationId, chapter.id);
-                  setSavingChapter(false);
-                  setSavedChapter(true);
-                  setTimeout(() => setSavedChapter(false), 2000);
-                  toast.success('Capítulo guardado en la biblioteca');
-                } catch(e) {
-                  setSavingChapter(false);
-                  toast.error('Error al guardar capítulo en la biblioteca');
-                }
-              }} className={`p-1.5 rounded transition-all duration-300 ${savedChapter ? 'text-green-500 bg-green-50 scale-110' : 'text-slate-400 hover:text-blue-500 hover:bg-white'}`} title="Guardar capítulo en biblioteca">
-                {savedChapter ? <Check size={14} /> : (savingChapter ? <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-400 border-t-transparent rounded-full mx-auto" /> : <Save size={14} />)}
+
+            {/* Action buttons: ALWAYS VISIBLE with clean subtle border, not hidden with opacity-0 */}
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+              <button 
+                type="button"
+                onClick={async () => {
+                  if (savingChapter) return;
+                  try {
+                    setSavingChapter(true);
+                    await quotationsService.saveChapterToLibrary(quotationId, chapter.id);
+                    setSavingChapter(false);
+                    setSavedChapter(true);
+                    setTimeout(() => setSavedChapter(false), 2000);
+                    toast.success('Capítulo guardado en la biblioteca');
+                  } catch(e) {
+                    setSavingChapter(false);
+                    toast.error('Error al guardar capítulo en la biblioteca');
+                  }
+                }} 
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition-all duration-200 cursor-pointer ${
+                  savedChapter 
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-300 scale-105' 
+                    : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-100 hover:text-blue-600 shadow-2xs'
+                }`} 
+                title="Guardar este capítulo y sus partidas en la biblioteca"
+              >
+                {savedChapter ? (
+                  <>
+                    <Check size={13} className="text-emerald-600" />
+                    <span>Guardado</span>
+                  </>
+                ) : savingChapter ? (
+                  <>
+                    <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-400 border-t-transparent rounded-full" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={13} className="text-slate-400" />
+                    <span className="hidden sm:inline">Guardar en biblioteca</span>
+                  </>
+                )}
               </button>
-              <button onClick={() => setEditingChapter(true)} className="p-1.5 text-slate-400 hover:text-primary rounded hover:bg-white"><Edit2 size={14} /></button>
-              <button onClick={deleteChapter} className="p-1.5 text-slate-400 hover:text-red-500 rounded hover:bg-white"><Trash2 size={14} /></button>
+
+              <button 
+                type="button"
+                onClick={() => setEditingChapter(true)} 
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-primary bg-white border border-slate-200 rounded-xl shadow-2xs hover:bg-slate-100 transition-all cursor-pointer"
+                title="Editar nombre y fechas del capítulo"
+              >
+                <Edit2 size={13} className="text-slate-400" />
+                <span className="hidden sm:inline">Editar</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={deleteChapter} 
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-slate-200 hover:border-red-200 bg-white shadow-2xs transition-all cursor-pointer" 
+                title="Eliminar capítulo"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
           </>
         )}
@@ -414,7 +534,7 @@ export default function QuotationChapterEditor({ quotationId, chapter, index, on
                         <span className={isGroup ? 'text-indigo-600 font-bold' : ''}>{formatCurrency(computedUnitPrice)}</span>
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-slate-800">{formatCurrency(totalCost)}</td>
-                      <td className="py-3 px-2 text-right opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      <td className="py-3 px-2 text-right opacity-70 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         <button onClick={() => handleMoveLine(l.id, 'up')} className="p-1.5 text-slate-300 hover:text-slate-600 rounded" title="Subir" disabled={lIdx === 0}>
                           <ArrowUp size={14} />
                         </button>
@@ -533,7 +653,7 @@ export default function QuotationChapterEditor({ quotationId, chapter, index, on
                           <td className="py-1.5 px-4 text-center text-slate-400 text-xs cursor-text" onClick={() => startEditLine(cl)}>{cl.unit || 'ud'}</td>
                           <td className="py-1.5 px-4 text-right font-medium text-slate-600 text-xs cursor-text" onClick={() => startEditLine(cl)}>{formatCurrency(computedChildUnitPrice)}</td>
                           <td className="py-1.5 px-4 text-right font-bold text-slate-600 text-xs">{formatCurrency(cl.quantity * computedChildUnitPrice)}</td>
-                          <td className="py-1.5 px-2 text-right opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          <td className="py-1.5 px-2 text-right opacity-70 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                             <button onClick={() => exportToLibrary(cl)} className={`p-1 rounded transition-all duration-300 ${savedLineIds.includes(cl.id) ? 'text-green-500 bg-green-50 scale-110' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'}`} title="Guardar en Biblioteca">
                               {savedLineIds.includes(cl.id) ? <Check size={12} /> : (savingLineIds.includes(cl.id) ? <div className="animate-spin h-3 w-3 border-2 border-slate-400 border-t-transparent rounded-full mx-auto" /> : <Save size={12} />)}
                             </button>
@@ -702,9 +822,12 @@ export default function QuotationChapterEditor({ quotationId, chapter, index, on
       {pickerType && (
         <ApuPickerModal 
           isOpen={true}
-          onClose={() => setPickerType(null)}
+          onClose={() => { setPickerType(null); setLineForm({}); }}
           onSelect={handleSelectApu}
           resourceType={pickerType}
+          title={pickerType === ResourceType.APU ? 'Biblioteca de APUs' : 'Biblioteca de partidas'}
+          chapters={allChapters || [{ id: chapter.id, title: `Capítulo ${index + 1}: ${chapter.title}` }]}
+          currentChapterId={chapter.id}
         />
       )}
 

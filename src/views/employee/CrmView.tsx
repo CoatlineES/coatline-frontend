@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Building2, Users, Search, Plus, Edit2, Trash2, 
+  Building2, Users, Search, Plus, Edit2, Edit3, Trash2, 
   AlertCircle, CheckCircle, RefreshCw, X, Mail, Phone, Briefcase,
   LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, ChevronRight, ExternalLink, Download, History, User, Filter,
   Copy, Check, Target, GitMerge } from 'lucide-react';
@@ -31,6 +31,8 @@ import LibraryView from './library/LibraryView';
 import Record360Modal from './Record360Modal';
 import CrmReportsView from './reports/CrmReportsView';
 import { BulkActivityModal, BulkActivityTemplate } from '../../components/common/BulkActivityModal';
+import { BulkRescheduleModal } from '../../components/common/BulkRescheduleModal';
+import { BulkEditActivitiesModal } from '../../components/common/BulkEditActivitiesModal';
 import { SectorAutocomplete } from '../../components/common/SectorAutocomplete';
 import { SectorMultiSelect } from '../../components/common/SectorMultiSelect';
 import { ManageSectorsModal } from '../../components/common/ManageSectorsModal';
@@ -998,6 +1000,12 @@ export default function CrmView() {
   const [isBulkSelectionModeContacts, setIsBulkSelectionModeContacts] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
 
+  const [isBulkSelectionModeActivities, setIsBulkSelectionModeActivities] = useState(false);
+  const [selectedActivities, setSelectedActivities] = useState<Set<string>>(new Set());
+  const [showBulkRescheduleModal, setShowBulkRescheduleModal] = useState(false);
+  const [showBulkEditActivitiesModal, setShowBulkEditActivitiesModal] = useState(false);
+  const [showBulkDeleteConfirmModal, setShowBulkDeleteConfirmModal] = useState(false);
+
   // Merge Entities State
   const [mergeModalConfig, setMergeModalConfig] = useState<{
     isOpen: boolean;
@@ -1088,6 +1096,71 @@ export default function CrmView() {
       fetchData();
     } catch (error: any) {
       showNotification(error?.response?.data?.message || 'Error al generar actividades', 'error');
+    }
+  };
+
+  const toggleBulkSelectionModeActivities = () => {
+    setIsBulkSelectionModeActivities(prev => !prev);
+    setSelectedActivities(new Set());
+  };
+
+  const toggleActivitySelection = (id: string) => {
+    const next = new Set(selectedActivities);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedActivities(next);
+  };
+
+  const toggleAllFilteredActivities = () => {
+    if (selectedActivities.size === filteredActivities.length && filteredActivities.length > 0) {
+      setSelectedActivities(new Set());
+    } else {
+      setSelectedActivities(new Set(filteredActivities.map(a => a.id)));
+    }
+  };
+
+  const handleBulkReschedule = async (options: { mode: 'fixed' | 'shift'; plannedDate?: string; shiftDays?: number }) => {
+    try {
+      const ids = Array.from(selectedActivities);
+      const updates = options.mode === 'shift' 
+        ? { shiftDays: options.shiftDays } 
+        : { plannedDate: options.plannedDate };
+      await activitiesService.bulkUpdate(ids, updates);
+      showNotification(`${ids.length} ${ids.length === 1 ? 'actividad reagendada' : 'actividades reagendadas'} con éxito`);
+      setShowBulkRescheduleModal(false);
+      setSelectedActivities(new Set());
+      setIsBulkSelectionModeActivities(false);
+      fetchData();
+    } catch (err: any) {
+      showNotification(err?.response?.data?.message || 'Error al reagendar actividades', 'error');
+    }
+  };
+
+  const handleBulkEditActivities = async (updates: any) => {
+    try {
+      const ids = Array.from(selectedActivities);
+      await activitiesService.bulkUpdate(ids, updates);
+      showNotification(`${ids.length} ${ids.length === 1 ? 'actividad actualizada' : 'actividades actualizadas'} con éxito`);
+      setShowBulkEditActivitiesModal(false);
+      setSelectedActivities(new Set());
+      setIsBulkSelectionModeActivities(false);
+      fetchData();
+    } catch (err: any) {
+      showNotification(err?.response?.data?.message || 'Error al actualizar actividades', 'error');
+    }
+  };
+
+  const handleBulkDeleteActivities = async () => {
+    try {
+      const ids = Array.from(selectedActivities);
+      await activitiesService.bulkDelete(ids);
+      showNotification(`${ids.length} ${ids.length === 1 ? 'actividad eliminada' : 'actividades eliminadas'} con éxito`);
+      setShowBulkDeleteConfirmModal(false);
+      setSelectedActivities(new Set());
+      setIsBulkSelectionModeActivities(false);
+      fetchData();
+    } catch (err: any) {
+      showNotification(err?.response?.data?.message || 'Error al eliminar actividades', 'error');
     }
   };
   
@@ -1939,7 +2012,15 @@ export default function CrmView() {
     const isActive = activeTab === id;
     return (
       <button
-        onClick={() => setActiveTab(id)}
+        onClick={() => {
+          setActiveTab(id);
+          setIsBulkSelectionMode(false);
+          setIsBulkSelectionModeContacts(false);
+          setIsBulkSelectionModeActivities(false);
+          setSelectedAccounts(new Set());
+          setSelectedContacts(new Set());
+          setSelectedActivities(new Set());
+        }}
         className={`flex items-center gap-2 pb-3 border-b-2 text-sm font-semibold transition-colors whitespace-nowrap px-1 ${
           isActive 
             ? 'border-[#001c3a] text-[#001c3a]' 
@@ -2258,6 +2339,20 @@ export default function CrmView() {
               >
                 {exportingTarget === 'excel' ? <RefreshCw size={16} className="animate-spin" /> : <FileText size={16} />}
               </button>
+
+              <button
+                type="button"
+                onClick={toggleBulkSelectionModeActivities}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm active:scale-95 cursor-pointer ${
+                  isBulkSelectionModeActivities 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200' 
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+                title="Activar o desactivar modo de selección múltiple"
+              >
+                <CheckSquare size={16} />
+                <span className="hidden sm:inline">{isBulkSelectionModeActivities ? 'Cancelar Selección' : 'Selección Múltiple'}</span>
+              </button>
               
               <button
                 onClick={() => {
@@ -2317,8 +2412,8 @@ export default function CrmView() {
                     className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm"
                   >
                     <option value="ALL">Cualquier responsable</option>
-                    {crmUsers.map(u => (
-                      <option key={u.id} value={u.id}>{(u as any).display_name || u.name}</option>
+                    {crmUsers.map((u, idx) => (
+                      <option key={u.id || `crmu-${idx}`} value={u.id}>{(u as any).display_name || u.name}</option>
                     ))}
                   </select>
 
@@ -2369,8 +2464,8 @@ export default function CrmView() {
                         className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#001c3a]/20 cursor-pointer shadow-sm flex-1 min-w-[150px]"
                       >
                         <option value="ALL">Todas las líneas</option>
-                        {businessLines.map(b => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
+                        {businessLines.map((b, idx) => (
+                          <option key={b.id || `bl-${idx}`} value={b.id}>{b.name}</option>
                         ))}
                       </select>
   
@@ -2443,6 +2538,17 @@ export default function CrmView() {
               <table className="w-full text-left border-collapse table-fixed min-w-[1150px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider font-bold">
+                    {isBulkSelectionModeActivities && (
+                      <th className="p-3.5 border-b border-slate-200 text-center w-12">
+                        <input
+                          type="checkbox"
+                          checked={filteredActivities.length > 0 && selectedActivities.size === filteredActivities.length}
+                          onChange={toggleAllFilteredActivities}
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          title={selectedActivities.size === filteredActivities.length ? "Deseleccionar todas" : "Seleccionar todas"}
+                        />
+                      </th>
+                    )}
                     <th className="p-3.5 border-b border-slate-200 text-center w-14">St</th>
                     <th className="p-3.5 border-b border-slate-200 w-52">Actividad</th>
                     <th className="p-3.5 border-b border-slate-200 w-80">Contacto</th>
@@ -2454,18 +2560,38 @@ export default function CrmView() {
                 <tbody className="divide-y divide-slate-100">
                   <AnimatePresence>
                     {filteredActivities.length > 0 ? (
-                      filteredActivities.map((act) => {
+                      filteredActivities.map((act, actIdx) => {
                         const isExpanded = expandedDashboardActivityId === act.id;
                         const timeStatus = getActivityTimeStatus(act);
                         const theme = getActivityColorTheme(timeStatus, isExpanded);
                         return (
-                          <React.Fragment key={act.id}>
+                          <React.Fragment key={act.id || `act-${actIdx}`}>
                             <motion.tr 
                               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                              className={`cursor-pointer transition-colors group ${isExpanded ? theme.expandedRow : theme.unselectedRow}`}
-                              onClick={() => setExpandedDashboardActivityId(isExpanded ? null : act.id)}
-                              onDoubleClick={(e) => { e.stopPropagation(); setRecord360({ id: act.id, type: 'activity', accountId: act.accountId }); }}
+                              className={`cursor-pointer transition-colors group ${
+                                isBulkSelectionModeActivities && selectedActivities.has(act.id)
+                                  ? 'bg-blue-50/90 border-blue-300 ring-1 ring-blue-400/30'
+                                  : isExpanded ? theme.expandedRow : theme.unselectedRow
+                              }`}
+                              onClick={() => {
+                                if (isBulkSelectionModeActivities) {
+                                  toggleActivitySelection(act.id);
+                                } else {
+                                  setExpandedDashboardActivityId(isExpanded ? null : act.id);
+                                }
+                              }}
+                              onDoubleClick={(e) => { e.stopPropagation(); !isBulkSelectionModeActivities && setRecord360({ id: act.id, type: 'activity', accountId: act.accountId }); }}
                             >
+                              {isBulkSelectionModeActivities && (
+                                <td className="p-3.5 text-center align-middle" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedActivities.has(act.id)}
+                                    onChange={() => toggleActivitySelection(act.id)}
+                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  />
+                                </td>
+                              )}
                               <td className={`p-3.5 text-center align-middle transition-colors ${theme.firstCell}`} onClick={e => e.stopPropagation()}>
                                 <button
                                   onClick={(e) => { 
@@ -2634,7 +2760,7 @@ export default function CrmView() {
                             {/* HISTORIAL Y DETALLES EXPANDIDOS */}
                             {isExpanded && (
                               <tr className={theme.drawerRow}>
-                                <td colSpan={6} className={`p-4 pl-12 ${theme.drawerTd}`}>
+                                <td colSpan={isBulkSelectionModeActivities ? 7 : 6} className={`p-4 pl-12 ${theme.drawerTd}`}>
                                   <div className="flex items-center justify-between mb-3">
                                     <div className={`flex items-center gap-2 text-xs uppercase tracking-wider font-bold ${theme.drawerTitle}`}>
                                       <History size={14} className={theme.drawerIcon} /> Historial de actividades del registro
@@ -2748,8 +2874,8 @@ export default function CrmView() {
 
                                     return (
                                       <div className="space-y-3">
-                                        {history.map((h) => (
-                                          <div key={h.id} className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs relative shadow-xs hover:border-slate-300 transition-all group/hist">
+                                        {history.map((h, hIdx) => (
+                                          <div key={h.id || `hist-${hIdx}`} className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs relative shadow-xs hover:border-slate-300 transition-all group/hist">
                                             <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
                                               <div className="flex items-center gap-2 flex-wrap">
                                                 <div className="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
@@ -2913,13 +3039,78 @@ export default function CrmView() {
                         );
                       })
                     ) : (
-                      <tr><td colSpan={7} className="p-10 text-center text-slate-400 text-sm">No se encontraron actividades pendientes.</td></tr>
+                      <tr><td colSpan={isBulkSelectionModeActivities ? 8 : 7} className="p-10 text-center text-slate-400 text-sm">No se encontraron actividades pendientes.</td></tr>
                     )}
                   </AnimatePresence>
                 </tbody>
               </table>
             </div>
           )}
+
+          {/* Floating Actions Bar for Selected Activities */}
+          <AnimatePresence>
+            {isBulkSelectionModeActivities && selectedActivities.size > 0 && (
+              <motion.div
+                key="floating-bulk-activities-bar"
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 50, opacity: 0 }}
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#001c3a] text-white px-5 py-3 rounded-2xl shadow-2xl flex flex-wrap items-center gap-2.5 border border-slate-700/60 backdrop-blur-md"
+              >
+                <div className="flex items-center gap-2 pr-3 border-r border-slate-700">
+                  <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shadow-xs">
+                    {selectedActivities.size}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-200 whitespace-nowrap">
+                    {selectedActivities.size === 1 ? 'actividad seleccionada' : 'actividades seleccionadas'}
+                  </span>
+                </div>
+
+                {/* Reagendar */}
+                <button
+                  type="button"
+                  onClick={() => setShowBulkRescheduleModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm text-amber-300 hover:text-amber-200 cursor-pointer"
+                  title="Reagendar fechas o desplazar días"
+                >
+                  <Calendar size={14} className="text-amber-400" />
+                  <span>Reagendar</span>
+                </button>
+
+                {/* Editar en lote */}
+                <button
+                  type="button"
+                  onClick={() => setShowBulkEditActivitiesModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm text-sky-300 hover:text-sky-200 cursor-pointer"
+                  title="Cambiar tipo, responsable, estado, notas o asunto"
+                >
+                  <Edit3 size={14} className="text-sky-400" />
+                  <span>Editar en lote</span>
+                </button>
+
+                {/* Eliminar en lote */}
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteConfirmModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/80 hover:bg-red-600 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm text-white cursor-pointer ml-1"
+                  title="Eliminar las actividades seleccionadas permanentemente"
+                >
+                  <Trash2 size={14} />
+                  <span>Eliminar ({selectedActivities.size})</span>
+                </button>
+
+                {/* Deseleccionar todo */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedActivities(new Set())}
+                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer ml-1"
+                  title="Deseleccionar todo"
+                >
+                  <X size={15} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
 
@@ -5252,6 +5443,60 @@ export default function CrmView() {
           users={users}
           currentUserId={user?.id || ''}
         />
+
+        {showBulkRescheduleModal && (
+          <BulkRescheduleModal
+            key="bulk-reschedule-modal"
+            isOpen={showBulkRescheduleModal}
+            onClose={() => setShowBulkRescheduleModal(false)}
+            selectedCount={selectedActivities.size}
+            onSubmit={handleBulkReschedule}
+          />
+        )}
+
+        {showBulkEditActivitiesModal && (
+          <BulkEditActivitiesModal
+            key="bulk-edit-modal"
+            isOpen={showBulkEditActivitiesModal}
+            onClose={() => setShowBulkEditActivitiesModal(false)}
+            selectedCount={selectedActivities.size}
+            users={users}
+            onSubmit={handleBulkEditActivities}
+          />
+        )}
+
+        {showBulkDeleteConfirmModal && (
+          <div key="bulk-delete-confirm-modal" className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowBulkDeleteConfirmModal(false)} className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md relative z-10 border border-slate-100">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center mb-4 shadow-xs">
+                <Trash2 size={22} />
+              </div>
+              <h3 className="text-base font-bold text-slate-800">
+                ¿Eliminar {selectedActivities.size} {selectedActivities.size === 1 ? 'actividad' : 'actividades'}?
+              </h3>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                Esta acción eliminará permanentemente las actividades seleccionadas de la base de datos. No se podrá deshacer.
+              </p>
+              <div className="flex justify-end items-center gap-2 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteConfirmModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDeleteActivities}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  Sí, eliminar definitivamente
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {completingActivity && (
           <div key="quick-complete-modal" className="fixed inset-0 z-[60] flex items-center justify-center px-4">

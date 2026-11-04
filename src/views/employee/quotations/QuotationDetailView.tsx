@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, FileText, Download, Copy, Trash2, Edit2, Check, X, 
-  Plus, Calendar, Box, CreditCard, Shield, MessageSquare, ExternalLink, CheckCircle, Clock, Search, GripVertical, Paperclip, UploadCloud, Eye, ChevronDown, ChevronUp, Save, FileSignature, Folder, Package
+  Plus, Calendar, Box, CreditCard, Shield, MessageSquare, ExternalLink, CheckCircle, Clock, Search, GripVertical, Paperclip, UploadCloud, Eye, ChevronDown, ChevronUp, Save, FileSignature, Folder, Package, BookOpen
 } from 'lucide-react';
 import { uploadService } from '../../../services/upload.service';
 import { Quotation, QuotationStatus, QuotationChapter, QuotationLine } from '../../../types/quotation';
@@ -87,6 +87,7 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSignModalOpen, setIsSignModalOpen] = useState(false);
   const [isImportCapituloModalOpen, setIsImportCapituloModalOpen] = useState(false);
+  const [isImportPartidaModalOpen, setIsImportPartidaModalOpen] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signatureLink, setSignatureLink] = useState('');
   
@@ -338,6 +339,43 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
     }
   };
 
+  const handleImportPartida = async (apu: Resource, targetChapterId?: string) => {
+    if (!quotation) return;
+    try {
+      let destChapterId = targetChapterId;
+      if (!destChapterId && quotation.chapters.length > 0) {
+        destChapterId = quotation.chapters[0].id;
+      }
+      if (!destChapterId) {
+        const newCh = await quotationsService.addChapter(quotation.id, {
+          title: 'Capítulo 1: Partidas',
+          order: 0
+        });
+        destChapterId = newCh.id;
+      }
+
+      const [title, ...descParts] = (apu.name || '').split('\n');
+      const fullConcept = `${title}${descParts.length > 0 ? '\n' + descParts.join('\n') : (apu.notes ? '\n' + apu.notes : '')}`;
+
+      await quotationsService.addLine(quotation.id, destChapterId, {
+        concept: fullConcept,
+        unit: apu.unit || 'ud',
+        quantity: (apu as any).defaultQuantity ?? 1,
+        unitPrice: apu.salesPrice || apu.unitCost || 0,
+        resourceId: apu.id,
+        isGroup: (apu as any).isGroup || false,
+        code: apu.code || null
+      });
+
+      toast.success('Partida importada en la cotización');
+      setIsImportPartidaModalOpen(false);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al importar partida');
+    }
+  };
+
   const handleDuplicate = async () => {
     if (!quotation) return;
     try {
@@ -523,17 +561,24 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
                     quotationId={quotation.id} 
                     chapter={ch} 
                     index={idx} 
-                    onUpdate={loadData} 
+                    onUpdate={loadData}
+                    allChapters={quotation.chapters.map((c, i) => ({ id: c.id, title: `Capítulo ${i + 1}: ${c.title}` }))}
                   />
                 </div>
               ))}
 
-              <div className="flex gap-4 w-full">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                <button 
+                  onClick={() => setIsImportPartidaModalOpen(true)}
+                  className="py-3 border-2 border-dashed border-emerald-300 rounded-xl text-emerald-700 font-semibold hover:border-emerald-500 hover:bg-emerald-50 transition-all flex justify-center items-center gap-2 text-sm shadow-2xs cursor-pointer"
+                >
+                  <BookOpen size={18} className="text-emerald-600" /> Importar Partida / APU
+                </button>
                 <button 
                   onClick={() => setIsImportCapituloModalOpen(true)}
-                  className="w-1/2 py-3 border-2 border-dashed border-amber-300 rounded-xl text-amber-600 font-medium hover:border-amber-500 hover:bg-amber-50 transition-all flex justify-center items-center gap-2"
+                  className="py-3 border-2 border-dashed border-amber-300 rounded-xl text-amber-700 font-semibold hover:border-amber-500 hover:bg-amber-50 transition-all flex justify-center items-center gap-2 text-sm shadow-2xs cursor-pointer"
                 >
-                  <Package size={18} /> Importar Capítulo de Biblioteca
+                  <Package size={18} className="text-amber-600" /> Importar Capítulo
                 </button>
                 <button 
                   onClick={async () => {
@@ -544,7 +589,7 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
                       toast.error('Error al añadir capítulo');
                     }
                   }}
-                  className="w-1/2 py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-medium hover:border-primary hover:bg-primary/5 hover:text-primary transition-all flex justify-center items-center gap-2"
+                  className="py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-600 font-semibold hover:border-[#001c3a] hover:bg-slate-50 hover:text-[#001c3a] transition-all flex justify-center items-center gap-2 text-sm shadow-2xs cursor-pointer"
                 >
                   <Plus size={18} /> Añadir Nuevo Capítulo
                 </button>
@@ -777,13 +822,26 @@ export default function QuotationDetailView({ quotationId, onBack, businessLines
       </div>
       
       <AnimatePresence>
-        {isImportCapituloModalOpen && (
+        {isImportPartidaModalOpen && quotation && (
+          <ApuPickerModal
+            isOpen={isImportPartidaModalOpen}
+            onClose={() => setIsImportPartidaModalOpen(false)}
+            onSelect={handleImportPartida}
+            resourceType={ResourceType.PARTIDA}
+            title="Biblioteca de partidas"
+            chapters={quotation.chapters.map((c, i) => ({ id: c.id, title: `Capítulo ${i + 1}: ${c.title}` }))}
+            currentChapterId={quotation.chapters[0]?.id}
+          />
+        )}
+        {isImportCapituloModalOpen && quotation && (
           <ApuPickerModal
             isOpen={isImportCapituloModalOpen}
             onClose={() => setIsImportCapituloModalOpen(false)}
             onSelect={handleImportCapitulo}
             resourceType={ResourceType.CAPITULO}
             title="Importar Capítulo de Biblioteca"
+            chapters={quotation.chapters.map((c, i) => ({ id: c.id, title: `Capítulo ${i + 1}: ${c.title}` }))}
+            currentChapterId={quotation.chapters[0]?.id}
           />
         )}
         {showPreview && (
