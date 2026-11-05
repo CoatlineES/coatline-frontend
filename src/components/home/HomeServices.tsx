@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Wrench, AlertTriangle, Droplet, Leaf, ArrowRight } from 'lucide-react';
+import { Wrench, AlertTriangle, Droplet, Leaf, ArrowRight, ShieldCheck, Clock, CheckCircle2, Phone } from 'lucide-react';
 import { ScreenId } from '../../types';
 import energyRoofImg from '../../assets/energy_efficient_roof.png';
 
@@ -10,115 +10,186 @@ interface HomeServicesProps {
 
 export default function HomeServices({ onNavigate }: HomeServicesProps) {
   return (
-    <main id="servicios" className="py-24 px-6 md:px-16 bg-surface">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="text-center mb-16 max-w-3xl mx-auto space-y-6">
-          <h2 className="font-display font-bold text-3xl md:text-4xl text-primary tracking-tight">
-            SOLUCIONES TÉCNICAS
+    <section id="servicios" className="py-24 px-6 md:px-16 bg-surface relative overflow-hidden">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/2 left-0 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-72 h-72 bg-secondary/5 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Section Header */}
+        <div className="text-center mb-16 max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
+            <ShieldCheck size={14} className="text-secondary" />
+            <span>Capacidad Técnica Multidisciplinar</span>
+          </div>
+
+          <h2 className="font-display font-extrabold text-3xl md:text-5xl text-primary tracking-tight">
+            Soluciones Técnicas de Vanguardia
           </h2>
-          <div className="w-16 h-1 bg-secondary mx-auto"></div>
-          <p className="font-sans text-base md:text-lg text-on-surface-variant">
-            Coatline pone a su disposición servicios que le permitirán solucionar cualquier incidencia que surja en sus superficies. En el programa <span className="font-bold text-primary">ZERO FILTRACIONES</span> están incluidos todos estos servicios.
+
+          <p className="font-sans text-base md:text-lg text-on-surface-variant leading-relaxed">
+            Actuaciones modulares de ingeniería desarrolladas para diagnosticar, resolver y proteger cualquier superficie frente a agentes climáticos extremos.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
-          <div className="lg:col-span-7 bg-white border border-surface-variant rounded-xl p-8 hover:-translate-y-1 transition-all duration-300 hover:shadow-xl group">
-            <div className="flex flex-col sm:flex-row items-start gap-6">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                <Wrench className="text-primary w-8 h-8 group-hover:text-white transition-colors" />
-              </div>
-              <div className="space-y-3">
-                <h3 className="font-display font-bold text-lg md:text-xl text-primary uppercase">
-                  MANTENIMIENTO PREVENTIVO
-                </h3>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Un adecuado mantenimiento de su cubierta le permitirá un importante ahorro al prevenir posibles problemas causados por elementos externos. Nuestro equipo de inspección identifica incidencias con la última tecnología.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-5 bg-white border border-surface-variant rounded-xl p-8 hover:-translate-y-1 transition-all duration-300 hover:shadow-xl group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500" />
-            <div className="flex flex-col h-full justify-between space-y-6">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded bg-secondary/10 flex items-center justify-center group-hover:bg-secondary text-secondary group-hover:text-white transition-colors">
-                  <AlertTriangle className="w-6 h-6" />
+        {/* Bento Grid Architecture */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-stretch">
+          
+          {/* Card 1 (7 Cols): Mantenimiento Preventivo */}
+          <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-3xl p-8 md:p-10 hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl hover:border-primary/30 group flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-sm">
+                  <Wrench className="w-7 h-7 transition-colors" />
                 </div>
-                <h3 className="font-display font-bold text-lg md:text-xl text-primary uppercase">
-                  RESPUESTA ANTE EMERGENCIAS
-                </h3>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Respuesta rápida ante filtraciones repentinas o cualquier incidencia para contener el problema lo más pronto posible y dar la mejor solución en el menor tiempo.
-                </p>
+                <span className="text-[11px] font-bold text-primary uppercase tracking-widest bg-primary/5 px-3 py-1.5 rounded-full border border-primary/15">
+                  Plan Preventivo
+                </span>
               </div>
+
+              <h3 className="font-display font-extrabold text-xl md:text-2xl text-primary mb-3">
+                Mantenimiento Preventivo Programado
+              </h3>
+
+              <p className="font-sans text-sm md:text-base text-on-surface-variant leading-relaxed mb-6">
+                Un adecuado plan de mantenimiento periódico evita sobrecostes estructurales y previene filtraciones imprevistas mediante inspecciones técnicas regulares con escáner y termografía.
+              </p>
+
+              <ul className="space-y-2.5 mb-6">
+                {[
+                  'Limpieza y despeje de sumideros, bajantes y arquetas',
+                  'Inspección termográfica de juntas de dilatación críticas',
+                  'Sellado preventivo con elastómeros de alta resiliencia',
+                  'Informe pericial con registro fotográfico y trazabilidad'
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs md:text-sm text-slate-700 font-medium">
+                    <CheckCircle2 size={16} className="text-secondary shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ahorro medio en ciclo de vida</span>
+              <span className="text-sm font-extrabold text-primary">Hasta un 60%</span>
             </div>
           </div>
 
-          <div
-            className="lg:col-span-12 bg-primary text-white rounded-xl p-8 md:p-12 hover:-translate-y-1 transition-all duration-300 hover:shadow-xl group relative overflow-hidden text-left"
+          {/* Card 2 (5 Cols): Respuesta ante Emergencias */}
+          <div className="lg:col-span-5 bg-gradient-to-br from-white via-white to-secondary/5 border border-slate-200/80 rounded-3xl p-8 md:p-10 hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl hover:border-secondary/40 group flex flex-col justify-between relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-bl-full -z-0 group-hover:scale-125 transition-transform duration-500" />
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-white transition-all duration-300 shadow-sm">
+                  <AlertTriangle className="w-7 h-7" />
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-secondary uppercase tracking-widest bg-secondary/10 px-3 py-1.5 rounded-full border border-secondary/20">
+                  <Clock size={12} /> Respuesta &lt; 24h
+                </span>
+              </div>
+
+              <h3 className="font-display font-extrabold text-xl md:text-2xl text-primary mb-3">
+                Respuesta Inmediata ante Emergencias
+              </h3>
+
+              <p className="font-sans text-sm md:text-base text-on-surface-variant leading-relaxed mb-6">
+                Equipo móvil de guardia técnica para contener filtraciones activas repentinas en oficinas, instalaciones industriales y centros de datos sin interrumpir su actividad.
+              </p>
+
+              <div className="space-y-2 mb-6">
+                <div className="p-3 bg-white/80 border border-slate-200/80 rounded-2xl text-xs text-slate-700 font-medium">
+                  ⚡ Protocolo de contención urgente sin obras invasivas
+                </div>
+                <div className="p-3 bg-white/80 border border-slate-200/80 rounded-2xl text-xs text-slate-700 font-medium">
+                  🛡️ Protección preventiva de equipos e inventarios de alto valor
+                </div>
+              </div>
+            </div>
+
+            <a
+              href="tel:+34914916197"
+              className="relative z-10 w-full py-3.5 px-4 bg-secondary hover:bg-secondary-container text-white font-bold text-xs uppercase tracking-wider rounded-2xl transition-all shadow-md hover:shadow-secondary/30 flex items-center justify-center gap-2"
+            >
+              <Phone size={15} />
+              <span>Llamar a Guardia Técnica</span>
+            </a>
+          </div>
+
+          {/* Card 3 (6 Cols): Impermeabilización Certificada */}
+          <div 
+            className="lg:col-span-6 rounded-3xl p-8 md:p-10 text-white relative overflow-hidden flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl group border border-white/10"
             style={{ backgroundColor: '#001c3a' }}
           >
             <div
               className="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay group-hover:scale-105 transition-transform duration-700"
               style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuD8JC_kiZH37kX5YNJ241KFj74FSuIh6SYjV9PPlGIWHjJngnZXgNo8dAQ1IP-4PrnBhO_W-wq225mRcCjIpuqKy9mdKxO3v5kB806xcirKFwDaJPRlzQK4Ac6JLaw0RgcnM733F9HCljMH7OlTynTKQRLNqKaz6CBaR0rEx5i0dSL7hVynrozSS98CLeyoZItnAlS1aEDKio0tzGofmBcSlBOgnJhL3NPg2xy0o_vbCqfaflSIAs1JSYGa1p2ggf73oPyC7RlMYJQf')" }}
             />
-            <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start lg:items-center h-full justify-between">
-              <div className="space-y-4 max-w-4xl">
-                <div className="w-12 h-12 rounded bg-white/20 flex items-center justify-center mb-6 backdrop-blur-sm">
-                  <Droplet className="text-white w-6 h-6" />
-                </div>
-                <h3 className="font-display font-bold text-xl md:text-2xl tracking-tight uppercase">
-                  IMPERMEABILIZACIÓN CERTIFICADA
-                </h3>
-                <p className="font-sans text-sm md:text-base text-slate-100 leading-relaxed">
-                  Certificados para aplicar diferentes sistemas de impermeabilización y techado en proyectos de nueva construcción, reinstalación o reparación, respetando estándares del fabricante.
-                </p>
+
+            <div className="relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6">
+                <Droplet className="w-7 h-7 text-sky-400" />
               </div>
-              <div className="shrink-0">
-                <button
-                  onClick={() => onNavigate('detection', 'none')}
-                  className="inline-flex items-center gap-2 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded hover:bg-secondary-container transition-all"
-                >
-                  Ver Especialidades <ArrowRight size={14} />
-                </button>
+
+              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-sky-300 mb-2">
+                <span>Sistemas Homologados</span>
               </div>
+
+              <h3 className="font-display font-extrabold text-xl md:text-2xl text-white mb-3">
+                Impermeabilización Certificada
+              </h3>
+
+              <p className="font-sans text-sm text-slate-300 leading-relaxed mb-6">
+                Aplicación certificada de membranas de alta durabilidad (poliurea pura, EPDM, PVC y membranas líquidas continuas) cumpliendo rigurosamente los estándares del fabricante y las normativas UNE.
+              </p>
+            </div>
+
+            <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between">
+              <button
+                onClick={() => onNavigate('detection', 'none')}
+                className="inline-flex items-center gap-2 text-white font-bold text-xs uppercase tracking-wider hover:text-sky-400 transition-colors group/btn cursor-pointer"
+              >
+                <span>Conocer tecnología y ensayos</span>
+                <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+              </button>
+              <span className="text-xs text-slate-400 font-bold">Garantía hasta 25 años</span>
             </div>
           </div>
 
-          <div className="lg:col-span-12 bg-white border border-surface-variant rounded-xl p-8 hover:-translate-y-1 transition-all duration-300 hover:shadow-xl group">
-            <div className="flex flex-col md:flex-row gap-8 items-center h-full">
-              <div className="w-full md:w-1/2 aspect-video bg-surface-container rounded-lg overflow-hidden relative shadow-md">
+          {/* Card 4 (6 Cols): Eficiencia Energética & Sostenibilidad */}
+          <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-3xl p-8 md:p-10 hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl hover:border-emerald-500/40 group flex flex-col justify-between">
+            <div>
+              <div className="w-full aspect-[21/9] bg-slate-100 rounded-2xl overflow-hidden mb-6 relative shadow-inner">
                 <img
-                  alt="Eficiencia Energética"
+                  alt="Eficiencia Energética y Cubiertas Cool Roof"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   src={energyRoofImg}
                 />
-              </div>
-              <div className="w-full md:w-1/2 space-y-4 text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-high rounded text-primary font-sans font-bold text-xs">
-                  <Leaf size={14} className="text-secondary" />
-                  LEED / BREEAM
+                <div className="absolute top-3 left-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/90 backdrop-blur-md text-emerald-800 border border-emerald-200 shadow-xs">
+                    <Leaf size={12} className="text-emerald-600" /> LEED &amp; BREEAM
+                  </span>
                 </div>
-                <h3 className="font-display font-bold text-xl md:text-2xl text-primary">
-                  EFICIENCIA ENERGÉTICA Y VALORIZACIÓN
-                </h3>
-                <p className="font-sans text-sm md:text-base text-on-surface-variant leading-relaxed">
-                  Soluciones de mejora energética (cubiertas verdes, blancas reflectantes, solares y azules) que aumentan la valoración en certificaciones LEED y BREEAM.
-                </p>
               </div>
+
+              <h3 className="font-display font-extrabold text-xl md:text-2xl text-primary mb-3">
+                Eficiencia Energética y Valorización
+              </h3>
+
+              <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
+                Soluciones de mejora bioclimática (cubiertas reflectantes Cool Roof, cubiertas ajardinadas y techos solares) que reducen hasta un 30% la temperatura superficial del edificio y disminuyen la factura de climatización.
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-6">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Certificaciones sostenibles</span>
+              <span className="text-sm font-extrabold text-emerald-600">Ahorro Térmico A+</span>
             </div>
           </div>
+
         </div>
-        </motion.div>
       </div>
-    </main>
+    </section>
   );
 }

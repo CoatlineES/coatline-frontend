@@ -24,12 +24,7 @@ export default function HomeBrands() {
   return (
     <section id="marcas" className="py-20 px-6 md:px-16 bg-surface-container-low border-y border-surface-variant/30">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6 }}
-        >
+        <div>
           <div className="text-center mb-16 max-w-4xl mx-auto space-y-4">
           <h2 className="font-display font-bold text-2xl md:text-3xl text-primary tracking-tight">
             Marcas que confían en nosotros
@@ -53,7 +48,7 @@ export default function HomeBrands() {
             </div>
           ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

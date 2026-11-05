@@ -17,7 +17,9 @@ import {
   Send,
   CheckCircle,
   HelpCircle,
-  ArrowRight
+  ArrowRight,
+  Zap,
+  Droplet
 } from 'lucide-react';
 import { FAQS } from '../data';
 import { ScreenId } from '../types';
@@ -188,17 +190,11 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
       </section>
 
       {/* Main Content Info + Form */}
-      <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto">
+      <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
 
           {/* Left Column: Contact Details */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.8 }}
-            className="col-span-1 lg:col-span-4 space-y-12"
-          >
+          <div className="col-span-1 lg:col-span-4 space-y-12">
             <div>
               <h2 className="font-display font-bold text-3xl text-primary mb-8 relative inline-block">
                 Nuestra Presencia
@@ -207,50 +203,38 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
 
               <div className="space-y-6">
                 {/* Sede Central Card */}
-                <motion.div
-                  whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 59, 112, 0.1), 0 8px 10px -6px rgba(0, 59, 112, 0.1)" }}
-                  className="bg-white p-6 rounded-xl border border-surface-variant shadow-sm text-left transition-all duration-300 hover:border-primary/30 group relative overflow-hidden"
-                >
+                <div className="bg-white p-6 rounded-xl border border-surface-variant shadow-sm text-left transition-all duration-300 hover:border-primary/30 group relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-[100px] pointer-events-none group-hover:scale-110 transition-transform duration-500"></div>
                   <h3 className="font-sans font-bold text-lg text-primary mb-4 flex items-center gap-2 relative z-10">
-                    <motion.span whileHover={{ rotate: [0, -10, 10, -10, 0] }} transition={{ duration: 0.5 }} className="inline-block"><MapPin size={20} className="text-secondary" /></motion.span> Sede Central
+                    <MapPin size={20} className="text-secondary" /> Sede Central
                   </h3>
                   <p className="text-slate-600 font-sans text-sm leading-relaxed">
                     Calle de la Resina, 35.<br />
                     Nave 7, 28021 Madrid.
                   </p>
-                </motion.div>
+                </div>
 
                 {/* Grid for Phone and Email */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <motion.div
-                    whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 59, 112, 0.1), 0 8px 10px -6px rgba(0, 59, 112, 0.1)" }}
-                    className="bg-white p-6 rounded-xl border border-surface-variant shadow-sm hover:border-primary/30 transition-all duration-300 text-left group"
-                  >
+                  <div className="bg-white p-6 rounded-xl border border-surface-variant shadow-sm hover:border-primary/30 transition-all duration-300 text-left group">
                     <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
-                      <motion.span whileHover={{ rotate: [0, -15, 15, -15, 0] }} transition={{ duration: 0.5 }} className="inline-block"><Phone size={18} className="text-secondary" /></motion.span>
+                      <Phone size={18} className="text-secondary" />
                     </div>
                     <h3 className="font-sans font-bold text-slate-800 mb-1 text-sm">Teléfono</h3>
                     <p className="text-slate-600 font-sans text-sm">+34 91 491 61 97</p>
-                  </motion.div>
+                  </div>
 
-                  <motion.div
-                    whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 59, 112, 0.1), 0 8px 10px -6px rgba(0, 59, 112, 0.1)" }}
-                    className="bg-white p-6 rounded-xl border border-surface-variant shadow-sm hover:border-primary/30 transition-all duration-300 text-left group"
-                  >
+                  <div className="bg-white p-6 rounded-xl border border-surface-variant shadow-sm hover:border-primary/30 transition-all duration-300 text-left group">
                     <div className="w-10 h-10 bg-primary/5 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
-                      <motion.span whileHover={{ y: [0, -5, 0] }} transition={{ duration: 0.5 }} className="inline-block"><Mail size={18} className="text-secondary" /></motion.span>
+                      <Mail size={18} className="text-secondary" />
                     </div>
                     <h3 className="font-sans font-bold text-slate-800 mb-1 text-sm">Email</h3>
                     <p className="text-slate-600 font-sans text-sm break-all">comercial@coatline.es</p>
-                  </motion.div>
+                  </div>
                 </div>
 
                 {/* Stylized Map Placeholder */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="w-full h-64 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden relative group transition-all duration-300 shadow-sm hover:shadow-lg hover:border-primary/30"
-                >
+                <div className="w-full h-64 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden relative group transition-all duration-300 shadow-sm hover:shadow-lg hover:border-primary/30">
                   <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"></div>
                   <div className="absolute inset-0 bg-primary/10 mix-blend-multiply group-hover:bg-transparent transition-colors duration-700"></div>
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
@@ -260,20 +244,14 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                     <MapPin size={36} className="text-secondary drop-shadow-md fill-secondary relative z-10 group-hover:scale-110 transition-transform duration-300" />
                     <div className="w-8 h-2 bg-black/30 blur-[2px] rounded-[100%] mt-1 group-hover:scale-90 transition-transform"></div>
                   </div>
-                </motion.div>
+                </div>
 
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right Column: Contact Form */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="col-span-1 lg:col-span-8"
-          >
+          <div className="col-span-1 lg:col-span-8">
             <div className="bg-white p-8 md:p-12 rounded-2xl border border-surface-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-left relative overflow-visible">
 
               {!isSubmitted ? (
@@ -285,16 +263,9 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                     </p>
                   </div>
 
-                  <motion.form
+                  <form
                     onSubmit={handleSubmit}
                     className="space-y-6"
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-50px" }}
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-                    }}
                   >
                     {errors.submit && (
                       <div className="bg-red-50 text-red-600 font-sans text-sm p-3 rounded border border-red-100 mb-4 text-center">
@@ -303,7 +274,7 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                     )}
 
                     {/* Row 1: Nombre & Empresa */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="relative group">
                         <input
                           type="text"
@@ -324,10 +295,10 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                           className="w-full bg-[#f8fafc] border border-slate-200 rounded-lg px-4 py-3.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_0_3px_rgba(0,59,112,0.1)] focus:bg-white transition-all duration-300 font-sans text-sm group-hover:border-slate-300"
                         />
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Row 2: Email */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="relative group">
+                    <div className="relative group">
                       <input
                         type="email"
                         value={email}
@@ -336,10 +307,10 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                         className={`w-full bg-[#f8fafc] border ${errors.email ? 'border-red-400 focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(248,113,113,0.2)]' : 'border-slate-200 focus:border-primary/50 focus:shadow-[0_0_0_3px_rgba(0,59,112,0.1)]'} rounded-lg px-4 py-3.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white transition-all duration-300 font-sans text-sm group-hover:border-slate-300`}
                       />
                       {errors.email && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-wider">{errors.email}</p>}
-                    </motion.div>
+                    </div>
 
                     {/* Row 3: Teléfono */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="relative group">
+                    <div className="relative group">
                       <input
                         type="tel"
                         value={phone}
@@ -348,10 +319,10 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                         className={`w-full bg-[#f8fafc] border ${errors.phone ? 'border-red-400 focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(248,113,113,0.2)]' : 'border-slate-200 focus:border-primary/50 focus:shadow-[0_0_0_3px_rgba(0,59,112,0.1)]'} rounded-lg px-4 py-3.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white transition-all duration-300 font-sans text-sm group-hover:border-slate-300`}
                       />
                       {errors.phone && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-wider">{errors.phone}</p>}
-                    </motion.div>
+                    </div>
 
                     {/* Row 4: Tipología & Sector */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="relative group">
                         <select
                           value={typology}
@@ -388,59 +359,119 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Section: Servicio de interés */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="space-y-3 pt-2">
+                    <div className="space-y-3 pt-2">
                       <label className="block font-sans font-bold text-sm text-slate-800">
-                        Servicio de interés
+                        Servicio o Solución de Interés
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <label className="flex items-center gap-3 font-sans text-sm text-slate-600 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={services.waterproofing}
-                              onChange={(e) => setServices({ ...services, waterproofing: e.target.checked })}
-                              className="w-5 h-5 rounded border-slate-300 text-secondary focus:ring-secondary/50 focus:ring-2 cursor-pointer transition-all"
-                            />
-                            <span>Impermeabilización</span>
-                          </label>
-                          <label className="flex items-center gap-3 font-sans text-sm text-slate-600 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={services.repairs}
-                              onChange={(e) => setServices({ ...services, repairs: e.target.checked })}
-                              className="w-5 h-5 rounded border-slate-300 text-secondary focus:ring-secondary/50 focus:ring-2 cursor-pointer transition-all"
-                            />
-                            <span>Reparaciones</span>
-                          </label>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Detección Electrónica */}
+                        <div
+                          onClick={() => setServices({ ...services, detection: !services.detection })}
+                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 flex items-center justify-between ${
+                            services.detection
+                              ? 'bg-sky-500/10 border-sky-500 text-sky-900 shadow-xs'
+                              : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                              services.detection ? 'bg-sky-500 text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              <Zap size={16} />
+                            </div>
+                            <span className="text-xs font-bold font-sans">Detección Electrónica</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={services.detection}
+                            onChange={() => {}}
+                            className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 pointer-events-none"
+                          />
                         </div>
-                        <div className="space-y-3">
-                          <label className="flex items-center gap-3 font-sans text-sm text-slate-600 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={services.detection}
-                              onChange={(e) => setServices({ ...services, detection: e.target.checked })}
-                              className="w-5 h-5 rounded border-slate-300 text-secondary focus:ring-secondary/50 focus:ring-2 cursor-pointer transition-all"
-                            />
-                            <span>Detección electrónica</span>
-                          </label>
-                          <label className="flex items-center gap-3 font-sans text-sm text-slate-600 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={services.zeroLeaks}
-                              onChange={(e) => setServices({ ...services, zeroLeaks: e.target.checked })}
-                              className="w-5 h-5 rounded border-slate-300 text-secondary focus:ring-secondary/50 focus:ring-2 cursor-pointer transition-all"
-                            />
-                            <span>Programa Zero Filtraciones</span>
-                          </label>
+
+                        {/* Programa Zero Filtraciones */}
+                        <div
+                          onClick={() => setServices({ ...services, zeroLeaks: !services.zeroLeaks })}
+                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 flex items-center justify-between ${
+                            services.zeroLeaks
+                              ? 'bg-amber-500/10 border-amber-500 text-amber-950 shadow-xs'
+                              : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                              services.zeroLeaks ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              <CheckCircle size={16} />
+                            </div>
+                            <span className="text-xs font-bold font-sans">Programa Zero Filtraciones</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={services.zeroLeaks}
+                            onChange={() => {}}
+                            className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 pointer-events-none"
+                          />
+                        </div>
+
+                        {/* Impermeabilización */}
+                        <div
+                          onClick={() => setServices({ ...services, waterproofing: !services.waterproofing })}
+                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 flex items-center justify-between ${
+                            services.waterproofing
+                              ? 'bg-primary/10 border-primary text-primary shadow-xs'
+                              : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                              services.waterproofing ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              <Droplet size={16} />
+                            </div>
+                            <span className="text-xs font-bold font-sans">Impermeabilización Certificada</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={services.waterproofing}
+                            onChange={() => {}}
+                            className="w-4 h-4 rounded text-primary focus:ring-primary pointer-events-none"
+                          />
+                        </div>
+
+                        {/* Reparaciones Urgentes */}
+                        <div
+                          onClick={() => setServices({ ...services, repairs: !services.repairs })}
+                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 flex items-center justify-between ${
+                            services.repairs
+                              ? 'bg-secondary/10 border-secondary text-secondary shadow-xs'
+                              : 'bg-white border-slate-200/80 hover:border-slate-300 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                              services.repairs ? 'bg-secondary text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              <HelpCircle size={16} />
+                            </div>
+                            <span className="text-xs font-bold font-sans">Reparaciones de Emergencia</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={services.repairs}
+                            onChange={() => {}}
+                            className="w-4 h-4 rounded text-secondary focus:ring-secondary pointer-events-none"
+                          />
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Row 6: m² aproximados & ¿Presupuesto asignado? */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                       <div className="relative group">
                         <input
                           type="text"
@@ -466,10 +497,10 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
 
                     {/* Row 7: Describa su proyecto o necesidad... */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="relative group">
+                    <div className="relative group">
                       <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
@@ -478,10 +509,10 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                         className={`w-full bg-[#f8fafc] border ${errors.message ? 'border-red-400 focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(248,113,113,0.2)]' : 'border-slate-200 focus:border-primary/50 focus:shadow-[0_0_0_3px_rgba(0,59,112,0.1)]'} rounded-lg px-4 py-3.5 text-slate-800 placeholder-slate-400 focus:outline-none resize-none focus:bg-white transition-all duration-300 font-sans text-sm group-hover:border-slate-300`}
                       ></textarea>
                       {errors.message && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-wider">{errors.message}</p>}
-                    </motion.div>
+                    </div>
 
                     {/* Row 8: Checkbox for Privacy Policy and Aviso Legal */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="relative pt-2">
+                    <div className="relative pt-2">
                       <label className="flex items-start gap-3 font-sans text-sm text-slate-600 cursor-pointer select-none">
                         <input
                           type="checkbox"
@@ -501,29 +532,21 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
                         </span>
                       </label>
                       {errors.acceptTerms && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase tracking-wider">{errors.acceptTerms}</p>}
-                    </motion.div>
+                    </div>
 
                     {/* Submit Button */}
-                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="pt-4">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                    <div className="pt-4">
+                      <button
                         type="submit"
                         className="relative overflow-hidden w-full md:w-auto bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest py-4 px-12 rounded hover:bg-secondary-container transition-all shadow-md hover:shadow-[0_10px_20px_rgba(183,15,54,0.3)] duration-300 flex items-center justify-center gap-2 group cursor-pointer"
                       >
-                        {/* Shimmer effect */}
-                        <motion.div 
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                          animate={{ x: ['-200%', '200%'] }}
-                          transition={{ repeat: Infinity, duration: 2.5, ease: 'linear', repeatDelay: 1 }}
-                        />
                         <span className="relative z-10 flex items-center gap-2">
                           ENVIAR MENSAJE
                           <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                         </span>
-                      </motion.button>
-                    </motion.div>
-                  </motion.form>
+                      </button>
+                    </div>
+                  </form>
                 </>
               ) : (
                 <div className="py-12 text-center space-y-6">
@@ -570,20 +593,14 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
               )}
 
             </div>
-          </motion.div>
+          </div>
 
         </div>
       </section>
 
       {/* FAQ Section */}
       <section className="bg-surface-container py-24 px-6 md:px-16 border-t border-surface-variant overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.8 }}
-          className="max-w-[800px] mx-auto"
-        >
+        <div className="max-w-[800px] mx-auto">
 
           <div className="text-center mb-16 space-y-2">
             <h2 className="font-display font-bold text-3xl md:text-4xl text-primary">Consultas Frecuentes</h2>
@@ -633,7 +650,7 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
             })}
           </div>
 
-        </motion.div>
+        </div>
       </section>
 
     </div>

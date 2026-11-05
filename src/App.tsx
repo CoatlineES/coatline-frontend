@@ -14,6 +14,7 @@ import CookiesView from './views/CookiesView';
 
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import SmoothScrollProvider from './components/layout/SmoothScrollProvider';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Placeholders for the private layouts and views we will build next
@@ -135,7 +136,7 @@ export default function App() {
             <Route path="partes" element={<PartesDiariosView />} />
             <Route path="ausencias" element={<AusenciasView />} />
             <Route path="gestion-ausencias" element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN', 'SUPERVISOR']}>
+              <ProtectedRoute allowedRoles={['SUPERADMIN', 'ADMIN', 'SUPERVISOR']} allowSupervisors={true}>
                 <GestionAusenciasView />
               </ProtectedRoute>
             } />
@@ -216,42 +217,44 @@ export default function App() {
 
   // Public Site Layout
   return (
-    <div className="bg-background text-on-surface font-sans antialiased min-h-screen flex flex-col justify-between">
-      <Navbar 
-        currentScreen={getCurrentScreen()} 
-        isMobileMenuOpen={isMobileMenuOpen} 
-        setIsMobileMenuOpen={setIsMobileMenuOpen} 
-        onNavigate={handleNav} 
-      />
+    <SmoothScrollProvider>
+      <div className="bg-background text-on-surface font-sans antialiased min-h-screen flex flex-col justify-between">
+        <Navbar 
+          currentScreen={getCurrentScreen()} 
+          isMobileMenuOpen={isMobileMenuOpen} 
+          setIsMobileMenuOpen={setIsMobileMenuOpen} 
+          onNavigate={handleNav} 
+        />
 
-      {/* Main Content Area with Router and Motion Transitions */}
-      <main className="flex-grow pt-20 overflow-x-hidden">
-        <AnimatePresence mode="wait" custom={transitionMode}>
-          <motion.div
-            key={location.pathname}
-            custom={transitionMode}
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={pageTransition}
-            className="w-full h-full flex flex-col"
-          >
-            <Routes location={location} key={location.pathname}>
-              <Route path="/" element={<HomeView onNavigate={handleNav} />} />
-              <Route path="/deteccion" element={<DetectionView onNavigate={handleNav} />} />
-              <Route path="/casos" element={<CasesView onNavigate={handleNav} />} />
-              <Route path="/contacto" element={<ContactView onNavigate={handleNav} />} />
-              <Route path="/login" element={<LoginView onNavigate={handleNav} />} />
-              <Route path="/legal" element={<LegalView onNavigate={handleNav} />} />
-              <Route path="/privacy" element={<PrivacyView onNavigate={handleNav} />} />
-              <Route path="/cookies" element={<CookiesView onNavigate={handleNav} />} />
-            </Routes>
-          </motion.div>
-        </AnimatePresence>
-      </main>
+        {/* Main Content Area with Router and Motion Transitions */}
+        <main className="flex-grow pt-20 overflow-x-hidden">
+          <AnimatePresence mode="wait" custom={transitionMode}>
+            <motion.div
+              key={location.pathname}
+              custom={transitionMode}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={pageTransition}
+              className="w-full h-full flex flex-col"
+            >
+              <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<HomeView onNavigate={handleNav} />} />
+                <Route path="/deteccion" element={<DetectionView onNavigate={handleNav} />} />
+                <Route path="/casos" element={<CasesView onNavigate={handleNav} />} />
+                <Route path="/contacto" element={<ContactView onNavigate={handleNav} />} />
+                <Route path="/login" element={<LoginView onNavigate={handleNav} />} />
+                <Route path="/legal" element={<LegalView onNavigate={handleNav} />} />
+                <Route path="/privacy" element={<PrivacyView onNavigate={handleNav} />} />
+                <Route path="/cookies" element={<CookiesView onNavigate={handleNav} />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        </main>
 
-      <Footer onNavigate={handleNav} />
-    </div>
+        <Footer onNavigate={handleNav} />
+      </div>
+    </SmoothScrollProvider>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Settings, 
   Droplet, 
@@ -15,10 +15,12 @@ import {
   ShieldCheck,
   ArrowRight,
   X,
-  ChevronsLeftRight
+  ChevronsLeftRight,
+  Sparkles,
+  Layers,
+  Activity
 } from 'lucide-react';
 import { ScreenId } from '../types';
-import CssDetectorCart from '../components/animations/CssDetectorCart';
 import CssDetectionFloor from '../components/animations/CssDetectionFloor';
 import imgHeroDeteccion from '../assets/packages/deteccion_termografica_1789058782940.jpg';
 
@@ -61,7 +63,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
           <button 
             onClick={onClose}
-            className="flex items-center gap-2 text-blue-200 hover:text-white transition-colors font-sans text-sm uppercase tracking-widest font-bold"
+            className="flex items-center gap-2 text-sky-300 hover:text-white transition-colors font-sans text-xs uppercase tracking-widest font-bold px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10"
           >
             <ArrowRight className="rotate-180" size={16} /> Volver a Casos
           </button>
@@ -69,14 +71,14 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
           <div className="flex items-center gap-2">
             <button 
               onClick={onPrev}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors border border-white/10"
+              className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-all border border-white/10 hover:border-white/20 active:scale-95"
               title="Caso Anterior"
             >
               <ArrowRight className="rotate-180" size={16} />
             </button>
             <button 
               onClick={onNext}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors border border-white/10"
+              className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-all border border-white/10 hover:border-white/20 active:scale-95"
               title="Caso Siguiente"
             >
               <ArrowRight size={16} />
@@ -87,14 +89,14 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         <AnimatePresence mode="wait">
           <motion.div 
             key={c.id}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="w-full bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col lg:flex-row h-auto lg:h-[75vh] lg:max-h-[800px] lg:min-h-[500px]"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="w-full bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row h-auto lg:h-[75vh] lg:max-h-[800px] lg:min-h-[500px] border border-slate-200/50"
           >
             {/* Slider Section */}
-            <div className="w-full lg:w-3/5 h-[40vh] lg:h-full relative bg-slate-900 select-none touch-none">
+            <div className="w-full lg:w-3/5 h-[42vh] lg:h-full relative bg-slate-900 select-none touch-none">
               <div 
                 className="relative w-full h-full cursor-ew-resize overflow-hidden flex items-center justify-center"
                 onPointerDown={onPointerDown}
@@ -119,71 +121,76 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
 
                 {/* Slider Handle */}
                 <div 
-                  className="absolute inset-y-0 flex items-center justify-center"
+                  className="absolute inset-y-0 flex items-center justify-center pointer-events-none"
                   style={{ left: `${sliderPos}%`, marginLeft: '-1px' }}
                 >
-                  <div className="w-[3px] h-full bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
-                  <div className="absolute w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center border-2 border-primary/20 text-primary pointer-events-none group-hover:scale-110 transition-transform">
-                    <ChevronsLeftRight size={24} />
+                  <div className="w-[3px] h-full bg-white shadow-[0_0_15px_rgba(0,0,0,0.6)]" />
+                  <div className="absolute w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center border-2 border-primary/20 text-primary pointer-events-none transform -translate-x-1/2">
+                    <ChevronsLeftRight size={22} />
                   </div>
                 </div>
                 
-                {/* Labels overlay */}
+                {/* Badges overlay */}
                 <div className="absolute top-4 left-4 lg:top-6 lg:left-6 pointer-events-none">
-                  <div className="px-3 py-1.5 lg:px-4 lg:py-2 bg-black/60 backdrop-blur text-white text-xs lg:text-sm font-bold rounded shadow-lg uppercase tracking-widest">
-                    Espacio a Supervisar
+                  <div className="px-3.5 py-1.5 lg:px-4 lg:py-2 bg-slate-900/80 backdrop-blur-md text-white text-[11px] lg:text-xs font-bold rounded-xl shadow-lg uppercase tracking-wider border border-white/10">
+                    Área a Supervisar
                   </div>
                 </div>
                 <div className="absolute top-4 right-4 lg:top-6 lg:right-6 pointer-events-none">
-                  <div className="px-3 py-1.5 lg:px-4 lg:py-2 bg-secondary/90 backdrop-blur text-white text-xs lg:text-sm font-bold rounded shadow-lg uppercase tracking-widest flex items-center gap-2">
-                    <Zap size={12} className="fill-white lg:w-[14px] lg:h-[14px]" />
-                    Filtraciones
+                  <div className="px-3.5 py-1.5 lg:px-4 lg:py-2 bg-secondary/95 backdrop-blur-md text-white text-[11px] lg:text-xs font-bold rounded-xl shadow-lg uppercase tracking-wider flex items-center gap-2 border border-white/15">
+                    <Zap size={13} className="fill-white" />
+                    Filtraciones COAT-DDP
                   </div>
+                </div>
+
+                {/* Hint indicator */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none bg-black/60 backdrop-blur-md text-white/80 text-[10px] font-sans px-3 py-1 rounded-full border border-white/10 uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                  <ChevronsLeftRight size={12} /> Arrastre para comparar
                 </div>
               </div>
             </div>
 
             {/* Info Section */}
             <div className="w-full lg:w-2/5 p-6 lg:p-10 flex flex-col bg-slate-50 text-slate-900 overflow-y-auto">
-              <div className="mb-8 flex flex-col">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-100 rounded text-primary mb-4 w-max shadow-sm">
+              <div className="mb-6 flex flex-col">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 border border-sky-200/60 rounded-full text-sky-800 mb-4 w-max shadow-2xs">
                   <Radar size={12} className="text-secondary" />
-                  <span className="font-sans font-bold text-[9px] uppercase tracking-wider">Caso de Estudio</span>
+                  <span className="font-sans font-bold text-[10px] uppercase tracking-wider">Caso de Estudio Dieléctrico</span>
                 </div>
-                <h3 className="font-display font-bold text-3xl lg:text-4xl mb-3 text-slate-800 leading-tight">
+                <h3 className="font-display font-extrabold text-2xl lg:text-3xl text-slate-900 leading-tight">
                   {c.system}
                 </h3>
-                <p className="font-sans text-sm md:text-base font-medium text-slate-600 border-l-4 border-slate-300 pl-4 mt-2 leading-relaxed">
+                <p className="font-sans text-xs md:text-sm font-medium text-slate-600 border-l-3 border-secondary/70 pl-3 mt-3 leading-relaxed">
                   {c.systemDesc}
                 </p>
               </div>
               
-              <div className="space-y-6 flex-grow">
+              <div className="space-y-4 flex-grow">
                 {/* Before Details */}
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
-                  <div className="flex items-center gap-2 mb-3">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs transition-all hover:shadow-xs">
+                  <div className="flex items-center gap-2.5 mb-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                    <h4 className="font-display font-bold text-xl text-primary">{c.before.title}</h4>
+                    <h4 className="font-display font-bold text-base text-primary">{c.before.title}</h4>
                   </div>
-                  <p className="font-sans text-xs uppercase tracking-wider font-bold text-slate-500 mb-3">
+                  <p className="font-sans text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
                     {c.before.subtitle}
                   </p>
-                  <p className="font-sans text-sm md:text-base text-slate-600 leading-relaxed">
+                  <p className="font-sans text-xs md:text-sm text-slate-600 leading-relaxed">
                     {c.before.desc}
                   </p>
                 </div>
 
                 {/* After Details */}
-                <div className="bg-white p-6 rounded-xl border border-secondary/20 shadow-md relative overflow-hidden transition-all hover:shadow-lg">
+                <div className="bg-white p-5 rounded-2xl border border-secondary/20 shadow-xs relative overflow-hidden transition-all hover:shadow-md">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-secondary" />
-                  <div className="flex items-center gap-2 mb-3">
-                    <Zap size={20} className="text-secondary fill-secondary/20" />
-                    <h4 className="font-display font-bold text-xl text-secondary">{c.after.title}</h4>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap size={18} className="text-secondary fill-secondary/20" />
+                    <h4 className="font-display font-bold text-base text-secondary">{c.after.title}</h4>
                   </div>
-                  <p className="font-sans text-xs uppercase tracking-wider font-bold text-red-600 mb-3">
+                  <p className="font-sans text-[11px] uppercase tracking-wider font-bold text-secondary mb-2">
                     {c.after.subtitle}
                   </p>
-                  <p className="font-sans text-sm md:text-base text-slate-700 leading-relaxed font-medium">
+                  <p className="font-sans text-xs md:text-sm text-slate-700 leading-relaxed font-medium">
                     {c.after.desc}
                   </p>
                 </div>
@@ -194,8 +201,6 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
       </div>
     );
   };
-
-
 
   const cases = [
     {
@@ -271,12 +276,15 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
   return (
     <div className="w-full text-on-surface">
       {/* Hero Section */}
-      <header className="relative w-full min-h-[calc(100vh-80px)] md:h-[calc(100vh-80px)] flex flex-col justify-center pt-8 overflow-hidden">
+      <header className="relative w-full min-h-[calc(100vh-80px)] md:h-[calc(100vh-80px)] flex flex-col justify-center pt-8 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-100">
         <div className="absolute inset-0 w-full h-full z-0">
           <CssDetectionFloor />
-          {/* Subtle vignette and blur to ensure text readability and create a premium feel */}
-          <div className="absolute inset-0 bg-background/70 md:bg-background/50 z-10 pointer-events-none backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-white/70 md:bg-white/50 z-10 pointer-events-none backdrop-blur-[2px]" />
         </div>
+
+        {/* Ambient radial lighting */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-200/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-30 max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16 items-center">
           
@@ -286,11 +294,11 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 rounded-full bg-white/80 border border-slate-300 backdrop-blur-md shadow-sm w-max"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-6 rounded-full bg-white/90 border border-slate-200/80 backdrop-blur-md shadow-xs w-max"
             >
-              <Settings size={14} className="text-secondary" />
+              <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
               <span className="font-sans font-bold text-slate-800 uppercase tracking-widest text-[10px]">
-                Tecnología de Vanguardia
+                Tecnología Dieléctrica · Normativa UNE
               </span>
             </motion.div>
             
@@ -298,7 +306,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, x: -30, filter: 'blur(10px)' }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-              className="font-display font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.1] tracking-tight mb-6"
+              className="font-display font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.08] tracking-tight mb-6"
             >
               Detección Electrónica de Filtraciones
             </motion.h1>
@@ -307,9 +315,9 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, x: -20, filter: 'blur(8px)' }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-              className="text-base md:text-lg lg:text-xl text-slate-700 font-sans max-w-xl leading-relaxed font-medium mb-10"
+              className="text-base md:text-lg text-slate-600 font-sans max-w-xl leading-relaxed font-normal mb-8"
             >
-              Diagnóstico de alta precisión sin alteraciones estructurales. Tecnología no invasiva que identifica microfisuras con exactitud milimétrica.
+              Diagnóstico de alta precisión sin demoliciones ni pruebas de inundación. Tecnología dieléctrica avanzada que localiza microfisuras con <strong className="text-slate-900 font-bold">exactitud sub-milimétrica</strong>.
             </motion.p>
             
             <motion.div 
@@ -318,17 +326,16 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
               className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
             >
-              <a 
-                href="#contacto" 
-                onClick={(e) => { e.preventDefault(); document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="px-8 py-4 bg-secondary text-white font-sans font-bold text-sm uppercase tracking-wider rounded-xl hover:bg-[#9a0c2d] transition-all shadow-xl shadow-secondary/30 active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
+              <button 
+                onClick={() => onNavigate('contact', 'push')}
+                className="px-8 py-4 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-[#c92548] transition-all shadow-xl shadow-secondary/25 hover:shadow-2xl hover:shadow-secondary/35 active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto group cursor-pointer"
               >
-                Solicitar Diagnóstico <ArrowRight size={16} />
-              </a>
+                Solicitar Diagnóstico <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </button>
               <a 
                 href="#tecnologia" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('tecnologia')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="px-8 py-4 bg-white/50 border-2 border-[#001c3a]/20 text-[#001c3a] font-sans font-bold text-sm uppercase tracking-wider rounded-xl hover:bg-white hover:border-[#001c3a] transition-all active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
+                className="px-8 py-4 bg-white/80 border border-slate-200/90 text-primary font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-white hover:border-primary/40 shadow-xs hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
               >
                 Conocer la Tecnología
               </a>
@@ -336,49 +343,49 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
           </div>
 
           {/* Right Column: Premium Image with Floating Cards */}
-          <div className="md:col-span-6 lg:col-span-7 relative h-full flex items-center justify-center pt-16 md:pt-0">
+          <div className="md:col-span-6 lg:col-span-7 relative h-full flex items-center justify-center pt-8 md:pt-0">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               className="relative w-full max-w-xl mx-auto aspect-[4/3]"
             >
-              <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border border-white/20">
+              <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl border border-white/40 ring-1 ring-slate-900/5">
                 <img 
                   src={imgHeroDeteccion} 
-                  alt="Técnico realizando detección termográfica" 
+                  alt="Técnico realizando detección dieléctrica de filtraciones" 
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-[#001c3a]/30 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#001c3a]/40 via-transparent to-transparent pointer-events-none" />
               </div>
               
               {/* Floating Metric 1 */}
               <motion.div 
-                animate={{ y: [-6, 6, -6] }}
+                animate={{ y: [-5, 5, -5] }}
                 transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                className="absolute top-6 md:top-10 -left-6 md:-left-12 bg-white/95 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/50 flex items-center gap-4 z-10"
+                className="absolute top-6 md:top-10 -left-4 md:-left-8 bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-xl border border-slate-200/80 flex items-center gap-3.5 z-10"
               >
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
                   <Target className="text-emerald-600 w-5 h-5" />
                 </div>
                 <div className="pr-2">
-                  <p className="font-display font-bold text-slate-900 text-lg md:text-xl leading-tight">99.9%</p>
-                  <p className="font-sans text-[10px] md:text-xs uppercase tracking-widest text-slate-500 font-bold mt-0.5">Precisión Exacta</p>
+                  <p className="font-display font-extrabold text-slate-900 text-lg md:text-xl leading-tight">99.9%</p>
+                  <p className="font-sans text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">Precisión Sub-Milimétrica</p>
                 </div>
               </motion.div>
 
               {/* Floating Metric 2 */}
               <motion.div 
-                animate={{ y: [6, -6, 6] }}
+                animate={{ y: [5, -5, 5] }}
                 transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 1 }}
-                className="absolute bottom-8 md:bottom-12 -right-6 md:-right-12 bg-white/95 backdrop-blur-md rounded-xl p-4 shadow-xl border border-white/50 flex items-center gap-4 z-10"
+                className="absolute bottom-8 md:bottom-10 -right-4 md:-right-8 bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-xl border border-slate-200/80 flex items-center gap-3.5 z-10"
               >
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
                   <ShieldCheck className="text-primary w-5 h-5" />
                 </div>
                 <div className="pr-2">
-                  <p className="font-display font-bold text-slate-900 text-base md:text-lg leading-tight">Normativa UNE</p>
-                  <p className="font-sans text-[10px] md:text-xs uppercase tracking-widest text-slate-500 font-bold mt-0.5">Certificado Oficial</p>
+                  <p className="font-display font-extrabold text-slate-900 text-base md:text-lg leading-tight">Normativa UNE</p>
+                  <p className="font-sans text-[10px] uppercase tracking-wider text-slate-500 font-bold mt-0.5">Ensayos Certificados</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -389,283 +396,289 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
 
       <main>
         {/* The Core Concept: Bento Grid */}
-        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6 }}
-            className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center lg:items-start"
-          >
+        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center lg:items-start">
             
             {/* Intro Text */}
-            <div className="md:col-span-5 flex flex-col justify-center pr-0 md:pr-12">
-              <h2 className="font-display font-bold text-3xl md:text-4xl text-primary mb-6 tight-tracking">
-                Prueba de Estanqueidad Sin Llenado
+            <div className="md:col-span-5 flex flex-col justify-center pr-0 md:pr-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 border border-sky-200/60 rounded-full text-sky-800 text-[10px] font-bold uppercase tracking-wider mb-4 w-max">
+                <Activity size={12} className="text-sky-600" />
+                Revolución en Ensayos No Destructivos
+              </div>
+              <h2 className="font-display font-extrabold text-3xl md:text-4xl text-slate-900 mb-6 tight-tracking leading-tight">
+                Prueba de Estanqueidad Sin Inundación
               </h2>
-              <p className="font-sans text-base text-on-surface-variant mb-6 leading-relaxed">
-                La estanqueidad electrónica representa el estándar más avanzado en inspección arquitectónica. Sustituye los métodos tradicionales de inundación por un mapeo de conductividad eléctrica que garantiza resultados inmediatos y precisos.
+              <p className="font-sans text-base text-slate-600 mb-6 leading-relaxed">
+                La inspección dieléctrica representa el estándar más avanzado en patología constructiva. Sustituye los métodos tradicionales de inundación por un mapeo de flujo eléctrico que detecta cualquier fisura de forma <strong className="text-slate-800">instantánea y sin sobrecargar la estructura</strong>.
               </p>
-              <div className="w-16 h-px bg-outline-variant mb-6" />
-              <p className="font-sans text-sm text-outline leading-relaxed">
-                Metodología avalada y conforme a las normativas UNE vigentes para ensayos no destructivos en edificación.
+              <div className="w-16 h-1 bg-secondary rounded-full mb-6" />
+              <p className="font-sans text-xs md:text-sm text-slate-500 leading-relaxed">
+                Metodología avalada por normativas UNE y ASTM para ensayos no destructivos en cubiertas planas e inclinadas.
               </p>
             </div>
             
             {/* Benefits Bento */}
-            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12 md:mt-0">
+            <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5 mt-10 md:mt-0">
               
-              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl transition-all duration-300 group">
-                <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">
-                  <Zap className="text-primary w-6 h-6" />
+              <div className="bg-white border border-slate-200/80 p-8 rounded-3xl flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Zap className="text-sky-600 w-6 h-6" />
                 </div>
-                <h3 className="font-display font-bold text-primary mb-3 text-lg">Resultados Instantáneos</h3>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Evita las esperas de 48 horas de las pruebas de inundación tradicionales. El escaneo electrónico proporciona lecturas precisas en tiempo real.
+                <h3 className="font-display font-bold text-slate-900 mb-2.5 text-lg">Resultados Instantáneos</h3>
+                <p className="font-sans text-xs md:text-sm text-slate-600 leading-relaxed">
+                  Evita esperas de 48 a 72 horas propias de inundaciones. El escaneo electrónico proporciona lecturas y coordenadas exactas en tiempo real.
                 </p>
               </div>
               
-              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl transition-all duration-300 group">
-                <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">
-                  <Scale className="text-primary w-6 h-6" />
+              <div className="bg-white border border-slate-200/80 p-8 rounded-3xl flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Scale className="text-amber-600 w-6 h-6" />
                 </div>
-                <h3 className="font-display font-bold text-primary mb-3 text-lg">Sin Sobrecarga Estructural</h3>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Protege la integridad del edificio al evitar el peso masivo asociado a las pruebas de estanqueidad tradicionales.
+                <h3 className="font-display font-bold text-slate-900 mb-2.5 text-lg">0% Sobrecarga Estructural</h3>
+                <p className="font-sans text-xs md:text-sm text-slate-600 leading-relaxed">
+                  Elimina el riesgo de colapso o fisuración por peso masivo de agua. El edificio conserva su estado estructural intacto.
                 </p>
               </div>
               
-              <div className="bg-white border border-surface-variant p-8 rounded-xl flex flex-col hover:shadow-xl transition-all duration-300 group">
-                <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">
-                  <Target className="text-primary w-6 h-6" />
+              <div className="bg-white border border-slate-200/80 p-8 rounded-3xl flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                <div className="w-12 h-12 rounded-2xl bg-secondary/10 border border-secondary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Target className="text-secondary w-6 h-6" />
                 </div>
-                <h3 className="font-display font-bold text-primary mb-3 text-lg">Alta Precisión</h3>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Localiza porosidades y fisuras microscópicas invisibles al ojo humano con exactitud sub-milimétrica.
+                <h3 className="font-display font-bold text-slate-900 mb-2.5 text-lg">Precisión Sub-Milimétrica</h3>
+                <p className="font-sans text-xs md:text-sm text-slate-600 leading-relaxed">
+                  Localiza porosidades, soldaduras defectuosas y fisuras microscópicas invisibles a inspecciones visuales o térmicas estándar.
                 </p>
               </div>
               
-              <div className="bg-primary border border-primary p-8 rounded-xl flex flex-col hover:shadow-2xl transition-all duration-300 group" style={{ backgroundColor: '#003b70' }}>
-                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-6">
+              <div className="bg-gradient-to-br from-[#001c3a] to-[#003b70] border border-primary/20 p-8 rounded-3xl flex flex-col hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 text-white group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <CheckCircle className="text-white w-6 h-6" />
                 </div>
-                <h3 className="font-display font-bold text-white mb-3 text-lg">Normativa UNE</h3>
-                <p className="font-sans text-sm text-blue-100 leading-relaxed">
-                  Procedimientos estandarizados y certificados que cumplen con los más altos requisitos técnicos europeos.
+                <h3 className="font-display font-bold text-white mb-2.5 text-lg">Normativa UNE Oficial</h3>
+                <p className="font-sans text-xs md:text-sm text-blue-100/90 leading-relaxed">
+                  Procedimientos estandarizados y certificados con validez legal y técnica ante compañías de seguros y dirección facultativa.
                 </p>
               </div>
-
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* Technology Breakdown */}
-        <section className="py-24 bg-surface-container-low border-y border-surface-variant/40" id="tecnologia">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6 }}
-            className="max-w-7xl mx-auto px-6 md:px-16"
-          >
+        <section className="py-24 bg-slate-50/80 border-y border-slate-200/60 overflow-hidden" id="tecnologia">
+          <div className="max-w-7xl mx-auto px-6 md:px-16">
             <div className="text-center mb-16 max-w-3xl mx-auto">
-              <span className="font-sans font-bold text-xs text-primary uppercase tracking-widest mb-4 block">
-                Sistemas de Diagnóstico
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-100 text-sky-800 font-sans font-bold text-[10px] rounded-full uppercase tracking-widest mb-4">
+                <Sparkles size={12} className="text-sky-600" /> Metodologías Especializadas
               </span>
-              <h2 className="font-display font-bold text-3xl md:text-4xl text-primary">
+              <h2 className="font-display font-extrabold text-3xl md:text-4xl text-slate-900 mb-4">
                 Dualidad Tecnológica para Cobertura Total
               </h2>
+              <p className="font-sans text-slate-600 text-sm md:text-base leading-relaxed">
+                Adaptamos el método de barrido eléctrico a la tipología exacta de membrana, nivel de humedad y aislamiento del inmueble.
+              </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Low Voltage */}
-              <div className="bg-white border border-surface-variant p-10 lg:p-12 rounded-xl flex flex-col relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+              <div className="bg-white border border-slate-200/80 p-8 lg:p-10 rounded-3xl flex flex-col relative overflow-hidden group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                   <Zap strokeWidth={1} className="w-48 h-48 text-primary" />
                 </div>
                 <div className="relative z-10">
-                  <h3 className="font-display font-bold text-2xl text-primary mb-4 flex items-center gap-3">
-                    Baja Tensión 
-                    <span className="px-2 py-1 bg-surface-container-high text-on-surface-variant font-sans font-bold text-[10px] rounded uppercase">Húmedo</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200/60 font-sans font-bold text-[10px] rounded-full uppercase tracking-wider">
+                      Método Húmedo (EFVM)
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-400">01 / 02</span>
+                  </div>
+                  <h3 className="font-display font-extrabold text-2xl text-slate-900 mb-4">
+                    Baja Tensión Vectorial
                   </h3>
-                  <p className="font-sans text-sm text-on-surface-variant mb-8 leading-relaxed">
-                    Ideal para superficies de impermeabilización expuestas o bajo cargas ligeras. Utiliza un circuito de baja tensión y un mapeo de vectores de flujo sobre una superficie pre-humedecida. La corriente fluye hacia las penetraciones conectadas a tierra, dirigiendo al técnico exactamente al punto de fallo.
+                  <p className="font-sans text-sm text-slate-600 mb-8 leading-relaxed">
+                    Ideal para cubiertas protegidas con grava, cubiertas ajardinadas o superficies bajo cargas pesadas. Utiliza un circuito de baja tensión y mapeo de vectores de flujo sobre una superficie pre-humedecida para orientar al operador directamente al punto de falla.
                   </p>
-                  <ul className="space-y-4 font-sans text-sm text-on-surface-variant">
+                  <ul className="space-y-3.5 font-sans text-xs md:text-sm text-slate-700">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="text-secondary w-5 h-5 shrink-0 mt-0.5" />
-                      Superficies expuestas y techos verdes extensivos.
+                      <span>Eficaz en cubiertas ajardinadas y techos verdes extensivos.</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="text-secondary w-5 h-5 shrink-0 mt-0.5" />
-                      Mapeo perimetral y de campos amplios.
+                      <span>Mapeo perimetral y lectura vectorial de campos amplios.</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="text-secondary w-5 h-5 shrink-0 mt-0.5" />
-                      Resolución de lectura direccional.
+                      <span>Detección precisa bajo grava sin retirada masiva de material.</span>
                     </li>
                   </ul>
                 </div>
               </div>
               
               {/* High Voltage */}
-              <div className="bg-white border border-surface-variant p-10 lg:p-12 rounded-xl flex flex-col relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+              <div className="bg-white border border-slate-200/80 p-8 lg:p-10 rounded-3xl flex flex-col relative overflow-hidden group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <div className="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                   <Zap strokeWidth={1.5} className="w-48 h-48 text-primary" />
                 </div>
                 <div className="relative z-10">
-                  <h3 className="font-display font-bold text-2xl text-primary mb-4 flex items-center gap-3">
-                    Alta Tensión
-                    <span className="px-2 py-1 bg-surface-container-high text-on-surface-variant font-sans font-bold text-[10px] rounded uppercase">Seco</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200/60 font-sans font-bold text-[10px] rounded-full uppercase tracking-wider">
+                      Método Seco (Spark Testing)
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-400">02 / 02</span>
+                  </div>
+                  <h3 className="font-display font-extrabold text-2xl text-slate-900 mb-4">
+                    Alta Tensión por Arco Eléctrico
                   </h3>
-                  <p className="font-sans text-sm text-on-surface-variant mb-8 leading-relaxed">
-                    Diseñado para membranas secas expuestas. Un electrodo en forma de escoba o rodillo con carga de alta tensión se pasa sobre la superficie. Cualquier discontinuidad permite que la corriente forme un arco eléctrico hacia el sustrato conductor, activando una señal visual y auditiva inmediata.
+                  <p className="font-sans text-sm text-slate-600 mb-8 leading-relaxed">
+                    Diseñado para membranas secas expuestas. Un electrodo de barrido con carga de alta tensión se desplaza por la superficie. Cualquier poro permite el paso de un arco eléctrico hacia el sustrato conductor, activando una señal visual y auditiva inmediata.
                   </p>
-                  <ul className="space-y-4 font-sans text-sm text-on-surface-variant">
+                  <ul className="space-y-3.5 font-sans text-xs md:text-sm text-slate-700">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="text-secondary w-5 h-5 shrink-0 mt-0.5" />
-                      Membranas bituminosas, PVC, TPO y recubrimientos líquidos.
+                      <span>Apto para membranas de PVC, TPO, EPDM y asfálticas secas.</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="text-secondary w-5 h-5 shrink-0 mt-0.5" />
-                      Inspección extremadamente rápida (hasta 2000 m²/día).
+                      <span>Inspección de alta velocidad: hasta 2.000 m²/día por cuadrilla.</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle className="text-secondary w-5 h-5 shrink-0 mt-0.5" />
-                      Detección de defectos capilares microscópicos.
+                      <span>Detección de defectos microscópicos en juntas y solapes.</span>
                     </li>
                   </ul>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* Process Section */}
-        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6 }}
-          >
-          <h2 className="font-display font-bold text-3xl md:text-4xl text-primary mb-16 text-center">
-            Metodología de Inspección
-          </h2>
-          <div className="relative">
-            {/* Connecting Line (Desktop) */}
-            <div className="hidden md:block absolute top-12 left-[12%] right-[12%] h-px bg-surface-variant border-t border-dashed border-slate-300" />
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 relative z-10">
+        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto overflow-hidden">
+          <div>
+            <div className="text-center mb-16 max-w-3xl mx-auto">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-800 font-sans font-bold text-[10px] rounded-full uppercase tracking-widest mb-4">
+                Protocolo Sistemático
+              </span>
+              <h2 className="font-display font-extrabold text-3xl md:text-4xl text-slate-900 mb-4">
+                Metodología de Inspección en 4 Fases
+              </h2>
+              <p className="font-sans text-slate-600 text-sm md:text-base leading-relaxed">
+                Garantizamos máxima rigurosidad desde la auditoría inicial hasta la entrega del informe técnico pericial.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
               
               {/* Step 1 */}
-              <div className="flex flex-col items-center text-center group cursor-default">
-                <div className="w-24 h-24 rounded-full bg-white border border-surface-variant flex items-center justify-center mb-6 shadow-sm relative group-hover:shadow-md transition-shadow">
-                  <span className="font-display font-extrabold text-2xl text-primary">01</span>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
-                    <Eye size={16} />
-                  </div>
+              <div className="bg-white border border-slate-200/80 p-8 rounded-3xl flex flex-col text-center items-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <Eye size={26} />
                 </div>
-                <h4 className="font-sans font-bold text-primary mb-3">Auditoría Visual</h4>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Inspección preliminar del sustrato y condiciones de la membrana para determinar la viabilidad técnica.
+                <span className="font-mono text-xs font-extrabold text-slate-400 mb-1">FASE 01</span>
+                <h4 className="font-display font-bold text-slate-900 text-lg mb-2">Auditoría Visual</h4>
+                <p className="font-sans text-xs md:text-sm text-slate-600 leading-relaxed">
+                  Inspección preliminar del sustrato, perímetros y elementos pasantes para determinar la viabilidad del ensayo.
                 </p>
               </div>
               
               {/* Step 2 */}
-              <div className="flex flex-col items-center text-center group cursor-default">
-                <div className="w-24 h-24 rounded-full bg-white border border-surface-variant flex items-center justify-center mb-6 shadow-sm relative group-hover:shadow-md transition-shadow">
-                  <span className="font-display font-extrabold text-2xl text-primary">02</span>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
-                    <SlidersHorizontal size={16} />
-                  </div>
+              <div className="bg-white border border-slate-200/80 p-8 rounded-3xl flex flex-col text-center items-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <SlidersHorizontal size={26} />
                 </div>
-                <h4 className="font-sans font-bold text-primary mb-3">Calibración</h4>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Ajuste de sensibilidad del equipo según el grosor del material aislante y conductividad del sustrato.
+                <span className="font-mono text-xs font-extrabold text-slate-400 mb-1">FASE 02</span>
+                <h4 className="font-display font-bold text-slate-900 text-lg mb-2">Calibración</h4>
+                <p className="font-sans text-xs md:text-sm text-slate-600 leading-relaxed">
+                  Ajuste de sensibilidad según grosor del material aislante, conductividad del sustrato y humedad ambiente.
                 </p>
               </div>
               
               {/* Step 3 */}
-              <div className="flex flex-col items-center text-center group cursor-default">
-                <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center mb-6 shadow-md relative ring-4 ring-primary/10 group-hover:shadow-xl transition-shadow">
-                  <span className="font-display font-extrabold text-2xl">03</span>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center shadow-md">
-                    <Radar size={16} />
-                  </div>
+              <div className="bg-gradient-to-br from-[#001c3a] to-[#003b70] text-white p-8 rounded-3xl flex flex-col text-center items-center shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden">
+                <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <Radar size={26} />
                 </div>
-                <h4 className="font-sans font-bold text-primary mb-3">Barrido Electrónico</h4>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Ejecución sistemática del escaneo, marcando físicamente cada anomalía detectada en tiempo real.
+                <span className="font-mono text-xs font-extrabold text-blue-200 mb-1">FASE 03</span>
+                <h4 className="font-display font-bold text-white text-lg mb-2">Barrido Dieléctrico</h4>
+                <p className="font-sans text-xs md:text-sm text-blue-100/90 leading-relaxed">
+                  Mapeo exhaustivo marcando con precisión milimétrica cada fisura detectada sobre la propia cubierta.
                 </p>
               </div>
               
               {/* Step 4 */}
-              <div className="flex flex-col items-center text-center group cursor-default">
-                <div className="w-24 h-24 rounded-full bg-white border border-surface-variant flex items-center justify-center mb-6 shadow-sm relative group-hover:shadow-md transition-shadow">
-                  <span className="font-display font-extrabold text-2xl text-primary">04</span>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
-                    <FileText size={16} />
-                  </div>
+              <div className="bg-white border border-slate-200/80 p-8 rounded-3xl flex flex-col text-center items-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <FileText size={26} />
                 </div>
-                <h4 className="font-sans font-bold text-primary mb-3">Informe Técnico</h4>
-                <p className="font-sans text-sm text-on-surface-variant leading-relaxed">
-                  Entrega de documentación planimétrica detallando patologías, coordenadas y recomendaciones de reparación.
+                <span className="font-mono text-xs font-extrabold text-slate-400 mb-1">FASE 04</span>
+                <h4 className="font-display font-bold text-slate-900 text-lg mb-2">Informe Técnico</h4>
+                <p className="font-sans text-xs md:text-sm text-slate-600 leading-relaxed">
+                  Entrega de planimetría digital con coordenadas de patologías y protocolo recomendado de reparación quirúrgica.
                 </p>
               </div>
 
             </div>
           </div>
-          </motion.div>
         </section>
 
         {/* Asymmetric Detail Section */}
-        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto border-t border-surface-variant/40">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6 }}
-            className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center"
-          >
-            <div className="md:col-span-6 relative h-[500px] rounded-2xl overflow-hidden shadow-xl group cursor-pointer">
+        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto border-t border-slate-200/60 overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+            {/* Image from Left */}
+            <div className="md:col-span-6 relative h-[450px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl group border border-slate-200/80">
               <img 
-                alt="Instrumental" 
+                alt="Instrumental de detección dieléctrica de Coatline" 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO9lRgqsXOHLFU5onbx5GvMUiDlOH-lG7BIG3Ou1BTws-0kdxrp97RmqJE84igddm-LyxRCIzvBj22aiaV5gPA-69ENsYUdOvKvkCJ6Vcis2vz-137oWFnTzzjk-5z-pvE46_LGZmqQoRF1x9QSapbY1rvlPi7oeiq8iHd0mzpxr816jxoUxrsANqiuBuVdPIDDPiE104MbtGIc_xKLnAtLfmfwn5IUldNtetvnG_lhQmdt-6hSD0kNbEzbHlCieAf46HbU-LqRihJ" 
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-white/40 shadow-lg">
+                <p className="font-display font-bold text-slate-900 text-sm">Calibración Certificada</p>
+                <p className="font-sans text-xs text-slate-600 mt-0.5">Equipos sometidos a trazabilidad metrológica periódica.</p>
+              </div>
             </div>
-            <div className="md:col-span-5 md:col-start-8 flex flex-col pt-8 md:pt-0">
-              <h2 className="font-display font-bold text-3xl md:text-3xl text-primary mb-6">
+            
+            {/* Text Specs from Right */}
+            <div className="md:col-span-6 flex flex-col pt-4 md:pt-0">
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-secondary/10 border border-secondary/20 rounded-full text-secondary text-[10px] font-bold uppercase tracking-wider mb-4 w-max">
+                <Target size={12} /> Alta Fidelidad Instrumental
+              </span>
+              <h2 className="font-display font-extrabold text-3xl md:text-4xl text-slate-900 mb-6 leading-tight">
                 Equipamiento de Grado Instrumental
               </h2>
-              <p className="font-sans text-base text-on-surface-variant mb-8 leading-relaxed">
-                No comprometemos la precisión. Coatline emplea exclusivamente equipos de calibración instrumental de última generación, capaces de adaptarse a variaciones resistivas ambientales y materiales complejos.
+              <p className="font-sans text-base text-slate-600 mb-8 leading-relaxed">
+                Coatline no compromete la precisión del diagnóstico. Empleamos instrumental electroquímico de última generación capaz de discriminar interferencias electromagnéticas y adaptarse a sustratos complejos.
               </p>
-              <ul className="space-y-6">
-                <li className="flex flex-col">
-                  <span className="font-sans font-bold text-primary mb-1">Calibración Dinámica</span>
-                  <span className="font-sans text-sm text-on-surface-variant leading-relaxed">Ajuste continuo a las condiciones de humedad y temperatura del entorno.</span>
-                </li>
-                <li className="w-full h-px bg-surface-variant" />
-                <li className="flex flex-col">
-                  <span className="font-sans font-bold text-primary mb-1">Técnicos Certificados</span>
-                  <span className="font-sans text-sm text-on-surface-variant leading-relaxed">Operadores formados específicamente en termodinámica y comportamiento eléctrico de polímeros.</span>
-                </li>
-              </ul>
+              
+              <div className="space-y-4">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs hover:shadow-sm transition-shadow">
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    <span className="font-display font-bold text-slate-900 text-base">Calibración Dinámica Adaptativa</span>
+                  </div>
+                  <p className="font-sans text-xs md:text-sm text-slate-600 pl-5 leading-relaxed">
+                    Ajuste automático a variaciones resistivas provocadas por el gradiente térmico del sol y la humedad del ambiente.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs hover:shadow-sm transition-shadow">
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <div className="w-2 h-2 rounded-full bg-secondary" />
+                    <span className="font-display font-bold text-slate-900 text-base">Ingenieros de Ensayo Certificados</span>
+                  </div>
+                  <p className="font-sans text-xs md:text-sm text-slate-600 pl-5 leading-relaxed">
+                    Operadores técnicos con titulación y formación continua en termodinámica y comportamiento dieléctrico de polímeros.
+                  </p>
+                </div>
+              </div>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* Intervenciones Reales en Obra */}
-        <section id="casos-reales" className="py-24 px-6 md:px-16 bg-primary text-white relative overflow-hidden" style={{ backgroundColor: '#002B54' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6 }}
-          >
-          <div className="absolute inset-0 opacity-10 mix-blend-overlay">
+        <section id="casos-reales" className="py-24 px-6 md:px-16 bg-[#001c3a] text-white relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none">
             <img 
               alt="Drone inspection" 
               className="w-full h-full object-cover grayscale" 
@@ -673,16 +686,20 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
             />
           </div>
           
+          {/* Ambient lighting */}
+          <div className="absolute top-10 left-10 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
+          
           <div className="relative z-10 max-w-7xl mx-auto">
             <div className="text-center mb-16 max-w-3xl mx-auto">
-              <span className="inline-flex items-center justify-center gap-2 px-3 py-1 bg-secondary/20 border border-secondary/30 rounded-full font-sans font-bold text-[10px] text-blue-100 uppercase tracking-widest mb-6">
-                <Target size={12} className="text-secondary" /> Demostración de Detección
+              <span className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 bg-secondary/20 border border-secondary/30 rounded-full font-sans font-bold text-[10px] text-pink-200 uppercase tracking-widest mb-6">
+                <Target size={12} className="text-secondary" /> Demostración Interactiva
               </span>
-              <h2 className="font-display font-bold text-4xl md:text-5xl text-white mb-6 tracking-tight">
+              <h2 className="font-display font-extrabold text-3xl md:text-5xl text-white mb-6 tracking-tight">
                 Intervenciones Reales en Obra
               </h2>
-              <p className="font-sans text-lg md:text-xl text-blue-100/90 leading-relaxed max-w-2xl mx-auto font-light">
-                Resultados tangibles en el terreno. Descubra cómo nuestra tecnología de <strong className="text-white font-bold">precisión quirúrgica</strong> evita demoliciones masivas, permitiendo inspeccionar hasta 2000 m²/día sin recurrir a costosas pruebas de inundación.
+              <p className="font-sans text-base md:text-lg text-blue-100/90 leading-relaxed max-w-2xl mx-auto font-light">
+                Descubra cómo nuestra tecnología de <strong className="text-white font-bold">precisión quirúrgica</strong> evita demoliciones masivas, permitiendo inspeccionar hasta 2.000 m²/día sin recurrir a pruebas de inundación.
               </p>
             </div>
             
@@ -694,36 +711,40 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 overflow-hidden"
                 >
                   {cases.map((c) => (
                     <div 
                       key={c.id} 
                       onClick={() => setSelectedCard(c)}
-                      className="bg-white rounded-xl overflow-hidden flex flex-col transition-all duration-300 cursor-pointer group border border-slate-100 hover:border-secondary shadow-sm hover:shadow-md"
+                      className="bg-white rounded-3xl overflow-hidden flex flex-col transition-all duration-300 cursor-pointer group border border-white/10 hover:border-secondary shadow-lg hover:shadow-2xl hover:-translate-y-1.5"
                     >
                       <div className="aspect-video overflow-hidden relative">
                         <img 
                           alt={c.system} 
-                          className="w-full h-full object-cover" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           src={c.before.img} 
                         />
-                        <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/10 transition-colors duration-300" />
+                        <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/0 transition-colors" />
+                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-white/20">
+                          <Eye size={12} /> Comparar
+                        </div>
                       </div>
-                      <div className="p-6 flex flex-col flex-grow text-left relative">
-                        <div className="absolute -top-4 right-6 w-8 h-8 bg-white rounded-full shadow flex items-center justify-center border border-slate-100 text-slate-300 group-hover:text-secondary transition-colors">
-                          <Eye size={14} />
+                      <div className="p-6 flex flex-col flex-grow text-left bg-white">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 rounded-full text-sky-800 mb-3 w-max">
+                           <Radar size={11} className="text-secondary" />
+                           <span className="font-sans font-bold text-[9px] uppercase tracking-wider">Caso Dieléctrico</span>
                         </div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 rounded text-primary mb-3 w-max">
-                           <Radar size={10} className="text-secondary" />
-                           <span className="font-sans font-bold text-[8px] uppercase tracking-wider">Caso de Estudio</span>
-                        </div>
-                        <h3 className="font-display font-bold text-lg mb-2 text-slate-800 leading-tight group-hover:text-primary transition-colors">
+                        <h3 className="font-display font-bold text-lg mb-2 text-slate-900 leading-tight group-hover:text-primary transition-colors">
                           {c.system}
                         </h3>
-                        <p className="font-sans text-xs md:text-sm text-slate-500 flex-grow leading-relaxed line-clamp-3">
+                        <p className="font-sans text-xs text-slate-500 flex-grow leading-relaxed line-clamp-3">
                           {c.systemDesc}
                         </p>
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-secondary font-sans font-bold text-xs">
+                          <span>Ver diagnóstico</span>
+                          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -752,37 +773,41 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               )}
             </AnimatePresence>
           </div>
-          </motion.div>
         </section>
 
         {/* Final CTA Section */}
-        <section className="py-24 px-6 md:px-16" id="contacto" style={{ backgroundColor: '#13487e' }}>
-          <div className="max-w-4xl mx-auto text-center">
-            <ShieldCheck size={48} className="mx-auto text-blue-300 mb-6" strokeWidth={1} />
-            <h2 className="font-display font-bold text-3xl md:text-4xl text-white mb-6">
+        <section className="py-24 px-6 md:px-16 relative overflow-hidden bg-gradient-to-b from-slate-900 to-[#001c3a] text-white" id="contacto">
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="max-w-4xl mx-auto text-center relative z-10">
+            <div className="w-16 h-16 rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <ShieldCheck size={32} className="text-secondary" />
+            </div>
+            
+            <h2 className="font-display font-extrabold text-3xl md:text-5xl text-white mb-6 tracking-tight">
               Proteja su activo con precisión milimétrica
             </h2>
-            <p className="font-sans text-base text-blue-100 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Evite reparaciones costosas y daños estructurales a largo plazo. Programe una inspección electrónica y obtenga certeza absoluta sobre el estado de su impermeabilización.
+            <p className="font-sans text-base md:text-lg text-blue-100/90 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Evite demoliciones innecesarias y filtraciones ocultas. Programe un ensayo dieléctrico certificado y reciba certeza absoluta sobre el estado de su cubierta.
             </p>
             
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 md:p-12 text-center shadow-2xl max-w-2xl mx-auto flex flex-col items-center">
-              <h3 className="font-display font-bold text-2xl text-white mb-4">¿Listo para certificar su cubierta?</h3>
-              <p className="font-sans text-blue-100 mb-8 max-w-md mx-auto leading-relaxed">
-                Nuestros ingenieros evaluarán la viabilidad técnica de su proyecto y diseñarán el protocolo de rastreo dieléctrico adecuado para su instalación.
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 text-center shadow-2xl max-w-2xl mx-auto flex flex-col items-center">
+              <h3 className="font-display font-bold text-2xl text-white mb-3">¿Listo para auditar su impermeabilización?</h3>
+              <p className="font-sans text-xs md:text-sm text-blue-100/80 mb-8 max-w-md mx-auto leading-relaxed">
+                Nuestros ingenieros evaluarán las especificaciones de su inmueble y emitirán una propuesta técnica sin compromiso en 24 horas.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
                 <button 
                   onClick={() => onNavigate('contact', 'push')}
-                  className="px-8 py-4 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-[#9a0c2d] transition-all shadow-lg shadow-secondary/30 active:scale-95 flex items-center justify-center gap-2 group"
+                  className="px-8 py-4 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-[#c92548] transition-all shadow-xl shadow-secondary/30 hover:shadow-2xl hover:shadow-secondary/40 active:scale-95 flex items-center justify-center gap-2 group cursor-pointer"
                 >
-                  Ir al formulario de contacto <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  Solicitar Diagnóstico <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button 
                   onClick={() => onNavigate('cases', 'push')}
-                  className="px-8 py-4 bg-transparent border border-blue-300/50 text-blue-100 font-sans font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-white/5 transition-colors active:scale-95 flex items-center justify-center"
+                  className="px-8 py-4 bg-white/5 border border-white/20 text-white font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-colors active:scale-95 flex items-center justify-center cursor-pointer"
                 >
-                  Ir a casos reales
+                  Ver Casos Reales
                 </button>
               </div>
             </div>

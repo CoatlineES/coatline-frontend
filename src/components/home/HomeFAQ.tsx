@@ -40,13 +40,7 @@ export default function HomeFAQ() {
 
   return (
     <section id="faqs" className="py-24 px-6 md:px-16 bg-white text-left">
-      <motion.div 
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.6 }}
-        className="max-w-3xl mx-auto space-y-12"
-      >
+      <div className="max-w-3xl mx-auto space-y-12">
         <div className="text-center">
           <h2 className="font-display font-bold text-3xl md:text-4xl text-primary tracking-tight">
             Preguntas Frecuentes
@@ -57,10 +51,13 @@ export default function HomeFAQ() {
           {faqs.map((f, index) => {
             const isFaqOpen = openFaq === index;
             return (
-              <div key={index} className="border-b border-surface-variant/40 pb-4 transition-all">
+              <div 
+                key={index} 
+                className="border-b border-surface-variant/40 pb-4 transition-all"
+              >
                 <button
                   onClick={() => toggleFaq(index)}
-                  className="w-full flex justify-between items-center text-left font-display font-bold text-base md:text-lg text-primary hover:text-secondary transition-colors focus:outline-none py-2"
+                  className="w-full flex justify-between items-center text-left font-display font-bold text-base md:text-lg text-primary hover:text-secondary transition-colors focus:outline-none py-2 cursor-pointer"
                 >
                   <span>{f.question}</span>
                   <ChevronDown
@@ -81,7 +78,7 @@ export default function HomeFAQ() {
             );
           })}
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

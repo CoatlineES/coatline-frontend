@@ -18,6 +18,7 @@ export interface CreateUserPayload {
   roleName: string;
   departmentName: string;
   managerId?: string;
+  supervisorIds?: string[];
   contract?: Omit<Contract, 'id'> | null;
   customPermissions?: string[];
 }
@@ -29,6 +30,7 @@ export interface UpdateUserPayload {
   roleName?: string;
   departmentName?: string;
   managerId?: string | null;
+  supervisorIds?: string[];
   status?: string;
   contract?: Omit<Contract, 'id'> | null;
   customPermissions?: string[];
@@ -41,10 +43,32 @@ export interface UserResponse {
   role: {
     name: string;
   };
+  department?: {
+    name: string;
+  } | string;
+  status?: string;
   manager?: {
     id: string;
     name: string;
   };
+  contract?: Contract | null;
+  customPermissions?: string[];
+  supervisors?: {
+    supervisor: {
+      id: string;
+      name: string;
+      email: string;
+      role?: { name: string };
+    };
+  }[];
+  supervisees?: {
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role?: { name: string };
+    };
+  }[];
 }
 
 export type ProjectStatus = 'AWARDED' | 'IN_PROGRESS' | 'COMPLETED' | 'INVOICED' | 'CLOSED' | 'CANCELLED';

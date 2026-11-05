@@ -143,7 +143,7 @@ export default function EmployeeLayout() {
   const getFilteredNavGroups = (): NavGroup[] => {
     const isSuperadmin = roleName === 'SUPERADMIN';
     const isAdmin = roleName === 'ADMIN';
-    const isSupervisor = roleName === 'SUPERVISOR';
+    const isSupervisor = roleName === 'SUPERVISOR' || Boolean(user?.isSupervisor) || Boolean((user as any)?.superviseeCount > 0);
     const isRRHH = roleName === 'RRHH';
     
     const isComercial = deptName === 'COMERCIAL';
@@ -154,10 +154,10 @@ export default function EmployeeLayout() {
 
     const groups: NavGroup[] = [];
 
-    // RRHH
-    if (hasPerm('rrhh') || hasPerm('documentos')) {
+    // RRHH (Accesible si tiene permiso rrhh/documentos o si es supervisor/admin)
+    if (hasPerm('rrhh') || hasPerm('documentos') || isSupervisor || isAdmin || isSuperadmin) {
       const rrhhItems = [];
-      if (hasPerm('rrhh')) {
+      if (hasPerm('rrhh') || isSupervisor || isAdmin || isSuperadmin) {
         if (!isContratista && !isObrero) {
           rrhhItems.push({ name: "Fichajes", path: "/app/empleado/fichaje", icon: <Clock size={20} /> });
         }
@@ -456,7 +456,7 @@ export default function EmployeeLayout() {
                   >
                     {availableSubsidiaries.map(sub => (
                       <option key={sub.id} value={sub.id}>
-                        {sub.country} ({sub.currency})
+                        {sub.name || sub.countryCode} ({sub.currency})
                       </option>
                     ))}
                   </select>

@@ -25,8 +25,9 @@ export default function UsersManagementView() {
 
   // Form State
   const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<'datos' | 'contrato' | 'permisos' | 'trabajadores'>('datos');
+  const [activeTab, setActiveTab] = useState<'datos' | 'contrato' | 'supervisores' | 'permisos' | 'trabajadores'>('datos');
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [supervisorSearch, setSupervisorSearch] = useState('');
   
   const getInitialFormData = () => ({
     name: '',
@@ -35,6 +36,7 @@ export default function UsersManagementView() {
     roleName: 'Empleado',
     departmentName: 'Técnico',
     status: 'ACTIVO',
+    supervisorIds: [] as string[],
     contract: {
       contractType: 'Indefinido',
       startDate: new Date().toISOString().split('T')[0],
@@ -176,6 +178,17 @@ export default function UsersManagementView() {
     });
   };
 
+  const handleToggleSupervisor = (supervisorId: string) => {
+    setFormData((prev: any) => {
+      const current = prev.supervisorIds || [];
+      if (current.includes(supervisorId)) {
+        return { ...prev, supervisorIds: current.filter((id: string) => id !== supervisorId) };
+      } else {
+        return { ...prev, supervisorIds: [...current, supervisorId] };
+      }
+    });
+  };
+
   const handleEditClick = async (userId: string) => {
     setIsLoading(true);
     setError('');
@@ -195,6 +208,8 @@ export default function UsersManagementView() {
           return String(dateStr).split('T')[0];
         };
 
+        const currentSupervisors = (user as any).supervisors?.map((s: any) => s.supervisor?.id || s.supervisorId).filter(Boolean) || [];
+
         setFormData({
           name: user.name,
           email: user.email,
@@ -202,6 +217,7 @@ export default function UsersManagementView() {
           roleName: roleName,
           departmentName: deptName,
           status: (user as any).status || 'ACTIVO',
+          supervisorIds: currentSupervisors,
           contract: user.contract ? {
             ...user.contract,
             startDate: formatForInput(user.contract.startDate),
@@ -429,33 +445,47 @@ export default function UsersManagementView() {
                 </h2>
               
               {/* TABS */}
-              <div className="flex border-b border-slate-200 gap-6 mb-6">
+              <div className="flex border-b border-slate-200 gap-6 mb-6 overflow-x-auto custom-scrollbar">
                 <button 
                   onClick={() => setActiveTab('datos')}
-                  className={`pb-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'datos' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                  type="button"
+                  className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${activeTab === 'datos' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
                 >
                   1. Datos Personales
                 </button>
                 <button 
                   onClick={() => setActiveTab('contrato')}
-                  className={`pb-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'contrato' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                  type="button"
+                  className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${activeTab === 'contrato' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
                 >
                   2. Contrato
                 </button>
                 <button 
+                  onClick={() => setActiveTab('supervisores')}
+                  type="button"
+                  className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 ${activeTab === 'supervisores' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                >
+                  3. Supervisores
+                  {formData.supervisorIds?.length > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-[#001c3a] text-white text-[10px] flex items-center justify-center font-bold">
+                      {formData.supervisorIds.length}
+                    </span>
+                  )}
+                </button>
+                <button 
                   onClick={() => setActiveTab('permisos')}
                   type="button"
-                  className={`pb-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'permisos' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                  className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${activeTab === 'permisos' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
                 >
-                  3. Permisos y Accesos
+                  4. Permisos y Accesos
                 </button>
                 {(formData.roleName === 'CONTRATISTA' || formData.roleName === 'Proveedor') && editingUserId && (
                   <button 
                     onClick={() => setActiveTab('trabajadores')}
                     type="button"
-                    className={`pb-3 font-bold text-sm transition-colors border-b-2 ${activeTab === 'trabajadores' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                    className={`pb-3 font-bold text-sm whitespace-nowrap transition-colors border-b-2 ${activeTab === 'trabajadores' ? 'border-[#001c3a] text-[#001c3a]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
                   >
-                    4. Trabajadores
+                    5. Trabajadores
                   </button>
                 )}
               </div>
@@ -665,6 +695,138 @@ export default function UsersManagementView() {
                 </div>
               )}
 
+              {/* TAB CONTENT: SUPERVISORES */}
+              {activeTab === 'supervisores' && (
+                <div className="animate-in fade-in zoom-in-95 duration-200 space-y-5">
+                  <div className="bg-blue-50/80 border border-blue-200/80 rounded-xl p-4 flex items-start gap-3">
+                    <Users className="text-[#001c3a] shrink-0 mt-0.5" size={20} />
+                    <div>
+                      <h4 className="font-bold text-sm text-[#001c3a]">Supervisores y Aprobadores de Ausencias</h4>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Define qué personas supervisan a este empleado. Solo los usuarios seleccionados aquí (y Dirección/Superadmin) podrán revisar, aprobar o rechazar sus ausencias y vacaciones.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Supervisores seleccionados */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                        Supervisores Asignados ({formData.supervisorIds?.length || 0})
+                      </label>
+                      {formData.supervisorIds?.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev: any) => ({ ...prev, supervisorIds: [] }))}
+                          className="text-[11px] text-red-600 hover:underline font-semibold"
+                        >
+                          Quitar todos
+                        </button>
+                      )}
+                    </div>
+
+                    {formData.supervisorIds?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        {formData.supervisorIds.map((sId: string) => {
+                          const supervisorUser = users.find(u => u.id === sId);
+                          const supRole = typeof supervisorUser?.role === 'object' ? (supervisorUser.role as any)?.name : supervisorUser?.role;
+                          return (
+                            <span 
+                              key={sId}
+                              className="inline-flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 bg-white border border-slate-200 text-slate-800 rounded-lg text-xs font-semibold shadow-sm"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-[#001c3a] text-white flex items-center justify-center text-[10px] font-bold">
+                                {supervisorUser?.name?.charAt(0) || 'U'}
+                              </span>
+                              <span>{supervisorUser?.name || 'Usuario'}</span>
+                              {supRole && <span className="text-[10px] text-slate-400 font-normal">({supRole})</span>}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSupervisor(sId)}
+                                className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                title="Quitar supervisor"
+                              >
+                                <X size={13} />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-amber-50/80 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-start gap-2">
+                        <span className="text-base">⚠️</span>
+                        <div>
+                          <strong className="font-bold">Sin supervisores asignados:</strong>
+                          <p className="mt-0.5 text-amber-700">Las solicitudes de ausencia de este empleado solo podrán ser aprobadas directamente por Administración / Dirección.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Buscador de usuarios para añadir como supervisores */}
+                  <div className="space-y-2 pt-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Seleccionar de la Lista de Usuarios
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      <input
+                        type="text"
+                        value={supervisorSearch}
+                        onChange={(e) => setSupervisorSearch(e.target.value)}
+                        placeholder="Buscar por nombre o correo..."
+                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50 focus:border-[#001c3a] transition-all"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto custom-scrollbar p-1 border border-slate-200 rounded-xl bg-slate-50/40">
+                      {users
+                        .filter(u => u.id !== editingUserId) // Un usuario no puede supervisarse a sí mismo
+                        .filter(u => 
+                          !supervisorSearch.trim() || 
+                          u.name.toLowerCase().includes(supervisorSearch.toLowerCase()) || 
+                          u.email.toLowerCase().includes(supervisorSearch.toLowerCase())
+                        )
+                        .map(u => {
+                          const isAssigned = formData.supervisorIds?.includes(u.id);
+                          const roleName = typeof u.role === 'object' ? (u.role as any)?.name : u.role;
+                          const deptName = typeof u.department === 'object' ? (u.department as any)?.name : u.department;
+                          
+                          return (
+                            <div 
+                              key={u.id}
+                              onClick={() => handleToggleSupervisor(u.id)}
+                              className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all select-none ${
+                                isAssigned 
+                                  ? 'bg-blue-50/80 border-blue-400 shadow-sm' 
+                                  : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                  isAssigned ? 'bg-[#001c3a] text-white shadow-sm' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {u.name.charAt(0)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-800 truncate">{u.name}</p>
+                                  <p className="text-[11px] text-slate-500 truncate">{roleName} {deptName ? `• ${deptName}` : ''}</p>
+                                </div>
+                              </div>
+                              
+                              <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-colors ${
+                                isAssigned ? 'bg-secondary text-white border-secondary' : 'border-slate-300 bg-white'
+                              }`}>
+                                {isAssigned && <CheckCircle size={14} />}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* TAB CONTENT: PERMISOS */}
               {activeTab === 'permisos' && (
                 <div className="animate-in fade-in zoom-in-95 duration-200">
@@ -858,6 +1020,7 @@ export default function UsersManagementView() {
                   <th className="p-5 border-b border-slate-200">Contacto</th>
                   <th className="p-5 border-b border-slate-200">Nivel / Rol</th>
                   <th className="p-5 border-b border-slate-200">Departamento</th>
+                  <th className="p-5 border-b border-slate-200">Supervisores</th>
                   <th className="p-5 border-b border-slate-200 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -902,6 +1065,26 @@ export default function UsersManagementView() {
                               {deptName}
                             </div>
                           </td>
+                          <td className="p-5">
+                            {user.supervisors && user.supervisors.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 max-w-[240px]">
+                                {user.supervisors.map(s => (
+                                  <span 
+                                    key={s.supervisor.id} 
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-[#001c3a] border border-blue-200 rounded-md text-xs font-semibold shadow-xs"
+                                    title={s.supervisor.email}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                    {s.supervisor.name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                                Dirección / RRHH
+                              </span>
+                            )}
+                          </td>
                           <td className="p-5 text-right">
                             <div className="flex items-center justify-end gap-2 transition-all">
                               <button 
@@ -925,7 +1108,7 @@ export default function UsersManagementView() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="p-16 text-center text-slate-400 font-medium text-sm">
+                      <td colSpan={6} className="p-16 text-center text-slate-400 font-medium text-sm">
                         No hay usuarios registrados en la base de datos.
                       </td>
                     </tr>

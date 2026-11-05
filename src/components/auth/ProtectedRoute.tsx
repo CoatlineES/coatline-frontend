@@ -5,10 +5,11 @@ import { useAuth, UserRole } from '../../contexts/AuthContext';
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
   allowedPermissions?: string[];
+  allowSupervisors?: boolean;
   children?: React.ReactNode;
 }
 
-export default function ProtectedRoute({ allowedRoles, allowedPermissions, children }: ProtectedRouteProps) {
+export default function ProtectedRoute({ allowedRoles, allowedPermissions, allowSupervisors, children }: ProtectedRouteProps) {
   const { user } = useAuth();
   const location = useLocation();
 
@@ -27,10 +28,11 @@ export default function ProtectedRoute({ allowedRoles, allowedPermissions, child
 
   const hasRequiredRole = Boolean(allowedRoles && normalizedRole && allowedRoles.includes(normalizedRole as any));
   const hasRequiredPerm = Boolean(allowedPermissions && userPermissions.some(p => allowedPermissions.includes(p)));
+  const isSupervisorUser = Boolean(allowSupervisors && (user.isSupervisor || (user.superviseeCount && user.superviseeCount > 0)));
 
-  // If restrictions are defined, user must have either the role OR the permission
-  const hasRestrictions = Boolean(allowedRoles?.length || allowedPermissions?.length);
-  const hasAccess = !hasRestrictions || hasRequiredRole || hasRequiredPerm;
+  // If restrictions are defined, user must have the role, permission, or be an assigned supervisor
+  const hasRestrictions = Boolean(allowedRoles?.length || allowedPermissions?.length || allowSupervisors);
+  const hasAccess = !hasRestrictions || hasRequiredRole || hasRequiredPerm || isSupervisorUser;
 
   if (!hasAccess) {
     // Si el rol no está permitido, lo enviamos a su home base

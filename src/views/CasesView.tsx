@@ -152,178 +152,225 @@ export default function CasesView({ onNavigate }: CasesViewProps) {
     }
   ];
 
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+
+  const categories = ['Todos', 'Corporativo', 'Deportes', 'Hostelería', 'Educación', 'Desarrollo Urbano', 'Retail', 'Salud'];
+
+  const filteredCases = selectedCategory === 'Todos' 
+    ? cases 
+    : cases.filter(c => c.category.toLowerCase().includes(selectedCategory.toLowerCase()));
+
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeCaseIndex !== null) {
-      setActiveCaseIndex((activeCaseIndex + 1) % cases.length);
+      setActiveCaseIndex((activeCaseIndex + 1) % filteredCases.length);
     }
   };
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeCaseIndex !== null) {
-      setActiveCaseIndex((activeCaseIndex - 1 + cases.length) % cases.length);
+      setActiveCaseIndex((activeCaseIndex - 1 + filteredCases.length) % filteredCases.length);
     }
   };
 
   return (
     <div className="w-full text-on-surface relative">
       {/* Hero Section */}
-      <header className="relative py-24 px-6 md:px-16 overflow-hidden min-h-[500px] flex items-center">
+      <header className="relative py-24 px-6 md:px-16 overflow-hidden min-h-[480px] flex items-center">
         <CssCasesBackground />
         
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10 pt-8">
-          <div className="md:col-span-7 space-y-6 text-left">
-            <h1 className="font-display font-bold text-5xl md:text-7xl text-white leading-tight drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">
-              Casos de Éxito
+          <div className="md:col-span-7 space-y-5 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase tracking-widest">
+              <span>Proyectos de Alta Complejidad</span>
+            </div>
+
+            <h1 className="font-display font-black text-4xl sm:text-5xl md:text-6xl text-white leading-tight drop-shadow-[0_0_20px_rgba(56,189,248,0.4)]">
+              Casos Reales y Proyectos
             </h1>
-            <p className="font-sans text-2xl font-bold text-secondary tracking-tight drop-shadow-md">
-              ¡Precisión arquitectónica demostrada!
+
+            <p className="font-sans text-lg md:text-xl font-medium text-slate-200 tracking-tight leading-relaxed max-w-2xl">
+              Garantía técnica probada en instalaciones emblemáticas: grandes estudios, estadios deportivos, hospitales y complejos residenciales.
             </p>
           </div>
           
-          <div className="md:col-span-5 mt-10 md:mt-0">
+          <div className="md:col-span-5 mt-8 md:mt-0">
             <CssAnimatedReport />
           </div>
         </div>
       </header>
 
+      {/* Filter Tabs Bar */}
+      <section className="max-w-7xl mx-auto px-6 md:px-16 pt-16">
+        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 border-b border-slate-200/80 pb-6">
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                  isSelected
+                    ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105'
+                    : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/80'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Projects Grid (Bento/Masonry Inspired) */}
-      <section className="max-w-7xl mx-auto px-6 md:px-16 py-24 mb-16">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-12 gap-6"
-        >
-          {cases.map((project, idx) => (
+      <section className="max-w-7xl mx-auto px-6 md:px-16 py-12 mb-16 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {filteredCases.map((project, idx) => (
             <article 
-              key={idx} 
+              key={project.title} 
               onClick={() => setActiveCaseIndex(idx)}
-              className={`${project.colSpan} group cursor-pointer bg-white border border-slate-200 overflow-hidden rounded-xl hover:-translate-y-1 hover:shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col relative`}
+              className={`${project.colSpan} group cursor-pointer bg-white border border-slate-200/80 overflow-hidden rounded-3xl hover:-translate-y-1.5 hover:shadow-2xl hover:border-primary/40 transition-all duration-300 flex flex-col relative`}
             >
               <div className={`relative w-full overflow-hidden ${project.imageHeight}`}>
                 <img 
                   alt={project.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
                   src={project.image} 
                 />
-                <div className="absolute top-6 left-6 z-10">
-                  <span className="inline-block bg-primary text-white px-3 py-1 font-sans font-bold text-[10px] uppercase tracking-widest rounded-sm shadow-sm" style={{ backgroundColor: '#003b70' }}>
+                
+                {/* Floating category badge */}
+                <div className="absolute top-5 left-5 z-10">
+                  <span className="inline-block bg-primary/90 backdrop-blur-md text-white px-3.5 py-1.5 font-sans font-bold text-[11px] uppercase tracking-widest rounded-full shadow-md border border-white/20">
                     {project.category}
                   </span>
                 </div>
-                {/* Hover Overlay indicating clickability */}
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-colors duration-300 flex items-center justify-center">
-                  <span className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-white text-primary font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-full shadow-lg">
-                    Ver Proyecto
+
+                {/* Dark Vignette Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+
+                {/* Hover Reveal Action Pill */}
+                <div className="absolute bottom-5 right-5 z-10 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                  <span className="bg-white text-primary font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5">
+                    Ver Estudio Completo
                   </span>
                 </div>
               </div>
-              <div className="p-6 md:p-8 flex-grow flex flex-col text-left bg-white relative z-10">
-                <h3 className="font-display font-bold text-2xl md:text-3xl text-primary mb-3">{project.title}</h3>
-                <p className="font-sans text-sm md:text-base text-slate-600 mb-0 leading-relaxed max-w-2xl">{project.description}</p>
+
+              <div className="p-6 md:p-8 flex-grow flex flex-col text-left bg-white relative z-10 justify-between">
+                <div>
+                  <h3 className="font-display font-extrabold text-2xl text-primary mb-2.5 group-hover:text-secondary transition-colors">
+                    {project.title}
+                  </h3>
+                  <p className="font-sans text-sm text-slate-600 leading-relaxed">
+                    {project.description}
+                  </p>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span className="truncate max-w-[220px]">{project.results}</span>
+                  <span className="text-secondary font-bold shrink-0">Ficha Técnica →</span>
+                </div>
               </div>
             </article>
           ))}
-        </motion.div>
+        </div>
       </section>
 
-      {/* Modal / Detailed Component */}
+      {/* Modal / Detailed Case Drawer */}
       <AnimatePresence>
-        {activeCaseIndex !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12">
+        {activeCaseIndex !== null && filteredCases[activeCaseIndex] && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setActiveCaseIndex(null)}
-              className="absolute inset-0 bg-primary/90 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#001c3a]/80 backdrop-blur-md"
             />
             
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
+              className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] z-10"
             >
               <button 
                 onClick={() => setActiveCaseIndex(null)}
-                className="absolute top-4 right-4 z-50 p-2 bg-white/80 hover:bg-white text-primary rounded-full shadow-md backdrop-blur-sm transition-colors"
+                className="absolute top-4 right-4 z-50 p-2.5 bg-black/40 hover:bg-black/60 text-white rounded-full shadow-md backdrop-blur-sm transition-colors"
               >
                 <X size={20} />
               </button>
 
-              <div className="w-full md:w-1/2 relative h-64 md:h-auto shrink-0 bg-slate-100">
+              <div className="w-full md:w-5/12 relative h-64 md:h-auto shrink-0 bg-slate-900">
                 <img 
-                  src={cases[activeCaseIndex].image} 
-                  alt={cases[activeCaseIndex].title}
+                  src={filteredCases[activeCaseIndex].image} 
+                  alt={filteredCases[activeCaseIndex].title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-6 left-6">
-                  <span className="inline-block bg-primary text-white px-3 py-1 font-sans font-bold text-[10px] uppercase tracking-widest rounded-sm shadow-sm" style={{ backgroundColor: '#003b70' }}>
-                    {cases[activeCaseIndex].category}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-6 md:p-8">
+                  <span className="inline-block bg-primary text-white px-3 py-1 font-sans font-bold text-[10px] uppercase tracking-widest rounded-full shadow-sm w-fit mb-2">
+                    {filteredCases[activeCaseIndex].category}
                   </span>
+                  <h2 className="font-display font-black text-2xl md:text-4xl text-white">
+                    {filteredCases[activeCaseIndex].title}
+                  </h2>
                 </div>
               </div>
 
-              <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto bg-white flex flex-col justify-between">
-                <div>
-                  <h2 className="font-display font-bold text-3xl md:text-5xl text-primary mb-6">
-                    {cases[activeCaseIndex].title}
-                  </h2>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="font-sans font-bold text-xs text-secondary uppercase tracking-widest mb-2">
-                        El Proyecto
-                      </h4>
-                      <p className="font-sans text-sm md:text-base text-slate-600 leading-relaxed">
-                        {cases[activeCaseIndex].longDescription}
-                      </p>
-                    </div>
+              <div className="w-full md:w-7/12 p-6 md:p-10 overflow-y-auto bg-white flex flex-col justify-between text-left">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-sans font-bold text-xs text-secondary uppercase tracking-widest mb-2">
+                      Memoria de Intervención
+                    </h4>
+                    <p className="font-sans text-sm md:text-base text-slate-700 leading-relaxed">
+                      {filteredCases[activeCaseIndex].longDescription}
+                    </p>
+                  </div>
 
-                    <div>
-                      <h4 className="font-sans font-bold text-xs text-secondary uppercase tracking-widest mb-2">
-                        Retos Técnicos
-                      </h4>
-                      <ul className="list-disc pl-4 text-sm text-slate-600 space-y-1">
-                        {cases[activeCaseIndex].challenges.map((challenge, i) => (
-                          <li key={i}>{challenge}</li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div>
+                    <h4 className="font-sans font-bold text-xs text-primary uppercase tracking-widest mb-3">
+                      Retos Técnicos Superados
+                    </h4>
+                    <ul className="space-y-2">
+                      {filteredCases[activeCaseIndex].challenges.map((challenge, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-xs md:text-sm text-slate-600">
+                          <span className="w-1.5 h-1.5 rounded-full bg-secondary shrink-0 mt-2" />
+                          <span>{challenge}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
-                      <h4 className="font-sans font-bold text-xs text-primary uppercase tracking-widest mb-2">
-                        Resultados
-                      </h4>
-                      <p className="font-sans text-sm font-semibold text-slate-700">
-                        {cases[activeCaseIndex].results}
-                      </p>
-                    </div>
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
+                    <h4 className="font-sans font-bold text-xs text-primary uppercase tracking-widest mb-1.5">
+                      Resultado Certificado
+                    </h4>
+                    <p className="font-sans text-xs md:text-sm font-semibold text-slate-800">
+                      {filteredCases[activeCaseIndex].results}
+                    </p>
                   </div>
                 </div>
 
                 {/* Navigation Controls inside Modal */}
-                <div className="flex items-center justify-between pt-8 mt-8 border-t border-slate-100">
+                <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-100">
                   <button 
                     onClick={handlePrev}
-                    className="flex items-center gap-2 text-sm font-bold text-primary hover:text-secondary transition-colors group"
+                    className="flex items-center gap-2 text-xs font-bold text-primary hover:text-secondary transition-colors"
                   >
-                    <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Anterior
+                    <ChevronLeft size={16} />
+                    <span>Anterior</span>
                   </button>
                   <span className="text-xs font-mono text-slate-400">
-                    {activeCaseIndex + 1} / {cases.length}
+                    {activeCaseIndex + 1} / {filteredCases.length}
                   </span>
                   <button 
                     onClick={handleNext}
-                    className="flex items-center gap-2 text-sm font-bold text-primary hover:text-secondary transition-colors group"
+                    className="flex items-center gap-2 text-xs font-bold text-primary hover:text-secondary transition-colors"
                   >
-                    Siguiente
-                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    <span>Siguiente</span>
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
@@ -333,62 +380,56 @@ export default function CasesView({ onNavigate }: CasesViewProps) {
       </AnimatePresence>
 
       {/* Metrics/Impact Section */}
-      <section className="bg-primary text-white py-20 mb-24" style={{ backgroundColor: '#003b70' }}>
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6 }}
-          className="max-w-7xl mx-auto px-6 md:px-16"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left divide-y md:divide-y-0 md:divide-x divide-slate-600/50">
-            <div className="md:pr-12 pt-8 md:pt-0 group hover:-translate-y-2 transition-transform duration-300 cursor-default">
-              <h4 className="font-display font-bold text-5xl md:text-6xl mb-3 text-white group-hover:text-secondary transition-colors">+300</h4>
-              <p className="font-sans font-bold text-xs text-blue-200 uppercase tracking-widest group-hover:text-white transition-colors">Clientes Confían</p>
+      <section className="bg-primary text-white py-20 mb-20 relative overflow-hidden" style={{ backgroundColor: '#001c3a' }}>
+        <div className="absolute top-0 right-1/4 w-80 h-80 bg-sky-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 md:px-16 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center md:text-left divide-y md:divide-y-0 md:divide-x divide-white/10">
+            <div className="md:pr-10 pt-6 md:pt-0">
+              <h4 className="font-display font-black text-4xl md:text-6xl mb-2 text-white">+300</h4>
+              <p className="font-sans font-bold text-xs text-sky-300 uppercase tracking-widest">Grandes Clientes Corporativos</p>
             </div>
-            <div className="md:px-12 pt-8 md:pt-0 group hover:-translate-y-2 transition-transform duration-300 cursor-default">
-              <h4 className="font-display font-bold text-5xl md:text-6xl mb-3 text-white group-hover:text-secondary transition-colors">+1000</h4>
-              <p className="font-sans font-bold text-xs text-blue-200 uppercase tracking-widest group-hover:text-white transition-colors">Proyectos Ejecutados</p>
+            <div className="md:px-10 pt-6 md:pt-0">
+              <h4 className="font-display font-black text-4xl md:text-6xl mb-2 text-white">+1,000</h4>
+              <p className="font-sans font-bold text-xs text-sky-300 uppercase tracking-widest">Intervenciones Exitosas</p>
             </div>
-            <div className="md:pl-12 pt-8 md:pt-0 group hover:-translate-y-2 transition-transform duration-300 cursor-default">
-              <h4 className="font-display font-bold text-5xl md:text-6xl mb-3 text-white group-hover:text-secondary transition-colors">+6M</h4>
-              <p className="font-sans font-bold text-xs text-blue-200 uppercase tracking-widest group-hover:text-white transition-colors">Metros Cuadrados Protegidos</p>
+            <div className="md:pl-10 pt-6 md:pt-0">
+              <h4 className="font-display font-black text-4xl md:text-6xl mb-2 text-white">+6M</h4>
+              <p className="font-sans font-bold text-xs text-sky-300 uppercase tracking-widest">Metros Cuadrados Protegidos</p>
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* Call to Action */}
-      <section className="max-w-7xl mx-auto px-6 md:px-16 text-center mb-24">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6 }}
-        >
-        <h2 className="font-display font-bold text-3xl md:text-4xl text-primary mb-6">¿Preparado para proteger su inversión?</h2>
-        <p className="font-sans text-lg text-slate-600 max-w-2xl mx-auto mb-10">
-          Consulte con nuestros ingenieros para una evaluación técnica de sus instalaciones.
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <button 
-            type="button"
-            className="inline-flex items-center justify-center px-8 py-4 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest rounded hover:bg-secondary-container transition-colors shadow-lg"
-          >
-            Solicitar Información
-          </button>
-          <a 
-            href="#" 
-            onClick={(e) => {
-              e.preventDefault();
-              onNavigate('contact', 'push');
-            }}
-            className="inline-flex items-center justify-center px-8 py-4 bg-transparent border-2 border-primary text-primary font-sans font-bold text-xs uppercase tracking-widest rounded hover:bg-slate-50 transition-colors"
-          >
-            Contactar
-          </a>
+      <section className="max-w-5xl mx-auto px-6 md:px-16 text-center mb-24">
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-10 md:p-14 shadow-lg space-y-6">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center font-bold">
+            0%
+          </div>
+          <h2 className="font-display font-black text-3xl md:text-4xl text-primary">
+            ¿Su edificio presenta patologías similares?
+          </h2>
+          <p className="font-sans text-base text-slate-600 max-w-xl mx-auto leading-relaxed">
+            Consulte con nuestros ingenieros especializados para un informe diagnóstico pericial sin coste ni obras invasivas.
+          </p>
+          <div className="pt-2 flex flex-col sm:flex-row justify-center gap-4">
+            <button 
+              type="button"
+              onClick={() => onNavigate('contact', 'push')}
+              className="px-8 py-4 bg-secondary hover:bg-secondary-container text-white font-sans font-bold text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg hover:shadow-secondary/30 hover:scale-105 active:scale-95"
+            >
+              Solicitar Evaluación Técnica
+            </button>
+            <button 
+              type="button"
+              onClick={() => onNavigate('detection', 'none')}
+              className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-primary font-sans font-bold text-xs uppercase tracking-widest rounded-2xl transition-all"
+            >
+              Ver Tecnología de Detección
+            </button>
+          </div>
         </div>
-        </motion.div>
       </section>
     </div>
   );

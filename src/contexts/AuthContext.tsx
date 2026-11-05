@@ -31,6 +31,8 @@ export interface User {
   contract?: Contract | null;
   customPermissions?: string[] | null;
   requirePasswordChange?: boolean;
+  isSupervisor?: boolean;
+  superviseeCount?: number;
 }
 
 interface AuthContextType {

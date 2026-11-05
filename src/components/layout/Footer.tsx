@@ -1,6 +1,5 @@
 import React from 'react';
-import { Globe, Share2, Phone, Mail, MapPin } from 'lucide-react';
-import logoUrl from '../../assets/logo.png';
+import { Globe, Share2, Phone, Mail, MapPin, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { ScreenId } from '../../types';
 
 interface FooterProps {
@@ -20,77 +19,155 @@ export default function Footer({ onNavigate }: FooterProps) {
   };
 
   return (
-    <footer className="bg-[#001c3a] text-white w-full relative border-t border-white/5">
+    <footer className="bg-[#001c3a] text-white w-full relative border-t border-white/10 overflow-hidden">
+      {/* Decorative ambient gradients */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-600/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
 
-      <div className="max-w-7xl mx-auto px-6 md:px-16 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-left">
+      <div className="max-w-7xl mx-auto px-6 md:px-16 pt-16 pb-12 relative z-10">
+        {/* Pre-footer Callout Banner */}
+        <div className="mb-16 bg-white/[0.04] border border-white/10 rounded-3xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-md hover:border-white/20 transition-all duration-300">
+          <div className="space-y-2 text-left">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-sky-400">
+              <ShieldCheck size={16} />
+              <span>Diagnóstico Pericial Inmediato</span>
+            </div>
+            <h3 className="font-display font-black text-2xl md:text-3xl text-white">
+              ¿Filtraciones activas en su edificio?
+            </h3>
+            <p className="font-sans text-sm text-slate-300 max-w-xl">
+              Localizamos el punto exacto de entrada sin picar ni realizar obras destructivas, entregando informe pericial con validez técnica.
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigate('contact', 'none')}
+            className="shrink-0 px-8 py-4 bg-secondary hover:bg-secondary-container text-white font-bold rounded-2xl text-sm transition-all duration-300 shadow-lg hover:shadow-secondary/30 hover:scale-105 active:scale-95 flex items-center gap-2 group"
+          >
+            <span>Solicitar Diagnóstico</span>
+            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+
+        {/* 4-Column Main Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-left pb-12">
           
-          {/* Branding Column */}
-          <div className="space-y-6">
+          {/* Column 1: Branding & Philosophy */}
+          <div className="space-y-5">
             <div className="flex items-center">
-              <span className="font-sans text-3xl font-normal tracking-wide text-white border-b-2 border-secondary pb-1">
+              <span className="font-sans text-3xl font-extrabold tracking-tight text-white border-b-2 border-secondary pb-1">
                 coatline
               </span>
             </div>
             <p className="font-sans text-sm text-slate-300 leading-relaxed">
-              Mantenga sus superficies siempre en perfecto estado con soluciones de ingeniería premium.
+              Ingeniería especializada en impermeabilización, diagnóstico electroacústico y mantenimiento preventivo inteligente de cubiertas y superficies.
             </p>
-            <div className="flex gap-4 pt-2">
-              <a className="text-white/80 hover:text-secondary transition-colors" href="#" aria-label="Language options">
-                <Globe size={18} />
-              </a>
-              <a className="text-white/80 hover:text-secondary transition-colors" href="#" aria-label="Share options">
-                <Share2 size={18} />
-              </a>
+            <div className="flex items-center gap-3 pt-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-slate-300">
+                <Sparkles size={12} className="text-secondary" /> Precisión Técnica
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-slate-300">
+                <ShieldCheck size={12} className="text-amber-400" /> Garantía Total
+              </span>
             </div>
           </div>
 
-          {/* Column 2: Servicios */}
+          {/* Column 2: Soluciones Técnicas */}
           <div>
-            <h4 className="font-sans font-bold text-xs text-white mb-6 uppercase tracking-widest border-b border-white/10 pb-2">
-              SERVICIOS
+            <h4 className="font-sans font-bold text-xs text-white mb-5 uppercase tracking-widest border-b border-white/10 pb-2 flex items-center justify-between">
+              <span>SOLUCIONES TÉCNICAS</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
             </h4>
-            <ul className="space-y-3 text-xs md:text-sm text-slate-300 font-semibold">
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('detection', 'none'); }}>Detección Eléctrica</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => handleAnchorClick(e, 'zero-filtraciones')}>Zero Filtraciones</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => handleAnchorClick(e, 'servicios')}>Mantenimiento Preventivo</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => handleAnchorClick(e, 'servicios')}>Impermeabilización Certificada</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => handleAnchorClick(e, 'servicios')}>Eficiencia Energética</a></li>
+            <ul className="space-y-2.5 text-xs md:text-sm text-slate-300 font-medium">
+              <li>
+                <a className="hover:text-white transition-colors flex items-center gap-1.5 py-1" href="#" onClick={(e) => { e.preventDefault(); onNavigate('detection', 'none'); }}>
+                  <span>Detección Electrónica</span>
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors flex items-center gap-1.5 py-1" href="#" onClick={(e) => handleAnchorClick(e, 'paquetes')}>
+                  <span>Programa Zero Filtraciones</span>
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors flex items-center gap-1.5 py-1" href="#" onClick={(e) => handleAnchorClick(e, 'servicios')}>
+                  <span>Mantenimiento Preventivo</span>
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors flex items-center gap-1.5 py-1" href="#" onClick={(e) => handleAnchorClick(e, 'servicios')}>
+                  <span>Respuesta ante Emergencias</span>
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors flex items-center gap-1.5 py-1" href="#" onClick={(e) => handleAnchorClick(e, 'servicios')}>
+                  <span>Eficiencia Energética en Cubiertas</span>
+                </a>
+              </li>
             </ul>
           </div>
 
-          {/* Column 3: Empresa */}
+          {/* Column 3: Empresa y Casos */}
           <div>
-            <h4 className="font-sans font-bold text-xs text-white mb-6 uppercase tracking-widest border-b border-white/10 pb-2">
-              EMPRESA
+            <h4 className="font-sans font-bold text-xs text-white mb-5 uppercase tracking-widest border-b border-white/10 pb-2 flex items-center justify-between">
+              <span>EMPRESA Y CASOS</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
             </h4>
-            <ul className="space-y-3 text-xs md:text-sm text-slate-300 font-semibold">
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => handleAnchorClick(e, 'nosotros')}>Sobre Nosotros</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => handleAnchorClick(e, 'metodologia')}>Metodología</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('cases', 'none'); }}>Casos Reales</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('contact', 'none'); }}>Contacto</a></li>
-              <li><a className="hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('login', 'push'); }}>Acceso Técnico</a></li>
+            <ul className="space-y-2.5 text-xs md:text-sm text-slate-300 font-medium">
+              <li>
+                <a className="hover:text-white transition-colors py-1 block" href="#" onClick={(e) => handleAnchorClick(e, 'nosotros')}>
+                  Sobre Coatline
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors py-1 block" href="#" onClick={(e) => handleAnchorClick(e, 'metodologia')}>
+                  Metodología de Intervención
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors py-1 block" href="#" onClick={(e) => { e.preventDefault(); onNavigate('cases', 'none'); }}>
+                  Casos Reales y Proyectos
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors py-1 block" href="#" onClick={(e) => { e.preventDefault(); onNavigate('contact', 'none'); }}>
+                  Contacto y Presupuestos
+                </a>
+              </li>
+              <li>
+                <a className="hover:text-white transition-colors py-1 block" href="#" onClick={(e) => { e.preventDefault(); onNavigate('login', 'push'); }}>
+                  Acceso Empleados / Clientes
+                </a>
+              </li>
             </ul>
           </div>
 
-          {/* Column 4: Contacto */}
+          {/* Column 4: Contacto Central */}
           <div>
-            <h4 className="font-sans font-bold text-xs text-white mb-6 uppercase tracking-widest border-b border-white/10 pb-2">
-              CONTACTO
+            <h4 className="font-sans font-bold text-xs text-white mb-5 uppercase tracking-widest border-b border-white/10 pb-2 flex items-center justify-between">
+              <span>SEDE Y ATENCIÓN</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             </h4>
-            <ul className="space-y-3.5 text-xs text-slate-300 font-semibold">
+            <ul className="space-y-3.5 text-xs text-slate-300 font-medium">
               <li className="flex items-start gap-2.5">
                 <MapPin size={16} className="text-secondary shrink-0 mt-0.5" />
-                <span>Calle de la Resina, 35. Nave 7<br />28021 Madrid</span>
+                <span>Calle de la Resina, 35. Nave 7<br />28021 Madrid, España</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Phone size={16} className="text-secondary" />
-                <span>+34 91 491 61 97</span>
+                <Phone size={16} className="text-secondary shrink-0" />
+                <a href="tel:+34914916197" className="hover:text-white transition-colors font-bold text-white">
+                  +34 91 491 61 97
+                </a>
               </li>
               <li className="flex items-center gap-2.5">
-                <Mail size={16} className="text-secondary" />
-                <span className="break-all">comercial@coatline.es</span>
+                <Mail size={16} className="text-secondary shrink-0" />
+                <a href="mailto:comercial@coatline.es" className="hover:text-white transition-colors break-all">
+                  comercial@coatline.es
+                </a>
+              </li>
+              <li className="pt-1 text-[11px] text-slate-400">
+                Horario de oficina: L-V 08:00 - 18:30<br />
+                Guardia técnica para emergencias 24/7
               </li>
             </ul>
           </div>
@@ -98,16 +175,23 @@ export default function Footer({ onNavigate }: FooterProps) {
         </div>
 
         {/* Subfooter */}
-        <div className="border-t border-white/10 py-8 text-center mt-12 space-y-4">
-          <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-xs">
-            <a className="text-white/40 hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('legal', 'none'); }}>Aviso Legal</a>
-            <span className="hidden md:block text-white/10">|</span>
-            <a className="text-white/40 hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy', 'none'); }}>Política de Privacidad</a>
-            <span className="hidden md:block text-white/10">|</span>
-            <a className="text-white/40 hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookies', 'none'); }}>Cookies</a>
+        <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <a className="hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('legal', 'none'); }}>
+              Aviso Legal
+            </a>
+            <span>•</span>
+            <a className="hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('privacy', 'none'); }}>
+              Política de Privacidad
+            </a>
+            <span>•</span>
+            <a className="hover:text-white transition-colors" href="#" onClick={(e) => { e.preventDefault(); onNavigate('cookies', 'none'); }}>
+              Política de Cookies
+            </a>
           </div>
-          <p className="text-xs text-white/40 font-medium font-sans">
-            © {new Date().getFullYear()} Coatline Architectural Maintenance. All rights reserved.
+
+          <p className="font-sans text-xs">
+            © {new Date().getFullYear()} Coatline Architectural Maintenance. Todos los derechos reservados.
           </p>
         </div>
       </div>
