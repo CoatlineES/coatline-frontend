@@ -47,7 +47,7 @@ export default function Navbar({ currentScreen, isMobileMenuOpen, setIsMobileMen
             : 'bg-white/85 backdrop-blur-md border-b border-slate-200/40 h-20'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 md:px-16 h-full flex items-center justify-between">
+        <div className="layout-container h-full flex items-center justify-between">
           {/* Logo with subtle hover micro-interaction */}
           <a
             className="flex items-center shrink-0 group py-1"
@@ -71,7 +71,7 @@ export default function Navbar({ currentScreen, isMobileMenuOpen, setIsMobileMen
           </a>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-2 lg:gap-3 justify-end">
+          <div className="hidden md:flex items-center gap-2 lg:gap-3 3xl:gap-5 justify-end">
             {/* Inicio with dropdown */}
             <div className="relative group flex items-center h-full py-4">
               <a
@@ -168,9 +168,19 @@ export default function Navbar({ currentScreen, isMobileMenuOpen, setIsMobileMen
               Contacto
             </a>
 
+            {/* Extra-large screen direct engineering hotline badge */}
+            <a
+              href="tel:+34914916197"
+              className="hidden 3xl:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-sans font-bold text-xs transition-colors border border-slate-200/80"
+            >
+              <Phone size={13} className="text-secondary" />
+              <span>+34 91 491 61 97</span>
+              <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-wider">24/7</span>
+            </a>
+
             {/* Acceso Button */}
             <a
-              className="ml-3 px-5 py-2.5 bg-gradient-to-r from-secondary to-secondary-container hover:from-secondary-container hover:to-secondary text-white font-sans font-bold text-xs rounded-full uppercase tracking-wider shadow-md hover:shadow-secondary/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2"
+              className="ml-2 px-5 py-2.5 bg-gradient-to-r from-secondary to-secondary-container hover:from-secondary-container hover:to-secondary text-white font-sans font-bold text-xs rounded-full uppercase tracking-wider shadow-md hover:shadow-secondary/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2"
               href="#"
               onClick={(e) => { e.preventDefault(); onNavigate('login', 'push'); }}
             >

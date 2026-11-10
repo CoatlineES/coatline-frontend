@@ -22,7 +22,10 @@ import {
 } from 'lucide-react';
 import { ScreenId } from '../types';
 import CssDetectionFloor from '../components/animations/CssDetectionFloor';
-import imgHeroDeteccion from '../assets/packages/deteccion_termografica_1789058782940.jpg';
+import imgHeroDeteccion from '../assets/deteccion_electrica_1.jpg';
+import imgDeteccionCubierta from '../assets/deteccion_electrica_2.jpg';
+import imgInstrumental from '../assets/deteccion_instrumental.jpg';
+import imgIngenieria from '../assets/ingenieria_coatline.jpg';
 
 interface DetectionViewProps {
   onNavigate: (screen: ScreenId, transition: 'none' | 'push') => void;
@@ -286,7 +289,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-200/40 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-30 max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16 items-center">
+        <div className="relative z-30 layout-container grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 3xl:gap-16 items-center">
           
           {/* Left Column: Typography */}
           <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-center text-left">
@@ -294,7 +297,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-6 rounded-full bg-white/90 border border-slate-200/80 backdrop-blur-md shadow-xs w-max"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-5 rounded-full bg-white/90 border border-slate-200/80 backdrop-blur-md shadow-xs w-max"
             >
               <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
               <span className="font-sans font-bold text-slate-800 uppercase tracking-widest text-[10px]">
@@ -306,7 +309,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, x: -30, filter: 'blur(10px)' }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-              className="font-display font-extrabold text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.08] tracking-tight mb-6"
+              className="font-display font-extrabold text-3xl md:text-4xl lg:text-5xl 3xl:text-6xl text-slate-900 leading-[1.08] tracking-tight mb-5"
             >
               Detección Electrónica de Filtraciones
             </motion.h1>
@@ -315,7 +318,7 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, x: -20, filter: 'blur(8px)' }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-              className="text-base md:text-lg text-slate-600 font-sans max-w-xl leading-relaxed font-normal mb-8"
+              className="text-sm md:text-base 3xl:text-lg text-slate-600 font-sans max-w-xl leading-relaxed font-normal mb-6"
             >
               Diagnóstico de alta precisión sin demoliciones ni pruebas de inundación. Tecnología dieléctrica avanzada que localiza microfisuras con <strong className="text-slate-900 font-bold">exactitud sub-milimétrica</strong>.
             </motion.p>
@@ -324,18 +327,18 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
-              className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
+              className="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto"
             >
               <button 
                 onClick={() => onNavigate('contact', 'push')}
-                className="px-8 py-4 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-[#c92548] transition-all shadow-xl shadow-secondary/25 hover:shadow-2xl hover:shadow-secondary/35 active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto group cursor-pointer"
+                className="px-7 py-3.5 bg-secondary text-white font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-[#c92548] transition-all shadow-xl shadow-secondary/25 hover:shadow-2xl hover:shadow-secondary/35 active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto group cursor-pointer"
               >
                 Solicitar Diagnóstico <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </button>
               <a 
                 href="#tecnologia" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('tecnologia')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="px-8 py-4 bg-white/80 border border-slate-200/90 text-primary font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-white hover:border-primary/40 shadow-xs hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
+                className="px-7 py-3.5 bg-white/80 border border-slate-200/90 text-primary font-sans font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-white hover:border-primary/40 shadow-xs hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
               >
                 Conocer la Tecnología
               </a>
@@ -343,12 +346,12 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
           </div>
 
           {/* Right Column: Premium Image with Floating Cards */}
-          <div className="md:col-span-6 lg:col-span-7 relative h-full flex items-center justify-center pt-8 md:pt-0">
+          <div className="md:col-span-6 lg:col-span-7 relative h-full flex items-center justify-center pt-6 md:pt-0">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative w-full max-w-xl mx-auto aspect-[4/3]"
+              className="relative w-full max-w-xl 3xl:max-w-2xl mx-auto aspect-[4/3]"
             >
               <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl border border-white/40 ring-1 ring-slate-900/5">
                 <img 
@@ -396,8 +399,8 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
 
       <main>
         {/* The Core Concept: Bento Grid */}
-        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center lg:items-start">
+        <section className="py-24 2xl:py-32 layout-container overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 2xl:gap-12 items-center lg:items-start">
             
             {/* Intro Text */}
             <div className="md:col-span-5 flex flex-col justify-center pr-0 md:pr-10">
@@ -412,9 +415,49 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
                 La inspección dieléctrica representa el estándar más avanzado en patología constructiva. Sustituye los métodos tradicionales de inundación por un mapeo de flujo eléctrico que detecta cualquier fisura de forma <strong className="text-slate-800">instantánea y sin sobrecargar la estructura</strong>.
               </p>
               <div className="w-16 h-1 bg-secondary rounded-full mb-6" />
-              <p className="font-sans text-xs md:text-sm text-slate-500 leading-relaxed">
+              <p className="font-sans text-xs md:text-sm text-slate-500 leading-relaxed mb-6">
                 Metodología avalada por normativas UNE y ASTM para ensayos no destructivos en cubiertas planas e inclinadas.
               </p>
+
+              {/* Real Field Video & Photo Showcase */}
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="relative rounded-2xl overflow-hidden shadow-lg border border-slate-200/80 aspect-[9/14] bg-slate-900 group">
+                  <video
+                    src="/verificacion_cubierta_vegetal.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 left-3 right-3 text-left">
+                    <span className="inline-block px-2 py-0.5 bg-secondary text-white text-[9px] font-bold uppercase tracking-wider rounded-full mb-1">
+                      En Obra · Vídeo Real
+                    </span>
+                    <p className="font-display font-bold text-white text-xs leading-snug">
+                      Verificación sobre cubierta vegetal y grava
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative rounded-2xl overflow-hidden shadow-lg border border-slate-200/80 aspect-[9/14] bg-slate-900 group">
+                  <img
+                    src={imgDeteccionCubierta}
+                    alt="Ensayo dieléctrico en cubierta con grava y césped"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 left-3 right-3 text-left">
+                    <span className="inline-block px-2 py-0.5 bg-sky-600 text-white text-[9px] font-bold uppercase tracking-wider rounded-full mb-1">
+                      Método Vectorial
+                    </span>
+                    <p className="font-display font-bold text-white text-xs leading-snug">
+                      Barrido electrónico sin levantar protecciones
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
             
             {/* Benefits Bento */}
@@ -465,9 +508,9 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         </section>
 
         {/* Technology Breakdown */}
-        <section className="py-24 bg-slate-50/80 border-y border-slate-200/60 overflow-hidden" id="tecnologia">
-          <div className="max-w-7xl mx-auto px-6 md:px-16">
-            <div className="text-center mb-16 max-w-3xl mx-auto">
+        <section className="py-24 2xl:py-32 bg-slate-50/80 border-y border-slate-200/60 overflow-hidden" id="tecnologia">
+          <div className="layout-container">
+            <div className="text-center mb-16 max-w-3xl 2xl:max-w-4xl mx-auto">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-100 text-sky-800 font-sans font-bold text-[10px] rounded-full uppercase tracking-widest mb-4">
                 <Sparkles size={12} className="text-sky-600" /> Metodologías Especializadas
               </span>
@@ -554,9 +597,9 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         </section>
 
         {/* Process Section */}
-        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto overflow-hidden">
+        <section className="py-24 2xl:py-32 layout-container overflow-hidden">
           <div>
-            <div className="text-center mb-16 max-w-3xl mx-auto">
+            <div className="text-center mb-16 max-w-3xl 2xl:max-w-4xl mx-auto">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-800 font-sans font-bold text-[10px] rounded-full uppercase tracking-widest mb-4">
                 Protocolo Sistemático
               </span>
@@ -623,14 +666,14 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         </section>
 
         {/* Asymmetric Detail Section */}
-        <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto border-t border-slate-200/60 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+        <section className="py-24 2xl:py-32 layout-container border-t border-slate-200/60 overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 2xl:gap-16 items-center">
             {/* Image from Left */}
-            <div className="md:col-span-6 relative h-[450px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl group border border-slate-200/80">
+            <div className="md:col-span-6 relative h-[450px] lg:h-[500px] 2xl:h-[580px] rounded-3xl overflow-hidden shadow-2xl group border border-slate-200/80">
               <img 
                 alt="Instrumental de detección dieléctrica de Coatline" 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO9lRgqsXOHLFU5onbx5GvMUiDlOH-lG7BIG3Ou1BTws-0kdxrp97RmqJE84igddm-LyxRCIzvBj22aiaV5gPA-69ENsYUdOvKvkCJ6Vcis2vz-137oWFnTzzjk-5z-pvE46_LGZmqQoRF1x9QSapbY1rvlPi7oeiq8iHd0mzpxr816jxoUxrsANqiuBuVdPIDDPiE104MbtGIc_xKLnAtLfmfwn5IUldNtetvnG_lhQmdt-6hSD0kNbEzbHlCieAf46HbU-LqRihJ" 
+                src={imgInstrumental} 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none" />
               <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-white/40 shadow-lg">
@@ -677,12 +720,12 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         </section>
 
         {/* Intervenciones Reales en Obra */}
-        <section id="casos-reales" className="py-24 px-6 md:px-16 bg-[#001c3a] text-white relative overflow-hidden">
+        <section id="casos-reales" className="py-24 2xl:py-32 bg-[#001c3a] text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none">
             <img 
               alt="Drone inspection" 
               className="w-full h-full object-cover grayscale" 
-              src="https://lh3.googleusercontent.com/aida/AP1WRLtEDcDFvNu8D5U3A-uzTqD63IRxtZ6TufJbN9phijt3N5tYaremtj1MTpci_K76Il3T4DTRdF04Wp2lcipvRwrMJNkFLEC3WjoMAYtHhW1E1VrkvV1esrbKXe91f8MViBAwfuhlWSY5zxY0Rfzzjy1JuOmu1GhHFhdpdFQv3_p1Jz9JAHWTbbnE8FPW3PjJ1eiBRsxrf1azJjq65F58MyprJJ4GvCfsuHA6bSuVk-YKer_stj0LI8SR-JVS" 
+              src={imgIngenieria} 
             />
           </div>
           
@@ -690,8 +733,8 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
           <div className="absolute top-10 left-10 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
           
-          <div className="relative z-10 max-w-7xl mx-auto">
-            <div className="text-center mb-16 max-w-3xl mx-auto">
+          <div className="relative z-10 layout-container">
+            <div className="text-center mb-16 max-w-3xl 2xl:max-w-4xl mx-auto">
               <span className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 bg-secondary/20 border border-secondary/30 rounded-full font-sans font-bold text-[10px] text-pink-200 uppercase tracking-widest mb-6">
                 <Target size={12} className="text-secondary" /> Demostración Interactiva
               </span>
@@ -776,22 +819,22 @@ export default function DetectionView({ onNavigate }: DetectionViewProps) {
         </section>
 
         {/* Final CTA Section */}
-        <section className="py-24 px-6 md:px-16 relative overflow-hidden bg-gradient-to-b from-slate-900 to-[#001c3a] text-white" id="contacto">
+        <section className="py-24 2xl:py-32 px-6 md:px-16 relative overflow-hidden bg-gradient-to-b from-slate-900 to-[#001c3a] text-white" id="contacto">
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
           
-          <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="max-w-4xl 2xl:max-w-6xl mx-auto text-center relative z-10">
             <div className="w-16 h-16 rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-6 shadow-xl">
               <ShieldCheck size={32} className="text-secondary" />
             </div>
             
-            <h2 className="font-display font-extrabold text-3xl md:text-5xl text-white mb-6 tracking-tight">
+            <h2 className="font-display font-extrabold text-3xl md:text-5xl 2xl:text-6xl text-white mb-6 tracking-tight">
               Proteja su activo con precisión milimétrica
             </h2>
-            <p className="font-sans text-base md:text-lg text-blue-100/90 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="font-sans text-base md:text-lg 2xl:text-xl text-blue-100/90 mb-10 max-w-2xl 2xl:max-w-3xl mx-auto leading-relaxed">
               Evite demoliciones innecesarias y filtraciones ocultas. Programe un ensayo dieléctrico certificado y reciba certeza absoluta sobre el estado de su cubierta.
             </p>
             
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 text-center shadow-2xl max-w-2xl mx-auto flex flex-col items-center">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 2xl:p-16 text-center shadow-2xl max-w-2xl 2xl:max-w-4xl mx-auto flex flex-col items-center">
               <h3 className="font-display font-bold text-2xl text-white mb-3">¿Listo para auditar su impermeabilización?</h3>
               <p className="font-sans text-xs md:text-sm text-blue-100/80 mb-8 max-w-md mx-auto leading-relaxed">
                 Nuestros ingenieros evaluarán las especificaciones de su inmueble y emitirán una propuesta técnica sin compromiso en 24 horas.

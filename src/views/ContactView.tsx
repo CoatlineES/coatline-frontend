@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { FAQS } from '../data';
 import { ScreenId } from '../types';
+import imgIngenieria from '../assets/ingenieria_coatline.jpg';
 
 interface ContactViewProps {
   onNavigate: (screen: ScreenId, transition: 'none' | 'push') => void;
@@ -140,7 +141,7 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
             transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
             alt="Architecture background"
             className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9BEvloOfydznnESnzbMl3-9JLawRIRwlrwiflL35JkAOrWMuAZrXN0RB-plm-zUgI3xVbNluEq52QJcMGIxg22R4EFji_Wej0RRQrqPlAFHixr-LqgCAf47tMUMSTjNh45z-UUSOyTz-W6h0Qo8wfA_S7aDS_05myGlhtzCZRNAdLosKQW_61-m_6JLBBykZCDL0TeoHD59e2mXr-9PkaaPhqZupFb8wphi5W-cMyRpKG1VIKbV267VOdSVnB1kYQThC0ZWlPlfn6"
+            src={imgIngenieria}
           />
         </motion.div>
 
@@ -169,7 +170,7 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
           className="absolute top-[40%] right-[30%] w-16 h-16 bg-white/5 border border-white/20 rounded-lg backdrop-blur-md pointer-events-none shadow-lg"
         />
 
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="layout-container relative z-10">
           <motion.h1
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -190,7 +191,7 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
       </section>
 
       {/* Main Content Info + Form */}
-      <section className="py-24 px-6 md:px-16 max-w-7xl mx-auto overflow-hidden">
+      <section className="py-24 layout-container overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
 
           {/* Left Column: Contact Details */}
@@ -600,7 +601,7 @@ export default function ContactView({ onNavigate }: ContactViewProps) {
 
       {/* FAQ Section */}
       <section className="bg-surface-container py-24 px-6 md:px-16 border-t border-surface-variant overflow-hidden">
-        <div className="max-w-[800px] mx-auto">
+        <div className="max-w-[800px] 3xl:max-w-5xl mx-auto">
 
           <div className="text-center mb-16 space-y-2">
             <h2 className="font-display font-bold text-3xl md:text-4xl text-primary">Consultas Frecuentes</h2>

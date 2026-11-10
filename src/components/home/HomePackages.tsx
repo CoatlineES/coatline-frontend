@@ -77,15 +77,15 @@ export default function HomePackages() {
   const selectedPackage = packages.find(p => p.id === selectedPackageId);
 
   return (
-    <section id="paquetes" className="py-24 px-6 md:px-16 text-white relative overflow-hidden" style={{ backgroundColor: '#001c3a' }}>
+    <section id="paquetes" className="py-24 3xl:py-28 text-white relative overflow-hidden" style={{ backgroundColor: '#001c3a' }}>
       {/* Decorative ambient glowing orbs */}
       <div className="absolute top-1/4 -left-40 w-96 h-96 bg-sky-600/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')]" />
       
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="layout-container relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-16 max-w-3xl mx-auto space-y-5">
+        <div className="text-center mb-16 max-w-3xl 3xl:max-w-4xl mx-auto space-y-5">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full border border-white/15 backdrop-blur-sm">
             <Sparkles size={14} className="text-secondary" />
             <span className="font-sans font-bold text-xs text-white uppercase tracking-widest">Nuestras Soluciones Clave</span>
@@ -101,7 +101,7 @@ export default function HomePackages() {
         </div>
 
         {/* 2-Column Flagship Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-stretch max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 3xl:gap-12 items-stretch max-w-6xl 3xl:max-w-none mx-auto w-full">
           {packages.map((pkg) => (
             <div 
               key={pkg.id}
@@ -112,7 +112,7 @@ export default function HomePackages() {
               
               {/* Hero Image Section */}
               <div 
-                className="relative h-60 md:h-68 w-full overflow-hidden cursor-pointer"
+                className="relative h-60 md:h-68 3xl:h-80 w-full overflow-hidden cursor-pointer"
                 onClick={() => setSelectedPackageId(pkg.id)}
               >
                 <img 
@@ -148,7 +148,7 @@ export default function HomePackages() {
               </div>
               
               {/* Card Body */}
-              <div className="p-6 md:p-8 flex flex-col flex-grow justify-between space-y-6">
+              <div className="p-6 md:p-8 3xl:p-10 flex flex-col flex-grow justify-between space-y-6">
                 <p className="font-sans text-sm md:text-base text-slate-300 leading-relaxed">
                   {pkg.description}
                 </p>
@@ -170,7 +170,7 @@ export default function HomePackages() {
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                     Ventajas y Alcance
                   </h4>
-                  <ul className="space-y-2.5">
+                  <ul className="grid grid-cols-1 3xl:grid-cols-2 gap-2.5">
                     {pkg.features.map((feat, idx) => (
                       <li key={idx} className="flex items-start gap-3 text-sm text-slate-200">
                         <CheckCircle2 size={18} className={`shrink-0 mt-0.5 ${pkg.checkColor}`} />

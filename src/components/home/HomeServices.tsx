@@ -2,7 +2,8 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Wrench, AlertTriangle, Droplet, Leaf, ArrowRight, ShieldCheck, Clock, CheckCircle2, Phone } from 'lucide-react';
 import { ScreenId } from '../../types';
-import energyRoofImg from '../../assets/energy_efficient_roof.png';
+import energyRoofImg from '../../assets/sostenibilidad_cielo.jpg';
+import imgRodillo from '../../assets/impermeabilizacion_rodillo.jpg';
 
 interface HomeServicesProps {
   onNavigate: (screen: ScreenId, transition: 'none' | 'push') => void;
@@ -10,12 +11,12 @@ interface HomeServicesProps {
 
 export default function HomeServices({ onNavigate }: HomeServicesProps) {
   return (
-    <section id="servicios" className="py-24 px-6 md:px-16 bg-surface relative overflow-hidden">
+    <section id="servicios" className="py-24 3xl:py-28 bg-surface bg-tech-grid relative overflow-hidden">
       {/* Background ambient lighting */}
       <div className="absolute top-1/2 left-0 w-72 h-72 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-72 h-72 bg-secondary/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="layout-container relative z-10">
         {/* Section Header */}
         <div className="text-center mb-16 max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
@@ -33,7 +34,7 @@ export default function HomeServices({ onNavigate }: HomeServicesProps) {
         </div>
 
         {/* Bento Grid Architecture */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 3xl:gap-8 text-left items-stretch">
           
           {/* Card 1 (7 Cols): Mantenimiento Preventivo */}
           <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-3xl p-8 md:p-10 hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl hover:border-primary/30 group flex flex-col justify-between">
@@ -55,7 +56,7 @@ export default function HomeServices({ onNavigate }: HomeServicesProps) {
                 Un adecuado plan de mantenimiento periódico evita sobrecostes estructurales y previene filtraciones imprevistas mediante inspecciones técnicas regulares con escáner y termografía.
               </p>
 
-              <ul className="space-y-2.5 mb-6">
+              <ul className="grid grid-cols-1 3xl:grid-cols-2 gap-2.5 mb-6">
                 {[
                   'Limpieza y despeje de sumideros, bajantes y arquetas',
                   'Inspección termográfica de juntas de dilatación críticas',
@@ -122,18 +123,18 @@ export default function HomeServices({ onNavigate }: HomeServicesProps) {
             className="lg:col-span-6 rounded-3xl p-8 md:p-10 text-white relative overflow-hidden flex flex-col justify-between hover:-translate-y-1.5 transition-all duration-300 hover:shadow-2xl group border border-white/10"
             style={{ backgroundColor: '#001c3a' }}
           >
-            <div
-              className="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay group-hover:scale-105 transition-transform duration-700"
-              style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuD8JC_kiZH37kX5YNJ241KFj74FSuIh6SYjV9PPlGIWHjJngnZXgNo8dAQ1IP-4PrnBhO_W-wq225mRcCjIpuqKy9mdKxO3v5kB806xcirKFwDaJPRlzQK4Ac6JLaw0RgcnM733F9HCljMH7OlTynTKQRLNqKaz6CBaR0rEx5i0dSL7hVynrozSS98CLeyoZItnAlS1aEDKio0tzGofmBcSlBOgnJhL3NPg2xy0o_vbCqfaflSIAs1JSYGa1p2ggf73oPyC7RlMYJQf')" }}
-            />
-
             <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white mb-6">
-                <Droplet className="w-7 h-7 text-sky-400" />
-              </div>
-
-              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-sky-300 mb-2">
-                <span>Sistemas Homologados</span>
+              <div className="w-full aspect-[21/9] bg-slate-900 rounded-2xl overflow-hidden mb-6 relative shadow-inner border border-white/10">
+                <img
+                  alt="Impermeabilización Certificada Coatline"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  src={imgRodillo}
+                />
+                <div className="absolute top-3 left-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#001c3a]/85 backdrop-blur-md text-sky-300 border border-sky-400/30 shadow-xs">
+                    <Droplet size={12} className="text-sky-400" /> Sistemas Homologados
+                  </span>
+                </div>
               </div>
 
               <h3 className="font-display font-extrabold text-xl md:text-2xl text-white mb-3">

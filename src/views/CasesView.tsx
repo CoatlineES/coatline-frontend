@@ -177,10 +177,10 @@ export default function CasesView({ onNavigate }: CasesViewProps) {
   return (
     <div className="w-full text-on-surface relative">
       {/* Hero Section */}
-      <header className="relative py-24 px-6 md:px-16 overflow-hidden min-h-[480px] flex items-center">
+      <header className="relative py-24 overflow-hidden min-h-[480px] flex items-center">
         <CssCasesBackground />
         
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10 pt-8">
+        <div className="layout-container grid grid-cols-1 md:grid-cols-12 gap-8 3xl:gap-14 items-center relative z-10 pt-8">
           <div className="md:col-span-7 space-y-5 text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase tracking-widest">
               <span>Proyectos de Alta Complejidad</span>
@@ -202,7 +202,7 @@ export default function CasesView({ onNavigate }: CasesViewProps) {
       </header>
 
       {/* Filter Tabs Bar */}
-      <section className="max-w-7xl mx-auto px-6 md:px-16 pt-16">
+      <section className="layout-container pt-16">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 border-b border-slate-200/80 pb-6">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat;
@@ -224,8 +224,8 @@ export default function CasesView({ onNavigate }: CasesViewProps) {
       </section>
 
       {/* Projects Grid (Bento/Masonry Inspired) */}
-      <section className="max-w-7xl mx-auto px-6 md:px-16 py-12 mb-16 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <section className="layout-container py-12 mb-16 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 3xl:gap-8">
           {filteredCases.map((project, idx) => (
             <article 
               key={project.title} 
@@ -380,30 +380,30 @@ export default function CasesView({ onNavigate }: CasesViewProps) {
       </AnimatePresence>
 
       {/* Metrics/Impact Section */}
-      <section className="bg-primary text-white py-20 mb-20 relative overflow-hidden" style={{ backgroundColor: '#001c3a' }}>
+      <section className="bg-primary text-white py-20 2xl:py-28 mb-20 relative overflow-hidden" style={{ backgroundColor: '#001c3a' }}>
         <div className="absolute top-0 right-1/4 w-80 h-80 bg-sky-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-16 relative z-10">
+        <div className="layout-container relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center md:text-left divide-y md:divide-y-0 md:divide-x divide-white/10">
             <div className="md:pr-10 pt-6 md:pt-0">
-              <h4 className="font-display font-black text-4xl md:text-6xl mb-2 text-white">+300</h4>
-              <p className="font-sans font-bold text-xs text-sky-300 uppercase tracking-widest">Grandes Clientes Corporativos</p>
+              <h4 className="font-display font-black text-4xl md:text-6xl 2xl:text-7xl mb-2 text-white">+300</h4>
+              <p className="font-sans font-bold text-xs 2xl:text-sm text-sky-300 uppercase tracking-widest">Grandes Clientes Corporativos</p>
             </div>
             <div className="md:px-10 pt-6 md:pt-0">
-              <h4 className="font-display font-black text-4xl md:text-6xl mb-2 text-white">+1,000</h4>
-              <p className="font-sans font-bold text-xs text-sky-300 uppercase tracking-widest">Intervenciones Exitosas</p>
+              <h4 className="font-display font-black text-4xl md:text-6xl 2xl:text-7xl mb-2 text-white">+1,000</h4>
+              <p className="font-sans font-bold text-xs 2xl:text-sm text-sky-300 uppercase tracking-widest">Intervenciones Exitosas</p>
             </div>
             <div className="md:pl-10 pt-6 md:pt-0">
-              <h4 className="font-display font-black text-4xl md:text-6xl mb-2 text-white">+6M</h4>
-              <p className="font-sans font-bold text-xs text-sky-300 uppercase tracking-widest">Metros Cuadrados Protegidos</p>
+              <h4 className="font-display font-black text-4xl md:text-6xl 2xl:text-7xl mb-2 text-white">+6M</h4>
+              <p className="font-sans font-bold text-xs 2xl:text-sm text-sky-300 uppercase tracking-widest">Metros Cuadrados Protegidos</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Call to Action */}
-      <section className="max-w-5xl mx-auto px-6 md:px-16 text-center mb-24">
-        <div className="bg-white border border-slate-200/80 rounded-3xl p-10 md:p-14 shadow-lg space-y-6">
+      <section className="max-w-5xl 2xl:max-w-7xl mx-auto px-6 md:px-16 text-center mb-24">
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-10 md:p-14 2xl:p-16 shadow-lg space-y-6">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center font-bold">
             0%
           </div>

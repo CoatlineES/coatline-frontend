@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ShieldCheck, Award, Globe2, Target, CheckCircle2 } from 'lucide-react';
+import imgIngenieria from '../../assets/ingenieria_coatline.jpg';
 
 export default function HomeAbout() {
   const stats = [
@@ -34,14 +35,14 @@ export default function HomeAbout() {
   ];
 
   return (
-    <section id="nosotros" className="py-24 px-6 md:px-16 bg-surface-container relative overflow-hidden">
+    <section id="nosotros" className="py-24 3xl:py-28 bg-surface-container relative overflow-hidden">
       {/* Background ambient lighting */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10 text-left">
+      <div className="layout-container relative z-10 text-left">
         <div className="space-y-16">
           {/* Top Story Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 3xl:gap-16 items-center overflow-hidden">
             {/* Left Column: Story + Pillars */}
             <div className="lg:col-span-7 space-y-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
@@ -80,8 +81,8 @@ export default function HomeAbout() {
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 group">
                 <img
                   alt="Inspección de cubiertas con alta tecnología Coatline"
-                  className="w-full h-auto object-cover group-hover:scale-105 transition-all duration-700"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4qXKKubNKotT2NTzOU9xUeJvEKRBTDDCu9DvqO3jI7yMvTKn3mW65LA7LFjJydyyP5xEXp_j5Vq_TXCTPZVxLbQIzB5MZg_EXkgGD4-J4Uvbdc0Y-zDJnmd8jTJB9omND-1D_NwmUXnCKLOc8SY42Z0MvNN8yZM_CFMJFMAQPk3se2t7cOkr5kwYraXtAEu8n1ChPqph2u8K18GcPE7MnHe2zAnCrOGoOBoLFPi2rPlwfz9s2AFUK_i3cU2w76XWFP-m-zpTKDS0j"
+                  className="w-full h-auto max-h-[540px] 3xl:max-h-[600px] object-cover group-hover:scale-105 transition-all duration-700"
+                  src={imgIngenieria}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#001c3a] via-transparent to-transparent opacity-80" />
                 <div className="absolute bottom-6 left-6 right-6 text-white text-xs font-semibold bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
@@ -95,7 +96,7 @@ export default function HomeAbout() {
           </div>
 
           {/* Metric KPI Ribbon */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 overflow-hidden">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 3xl:gap-6 overflow-hidden">
             {stats.map((stat, idx) => (
               <div 
                 key={idx} 

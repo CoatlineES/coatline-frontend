@@ -5,6 +5,9 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: 'Montserrat', sans-serif;
   --font-headline: 'Montserrat', sans-serif;
+
+  --breakpoint-3xl: 135rem;
+  --breakpoint-4xl: 160rem;
   
   --color-primary: #003b70;
   --color-secondary: #e63257;
@@ -37,6 +40,17 @@
   }
   .pt-safe {
     padding-top: env(safe-area-inset-top);
+  }
+  .layout-container {
+    @apply w-full max-w-7xl 3xl:max-w-[1720px] 4xl:max-w-[2040px] mx-auto px-6 md:px-16 3xl:px-20;
+  }
+  @media (min-width: 135rem) {
+    .bg-tech-grid {
+      background-image: 
+        linear-gradient(to right, rgba(0, 59, 112, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 59, 112, 0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
   }
 }
 

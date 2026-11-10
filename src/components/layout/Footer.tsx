@@ -25,7 +25,7 @@ export default function Footer({ onNavigate }: FooterProps) {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
 
-      <div className="max-w-7xl mx-auto px-6 md:px-16 pt-16 pb-12 relative z-10">
+      <div className="layout-container pt-16 2xl:pt-20 pb-12 2xl:pb-16 relative z-10">
         {/* Pre-footer Callout Banner */}
         <div className="mb-16 bg-white/[0.04] border border-white/10 rounded-3xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-md hover:border-white/20 transition-all duration-300">
           <div className="space-y-2 text-left">

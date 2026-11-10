@@ -22,8 +22,8 @@ export default function HomeBrands() {
   ];
 
   return (
-    <section id="marcas" className="py-20 px-6 md:px-16 bg-surface-container-low border-y border-surface-variant/30">
-      <div className="max-w-7xl mx-auto">
+    <section id="marcas" className="py-20 bg-surface-container-low border-y border-surface-variant/30">
+      <div className="layout-container">
         <div>
           <div className="text-center mb-16 max-w-4xl mx-auto space-y-4">
           <h2 className="font-display font-bold text-2xl md:text-3xl text-primary tracking-tight">
@@ -34,7 +34,7 @@ export default function HomeBrands() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 items-center justify-items-center mt-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 3xl:grid-cols-8 gap-6 items-center justify-items-center mt-10">
           {brands.map((b, idx) => (
             <div
               key={idx}
