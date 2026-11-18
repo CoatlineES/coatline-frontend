@@ -6,7 +6,7 @@ import {
   Building2, Users, Search, Plus, Edit2, Edit3, Trash2, 
   AlertCircle, CheckCircle, RefreshCw, X, Mail, Phone, Briefcase,
   LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, ChevronRight, ExternalLink, Download, History, User, Filter,
-  Copy, Check, Target, GitMerge } from 'lucide-react';
+  Copy, Check, Target, GitMerge, Eye } from 'lucide-react';
 import { accountsService, contactsService, Account, Contact } from '../../services/crm.service';
 import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus, ACTIVITY_RESULT_OPTIONS, ACTIVITY_RESULT_LABELS } from '../../services/activities.service';
 import { dealsService, Deal, DealStage } from '../../services/deals.service';
@@ -444,7 +444,7 @@ function SearchableContactFilter({
     if (!search.trim()) return contacts;
     const q = search.toLowerCase().trim();
     return contacts.filter(c => 
-      c.name.toLowerCase().includes(q) || 
+      (c.name && c.name.toLowerCase().includes(q)) || 
       (c.email && c.email.toLowerCase().includes(q)) ||
       (c.phone && c.phone.toLowerCase().includes(q)) ||
       (c.position && c.position.toLowerCase().includes(q))
@@ -1204,7 +1204,7 @@ export default function CrmView() {
         const accParams = { 
           search: debouncedSearchQuery, 
           ...debouncedAccountsFilters,
-          sectors: debouncedAccountsFilters.sectors.length > 0 ? debouncedAccountsFilters.sectors.join(',') : (debouncedAccountsFilters.sector || undefined)
+          sectors: (debouncedAccountsFilters.sectors && debouncedAccountsFilters.sectors.length > 0) ? debouncedAccountsFilters.sectors.join(',') : (debouncedAccountsFilters.sector || undefined)
         } as any;
         if (accParams.startDate) accParams.startDate += 'T00:00:00.000Z';
         if (accParams.endDate) accParams.endDate += 'T23:59:59.999Z';
@@ -1212,7 +1212,7 @@ export default function CrmView() {
         const conParams = { 
           search, 
           ...debouncedContactsFilters,
-          sectors: debouncedContactsFilters.sectors.length > 0 ? debouncedContactsFilters.sectors.join(',') : (debouncedContactsFilters.sector || undefined)
+          sectors: (debouncedContactsFilters.sectors && debouncedContactsFilters.sectors.length > 0) ? debouncedContactsFilters.sectors.join(',') : (debouncedContactsFilters.sector || undefined)
         } as any;
         if (conParams.startDate) conParams.startDate += 'T00:00:00.000Z';
         if (conParams.endDate) conParams.endDate += 'T23:59:59.999Z';
@@ -1390,11 +1390,11 @@ export default function CrmView() {
     try {
       const payload = {
         accountId: editingContact.accountId,
-        name: editingContact.name || undefined,
-        email: editingContact.email || undefined,
-        phone: editingContact.phone || undefined,
-        position: editingContact.position || undefined,
-        notes: editingContact.notes || undefined,
+        name: editingContact.name?.trim() || undefined,
+        email: editingContact.email?.trim() || undefined,
+        phone: editingContact.phone?.trim() || undefined,
+        position: editingContact.position?.trim() || undefined,
+        notes: editingContact.notes?.trim() || undefined,
       };
 
       if (editingContact.id) {
@@ -2229,8 +2229,8 @@ export default function CrmView() {
                 <div className="w-full flex justify-end">
                   <button 
                     onClick={() => {
-                      setAccountsFilters({ name: '', cif: '', sector: '', city: '', email: '', phone: '', startDate: '', endDate: '' });
-                      setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', startDate: '', endDate: '' });
+                      setAccountsFilters({ name: '', cif: '', sector: '', sectors: [], activityStatus: 'ALL', city: '', email: '', phone: '', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
+                      setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
                       setDealsFilters({ name: '', amountMin: '', amountMax: '', stage: '', userId: '', accountId: '', contactId: '', startDate: '', endDate: '', closeDateFrom: '', closeDateTo: '' });
                       setQuotationsFilters({ status: '', businessLineId: '', startDate: '', endDate: '' });
                       setActivitiesFilters({ subject: '', notes: '', activityType: '', result: '', userId: '', dealId: '', accountId: '', contactId: '', parentActivityId: '', startDate: '', endDate: '', completedAtFrom: '', completedAtTo: '', plannedDateFrom: '', plannedDateTo: '' });
@@ -3974,7 +3974,7 @@ export default function CrmView() {
                           <td className="p-5">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                                {acc.name.charAt(0).toUpperCase()}
+                                {(acc.name || '?').charAt(0).toUpperCase()}
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-slate-800 font-bold">{acc.name}</span>
@@ -4863,9 +4863,8 @@ export default function CrmView() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email (Opcional)</label>
                   <input
-                    required
                     type="email"
                     value={editingContact.email || ''}
                     onChange={(e) => setEditingContact({...editingContact, email: e.target.value})}
@@ -5379,7 +5378,7 @@ export default function CrmView() {
                 if (filteredIdx !== -1) {
                   setAccountsPage(Math.floor(filteredIdx / ITEMS_PER_PAGE) + 1);
                 } else {
-                  setAccountsFilters({ name: '', cif: '', sector: '', sectors: [], city: '', activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
+                  setAccountsFilters({ name: '', cif: '', sector: '', sectors: [], city: '', email: '', phone: '', activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
                   setSearchQuery('');
                   const allIdx = accounts.findIndex(a => a.id === targetId);
                   if (allIdx !== -1) {

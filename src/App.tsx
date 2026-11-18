@@ -17,34 +17,104 @@ import Footer from './components/layout/Footer';
 import SmoothScrollProvider from './components/layout/SmoothScrollProvider';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
-// Placeholders for the private layouts and views we will build next
-const EmployeeLayout = React.lazy(() => import('./components/layout/EmployeeLayout'));
-const EmployeeDashboardView = React.lazy(() => import('./views/employee/EmployeeDashboardView'));
-const ForcePasswordChangeView = React.lazy(() => import('./views/auth/ForcePasswordChangeView'));
-const ClientLayout = React.lazy(() => import('./components/layout/ClientLayout'));
-const ClientDashboardView = React.lazy(() => import('./views/client/ClientDashboardView'));
-const ExecutiveDashboardView = React.lazy(() => import('./views/employee/ExecutiveDashboardView'));
+// Helper for React.lazy that automatically reloads once if a chunk fails to load after a new deployment
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) {
+  return React.lazy(async () => {
+    try {
+      const component = await factory();
+      sessionStorage.removeItem('chunk_reload_retried');
+      return component;
+    } catch (error) {
+      const hasRetried = sessionStorage.getItem('chunk_reload_retried');
+      if (!hasRetried) {
+        sessionStorage.setItem('chunk_reload_retried', '1');
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+      throw error;
+    }
+  });
+}
 
-const FichajeView = React.lazy(() => import('./views/employee/FichajeView'));
-const PartesDiariosView = React.lazy(() => import('./views/employee/PartesDiariosView'));
-const TodosPartesView = React.lazy(() => import('./views/employee/TodosPartesView'));
-const AusenciasView = React.lazy(() => import('./views/employee/AusenciasView'));
-const GestionAusenciasView = React.lazy(() => import('./views/employee/GestionAusenciasView'));
-const HistorialView = React.lazy(() => import('./views/employee/HistorialView'));
-const UsersManagementView = React.lazy(() => import('./views/employee/UsersManagementView'));
-const HolidayCalendarsView = React.lazy(() => import('./views/employee/settings/HolidayCalendarsView'));
-const CrmView = React.lazy(() => import('./views/employee/CrmView'));
-const AlmacenView = React.lazy(() => import('./views/employee/almacen/AlmacenView'));
-const AlmacenAdminView = React.lazy(() => import('./views/employee/almacen/AlmacenAdminView'));
-const GlobalPlanningView = React.lazy(() => import('./views/employee/GlobalPlanningView'));
-const ProjectsView = React.lazy(() => import('./views/employee/projects/ProjectsView'));
-const ProjectDetailView = React.lazy(() => import('./views/employee/projects/ProjectDetailView'));
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorMessage: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return {
+      hasError: true,
+      errorMessage: error?.message || 'Error inesperado en la vista',
+    };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('AppErrorBoundary caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-sans">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-8 max-w-md w-full space-y-4">
+            <h2 className="text-xl font-bold text-[#001c3a]">
+              Se ha actualizado la vista o ocurrió un error temporal
+            </h2>
+            <p className="text-sm text-slate-600">
+              {this.state.errorMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                sessionStorage.removeItem('chunk_reload_retried');
+                window.location.reload();
+              }}
+              className="w-full py-3 px-6 bg-[#001c3a] hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-all cursor-pointer"
+            >
+              Recargar página
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Placeholders for the private layouts and views we will build next
+const EmployeeLayout = lazyWithRetry(() => import('./components/layout/EmployeeLayout'));
+const EmployeeDashboardView = lazyWithRetry(() => import('./views/employee/EmployeeDashboardView'));
+const ForcePasswordChangeView = lazyWithRetry(() => import('./views/auth/ForcePasswordChangeView'));
+const ClientLayout = lazyWithRetry(() => import('./components/layout/ClientLayout'));
+const ClientDashboardView = lazyWithRetry(() => import('./views/client/ClientDashboardView'));
+const ExecutiveDashboardView = lazyWithRetry(() => import('./views/employee/ExecutiveDashboardView'));
+
+const FichajeView = lazyWithRetry(() => import('./views/employee/FichajeView'));
+const PartesDiariosView = lazyWithRetry(() => import('./views/employee/PartesDiariosView'));
+const TodosPartesView = lazyWithRetry(() => import('./views/employee/TodosPartesView'));
+const AusenciasView = lazyWithRetry(() => import('./views/employee/AusenciasView'));
+const GestionAusenciasView = lazyWithRetry(() => import('./views/employee/GestionAusenciasView'));
+const HistorialView = lazyWithRetry(() => import('./views/employee/HistorialView'));
+const UsersManagementView = lazyWithRetry(() => import('./views/employee/UsersManagementView'));
+const HolidayCalendarsView = lazyWithRetry(() => import('./views/employee/settings/HolidayCalendarsView'));
+const CrmView = lazyWithRetry(() => import('./views/employee/CrmView'));
+const AlmacenView = lazyWithRetry(() => import('./views/employee/almacen/AlmacenView'));
+const AlmacenAdminView = lazyWithRetry(() => import('./views/employee/almacen/AlmacenAdminView'));
+const GlobalPlanningView = lazyWithRetry(() => import('./views/employee/GlobalPlanningView'));
+const ProjectsView = lazyWithRetry(() => import('./views/employee/projects/ProjectsView'));
+const ProjectDetailView = lazyWithRetry(() => import('./views/employee/projects/ProjectDetailView'));
 import { ReportEditorView } from './views/employee/projects/reports/ReportEditorView';
 import CostesLaboralesView from './views/employee/CostesLaboralesView';
-const PublicQuotationView = React.lazy(() => import('./views/public/PublicQuotationView'));
-const PublicCertificationView = React.lazy(() => import('./views/public/PublicCertificationView'));
-const EmployeeDocumentsView = React.lazy(() => import('./views/employee/documents/EmployeeDocumentsView'));
-const AdminDocumentsView = React.lazy(() => import('./views/employee/documents/AdminDocumentsView'));
+const PublicQuotationView = lazyWithRetry(() => import('./views/public/PublicQuotationView'));
+const PublicCertificationView = lazyWithRetry(() => import('./views/public/PublicCertificationView'));
+const EmployeeDocumentsView = lazyWithRetry(() => import('./views/employee/documents/EmployeeDocumentsView'));
+const AdminDocumentsView = lazyWithRetry(() => import('./views/employee/documents/AdminDocumentsView'));
 
 export default function App() {
   const location = useLocation();
@@ -117,8 +187,9 @@ export default function App() {
 
   if (isAppArea) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen bg-surface flex items-center justify-center text-primary font-bold">Cargando aplicación...</div>}>
-        <Routes>
+      <AppErrorBoundary>
+        <React.Suspense fallback={<div className="min-h-screen bg-surface flex items-center justify-center text-primary font-bold">Cargando aplicación...</div>}>
+          <Routes>
           <Route path="/app/cambiar-clave" element={
             <ProtectedRoute>
               <ForcePasswordChangeView />
@@ -188,6 +259,7 @@ export default function App() {
           </Route>
         </Routes>
       </React.Suspense>
+      </AppErrorBoundary>
     );
   }
 
