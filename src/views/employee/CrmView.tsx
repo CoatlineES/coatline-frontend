@@ -1450,6 +1450,68 @@ export default function CrmView() {
   };
 
   // --- Handlers para Contacts ---
+  const [inlineContactEdit, setInlineContactEdit] = useState<{
+    contactId: string;
+    field: 'phone' | 'email';
+    value: string;
+  } | null>(null);
+  const [isSavingInlineContact, setIsSavingInlineContact] = useState(false);
+
+  const handleSaveInlineContactField = async () => {
+    if (!inlineContactEdit) return;
+    const { contactId, field, value } = inlineContactEdit;
+    const trimmed = value.trim();
+    setIsSavingInlineContact(true);
+    try {
+      await contactsService.update(contactId, { [field]: trimmed || undefined });
+      // Optimistically update contacts and activities in memory so the table updates immediately
+      setContacts(prev =>
+        prev.map(c => (c.id === contactId ? { ...c, [field]: trimmed || null } : c))
+      );
+      setActivities(prev =>
+        prev.map(a =>
+          a.contactId === contactId && a.contact
+            ? { ...a, contact: { ...a.contact, [field]: trimmed || null } }
+            : a
+        )
+      );
+      toast.success(field === 'phone' ? 'Teléfono actualizado' : 'Email actualizado');
+      setInlineContactEdit(null);
+    } catch (err: any) {
+      showNotification(err?.response?.data?.message || 'Error al actualizar el contacto', 'error');
+    } finally {
+      setIsSavingInlineContact(false);
+    }
+  };
+
+  const handleOpenEditContactFromActivity = (act: Activity) => {
+    const contactId = act.contactId || (act.contact as any)?.id;
+    const fullContact = contacts.find(c => c.id === contactId);
+    if (fullContact) {
+      setEditingContact(fullContact);
+      setShowContactModal(true);
+    } else if (act.contact && contactId) {
+      setEditingContact({
+        id: contactId,
+        accountId: act.accountId,
+        name: act.contact.name || '',
+        email: act.contact.email || '',
+        phone: act.contact.phone || '',
+        position: act.contact.position || '',
+      });
+      setShowContactModal(true);
+    } else {
+      setEditingContact({
+        accountId: act.accountId,
+        name: '',
+        email: '',
+        phone: '',
+        position: '',
+      });
+      setShowContactModal(true);
+    }
+  };
+
   const handleSaveContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingContact?.accountId) {
@@ -2737,61 +2799,266 @@ export default function CrmView() {
                               </td>
                               <td className={`p-3.5 align-middle overflow-hidden transition-colors ${theme.midCell}`}>
                                 {act.contact?.name ? (
-                                  <div className="flex flex-col gap-1.5 max-w-full">
-                                    <div className="flex items-center gap-2 text-[15px] font-bold text-slate-900 flex-wrap">
-                                      <Users size={17} className="text-[#001c3a] shrink-0" />
-                                      <span className="truncate" title={act.contact.name}>{act.contact.name}</span>
-                                      {(() => {
-                                        const fullContact = contacts.find(c => c.id === act.contactId) || (act.contact as any);
-                                        if (!fullContact?.id && !act.contactId) return null;
-                                        const st = getContactCommercialStatus({ id: act.contactId || fullContact.id, notes: fullContact?.notes }, deals, activities);
-                                        if (st.status === 'CLIENT') {
-                                          return (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs" title={st.label}>
-                                              <Star size={10} className="fill-emerald-600 text-emerald-600" /> Ya es Cliente
-                                            </span>
-                                          );
-                                        }
-                                        if (st.status === 'DO_NOT_CALL') {
-                                          return (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-100 text-red-800 border border-red-300 shadow-2xs" title={st.label}>
-                                              <Ban size={10} className="text-red-600" /> No llamar
-                                            </span>
-                                          );
-                                        }
-                                        return null;
-                                      })()}
-                                    </div>
-                                    {act.contact.position && (
-                                      <div className="text-xs text-slate-500 font-medium truncate ml-6 -mt-0.5">
-                                        {act.contact.position}
+                                  (() => {
+                                    const targetContactId = act.contactId || (act.contact as any)?.id || '';
+                                    const isEditingPhone =
+                                      inlineContactEdit?.contactId === targetContactId &&
+                                      inlineContactEdit?.field === 'phone';
+                                    const isEditingEmail =
+                                      inlineContactEdit?.contactId === targetContactId &&
+                                      inlineContactEdit?.field === 'email';
+
+                                    return (
+                                      <div className="flex flex-col gap-1.5 max-w-full">
+                                        <div
+                                          className="flex items-center gap-1.5 text-[15px] font-bold text-slate-900 flex-wrap group/cname"
+                                          onDoubleClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenEditContactFromActivity(act);
+                                          }}
+                                          title="Doble clic para abrir y editar la ficha del contacto"
+                                        >
+                                          <Users size={17} className="text-[#001c3a] shrink-0" />
+                                          <span className="truncate hover:text-blue-700 transition-colors">
+                                            {act.contact.name}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleOpenEditContactFromActivity(act);
+                                            }}
+                                            className="p-1 rounded-md text-slate-400 hover:text-blue-700 hover:bg-blue-50 opacity-70 group-hover/cname:opacity-100 transition-all cursor-pointer"
+                                            title="Editar ficha completa del contacto (nombre, cargo, teléfono, email, notas)"
+                                          >
+                                            <Edit2 size={13} />
+                                          </button>
+                                          {(() => {
+                                            const fullContact = contacts.find(c => c.id === act.contactId) || (act.contact as any);
+                                            if (!fullContact?.id && !act.contactId) return null;
+                                            const st = getContactCommercialStatus({ id: act.contactId || fullContact.id, notes: fullContact?.notes }, deals, activities);
+                                            if (st.status === 'CLIENT') {
+                                              return (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs" title={st.label}>
+                                                  <Star size={10} className="fill-emerald-600 text-emerald-600" /> Ya es Cliente
+                                                </span>
+                                              );
+                                            }
+                                            if (st.status === 'DO_NOT_CALL') {
+                                              return (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-100 text-red-800 border border-red-300 shadow-2xs" title={st.label}>
+                                                  <Ban size={10} className="text-red-600" /> No llamar
+                                                </span>
+                                              );
+                                            }
+                                            return null;
+                                          })()}
+                                        </div>
+                                        {act.contact.position && (
+                                          <div className="text-xs text-slate-500 font-medium truncate ml-6 -mt-0.5">
+                                            {act.contact.position}
+                                          </div>
+                                        )}
+                                        <div className="flex flex-col gap-1.5 mt-1 ml-6" onClick={(e) => e.stopPropagation()}>
+                                          {/* Teléfono con edición directa (doble clic o lápiz) */}
+                                          {isEditingPhone ? (
+                                            <div className="flex items-center gap-1 bg-white border-2 border-emerald-500 rounded-lg px-2 py-1 shadow-sm w-full max-w-[240px]">
+                                              <Phone size={14} className="text-emerald-600 shrink-0" />
+                                              <input
+                                                autoFocus
+                                                type="tel"
+                                                value={inlineContactEdit.value}
+                                                onChange={(e) =>
+                                                  setInlineContactEdit({ ...inlineContactEdit, value: e.target.value })
+                                                }
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleSaveInlineContactField();
+                                                  } else if (e.key === 'Escape') {
+                                                    setInlineContactEdit(null);
+                                                  }
+                                                }}
+                                                placeholder="Teléfono..."
+                                                className="w-full text-xs font-bold text-slate-800 bg-transparent outline-none"
+                                              />
+                                              <button
+                                                type="button"
+                                                disabled={isSavingInlineContact}
+                                                onClick={handleSaveInlineContactField}
+                                                className="p-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer"
+                                                title="Guardar teléfono (Enter)"
+                                              >
+                                                <Check size={12} />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => setInlineContactEdit(null)}
+                                                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                                                title="Cancelar (Esc)"
+                                              >
+                                                <X size={12} />
+                                              </button>
+                                            </div>
+                                          ) : act.contact.phone ? (
+                                            <div
+                                              className="inline-flex items-center gap-1 w-fit max-w-full group/phone-wrap"
+                                              onDoubleClick={(e) => {
+                                                e.stopPropagation();
+                                                if (targetContactId) {
+                                                  setInlineContactEdit({
+                                                    contactId: targetContactId,
+                                                    field: 'phone',
+                                                    value: act.contact?.phone || '',
+                                                  });
+                                                }
+                                              }}
+                                              title="Clic para llamar • Doble clic o lápiz para corregir teléfono"
+                                            >
+                                              <a
+                                                href={`tel:${act.contact.phone}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-950 border border-emerald-300 px-3 py-1.5 rounded-lg text-[15px] font-extrabold tracking-wide transition-all shadow-xs max-w-full group/phone"
+                                              >
+                                                <Phone size={16} className="text-emerald-600 group-hover/phone:scale-110 transition-transform shrink-0" />
+                                                <span className="truncate">{act.contact.phone}</span>
+                                              </a>
+                                              {targetContactId && (
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setInlineContactEdit({
+                                                      contactId: targetContactId,
+                                                      field: 'phone',
+                                                      value: act.contact?.phone || '',
+                                                    });
+                                                  }}
+                                                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent hover:border-emerald-200 opacity-70 group-hover/phone-wrap:opacity-100 transition-all cursor-pointer shrink-0"
+                                                  title="Editar teléfono aquí mismo"
+                                                >
+                                                  <Edit2 size={13} />
+                                                </button>
+                                              )}
+                                            </div>
+                                          ) : targetContactId ? (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setInlineContactEdit({
+                                                  contactId: targetContactId,
+                                                  field: 'phone',
+                                                  value: '',
+                                                });
+                                              }}
+                                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-dashed border-slate-300 hover:border-emerald-300 w-fit transition-all cursor-pointer"
+                                            >
+                                              <Phone size={12} /> + Añadir teléfono
+                                            </button>
+                                          ) : null}
+
+                                          {/* Email con edición directa (doble clic o lápiz) */}
+                                          {isEditingEmail ? (
+                                            <div className="flex items-center gap-1 bg-white border-2 border-sky-500 rounded-lg px-2 py-1 shadow-sm w-full max-w-[260px]">
+                                              <Mail size={14} className="text-sky-600 shrink-0" />
+                                              <input
+                                                autoFocus
+                                                type="email"
+                                                value={inlineContactEdit.value}
+                                                onChange={(e) =>
+                                                  setInlineContactEdit({ ...inlineContactEdit, value: e.target.value })
+                                                }
+                                                onKeyDown={(e) => {
+                                                  if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleSaveInlineContactField();
+                                                  } else if (e.key === 'Escape') {
+                                                    setInlineContactEdit(null);
+                                                  }
+                                                }}
+                                                placeholder="correo@empresa.com"
+                                                className="w-full text-xs font-semibold text-slate-800 bg-transparent outline-none"
+                                              />
+                                              <button
+                                                type="button"
+                                                disabled={isSavingInlineContact}
+                                                onClick={handleSaveInlineContactField}
+                                                className="p-1 rounded bg-sky-600 hover:bg-sky-700 text-white transition-colors cursor-pointer"
+                                                title="Guardar email (Enter)"
+                                              >
+                                                <Check size={12} />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => setInlineContactEdit(null)}
+                                                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                                                title="Cancelar (Esc)"
+                                              >
+                                                <X size={12} />
+                                              </button>
+                                            </div>
+                                          ) : act.contact.email ? (
+                                            <div
+                                              className="inline-flex items-center gap-1 w-fit max-w-full group/email-wrap"
+                                              onDoubleClick={(e) => {
+                                                e.stopPropagation();
+                                                if (targetContactId) {
+                                                  setInlineContactEdit({
+                                                    contactId: targetContactId,
+                                                    field: 'email',
+                                                    value: act.contact?.email || '',
+                                                  });
+                                                }
+                                              }}
+                                              title="Clic para enviar correo • Doble clic o lápiz para corregir email"
+                                            >
+                                              <a
+                                                href={`mailto:${act.contact.email}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="inline-flex items-center gap-2 bg-sky-50 text-sky-900 hover:bg-sky-100 hover:text-sky-950 border border-sky-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-xs max-w-[220px] group/email"
+                                              >
+                                                <Mail size={15} className="text-sky-600 group-hover/email:scale-110 transition-transform shrink-0" />
+                                                <span className="truncate">{act.contact.email}</span>
+                                              </a>
+                                              {targetContactId && (
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setInlineContactEdit({
+                                                      contactId: targetContactId,
+                                                      field: 'email',
+                                                      value: act.contact?.email || '',
+                                                    });
+                                                  }}
+                                                  className="p-1.5 rounded-lg text-slate-400 hover:text-sky-700 hover:bg-sky-50 border border-transparent hover:border-sky-200 opacity-70 group-hover/email-wrap:opacity-100 transition-all cursor-pointer shrink-0"
+                                                  title="Editar email aquí mismo"
+                                                >
+                                                  <Edit2 size={13} />
+                                                </button>
+                                              )}
+                                            </div>
+                                          ) : targetContactId ? (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setInlineContactEdit({
+                                                  contactId: targetContactId,
+                                                  field: 'email',
+                                                  value: '',
+                                                });
+                                              }}
+                                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-sky-700 bg-slate-50 hover:bg-sky-50 border border-dashed border-slate-300 hover:border-sky-300 w-fit transition-all cursor-pointer"
+                                            >
+                                              <Mail size={12} /> + Añadir email
+                                            </button>
+                                          ) : null}
+                                        </div>
                                       </div>
-                                    )}
-                                    <div className="flex flex-col gap-1.5 mt-1 ml-6">
-                                      {act.contact.phone && (
-                                        <a 
-                                          href={`tel:${act.contact.phone}`} 
-                                          onClick={e => e.stopPropagation()} 
-                                          className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-950 border border-emerald-300 px-3 py-1.5 rounded-lg text-[15px] font-extrabold tracking-wide transition-all shadow-xs w-fit max-w-full group/phone" 
-                                          title="Llamar"
-                                        >
-                                          <Phone size={16} className="text-emerald-600 group-hover/phone:scale-110 transition-transform shrink-0" />
-                                          <span className="truncate">{act.contact.phone}</span>
-                                        </a>
-                                      )}
-                                      {act.contact.email && (
-                                        <a 
-                                          href={`mailto:${act.contact.email}`} 
-                                          onClick={e => e.stopPropagation()} 
-                                          className="inline-flex items-center gap-2 bg-sky-50 text-sky-900 hover:bg-sky-100 hover:text-sky-950 border border-sky-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-xs w-fit max-w-full group/email" 
-                                          title="Enviar Email"
-                                        >
-                                          <Mail size={15} className="text-sky-600 group-hover/email:scale-110 transition-transform shrink-0" />
-                                          <span className="truncate">{act.contact.email}</span>
-                                        </a>
-                                      )}
-                                    </div>
-                                  </div>
+                                    );
+                                  })()
                                 ) : (
                                   <span className="text-xs text-slate-400 italic font-medium ml-6">Sin contacto</span>
                                 )}
