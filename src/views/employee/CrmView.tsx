@@ -6,7 +6,13 @@ import {
   Building2, Users, Search, Plus, Edit2, Edit3, Trash2, 
   AlertCircle, CheckCircle, RefreshCw, X, Mail, Phone, Briefcase,
   LayoutGrid, TrendingUp, FileText, BarChart2, Book, Clock, Calendar, PhoneCall, CheckSquare, Wand2, ChevronDown, ChevronRight, ExternalLink, Download, History, User, Filter,
-  Copy, Check, Target, GitMerge, Eye } from 'lucide-react';
+  Copy, Check, Target, GitMerge, Eye, Star, Ban } from 'lucide-react';
+import {
+  parseContactTagAndNotes,
+  buildContactNotesWithTag,
+  getContactCommercialStatus,
+  ContactCommercialTag
+} from '../../utils/contactCommercialStatus';
 import { accountsService, contactsService, Account, Contact } from '../../services/crm.service';
 import { activitiesService, Activity, ActivityType, ActivityResult, ActivityStatus, ACTIVITY_RESULT_OPTIONS, ACTIVITY_RESULT_LABELS } from '../../services/activities.service';
 import { dealsService, Deal, DealStage } from '../../services/deals.service';
@@ -705,18 +711,28 @@ export default function CrmView() {
               response = await accountsService.bulkCreate(mappedData);
           } else if (activeTab === 'contacts') {
             // Map headers for Contacts (Contactos)
-            // Esperamos: Empresa, Nombre, Email, Teléfono, Cargo
-                          const mappedData = data.map((row: any) => {
-                const values = Object.values(row);
-                return {
-                  accountName: row['Empresa'] || row['empresa'] || row['__EMPTY'] || (values[0] as string),
-                  name: row['Nombre'] || row['name'] || row['NAME'] || row['__EMPTY_1'] || (values[1] as string),
-                  email: row['Email'] || row['email'] || row['Correo'] || row['__EMPTY_2'] || (values[2] as string) || null,
-                  phone: String(row['Teléfono'] || row['Telefono'] || row['phone'] || row['__EMPTY_3'] || (values[3] as string) || ''),
-                  position: row['Cargo'] || row['cargo'] || row['position'] || row['__EMPTY_4'] || (values[4] as string) || '',
-                  notes: row['Notas'] || row['notas'] || row['Notes'] || row['notes'] || row['__EMPTY_5'] || (values[5] as string) || '',
-                };
-              }).filter(item => !!item.accountName && !!item.name);
+            // Esperamos: Empresa, Nombre, Email, Teléfono, Cargo, Notas, Cliente/Tipo (opcional)
+            const mappedData = data.map((row: any) => {
+              const values = Object.values(row);
+              const rawNotes = String(row['Notas'] || row['notas'] || row['Notes'] || row['notes'] || row['__EMPTY_5'] || (values[5] as string) || '');
+              const rawClientCol = String(row['Cliente'] || row['cliente'] || row['Es Cliente'] || row['Tipo'] || row['tipo'] || row['Estatus'] || '').trim().toLowerCase();
+              let tag: ContactCommercialTag | null = null;
+              if (['si', 'sí', 'cliente', 'client', 'true', '1', 'ya es cliente'].includes(rawClientCol)) {
+                tag = 'CLIENT';
+              } else if (['no llamar', 'descartado', 'no target', 'bloqueado'].includes(rawClientCol)) {
+                tag = 'DO_NOT_CALL';
+              }
+              const finalNotes = tag ? buildContactNotesWithTag(rawNotes, tag) : rawNotes;
+
+              return {
+                accountName: row['Empresa'] || row['empresa'] || row['__EMPTY'] || (values[0] as string),
+                name: row['Nombre'] || row['name'] || row['NAME'] || row['__EMPTY_1'] || (values[1] as string),
+                email: row['Email'] || row['email'] || row['Correo'] || row['__EMPTY_2'] || (values[2] as string) || null,
+                phone: String(row['Teléfono'] || row['Telefono'] || row['phone'] || row['__EMPTY_3'] || (values[3] as string) || ''),
+                position: row['Cargo'] || row['cargo'] || row['position'] || row['__EMPTY_4'] || (values[4] as string) || '',
+                notes: finalNotes,
+              };
+            }).filter(item => !!item.accountName && !!item.name);
 
             totalAttempted = mappedData.length;
               response = await contactsService.bulkCreate(mappedData);
@@ -760,7 +776,7 @@ export default function CrmView() {
   const [accountsFilters, setAccountsFilters] = useState({ name: '', cif: '', sector: '', sectors: [] as string[], activityStatus: 'ALL', city: '', email: '', phone: '', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
   const debouncedAccountsFilters = useDebounce(accountsFilters, 500);
 
-  const [contactsFilters, setContactsFilters] = useState({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [] as string[], activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
+  const [contactsFilters, setContactsFilters] = useState({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [] as string[], activityStatus: 'ALL', commercialStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
   const debouncedContactsFilters = useDebounce(contactsFilters, 500);
 
   const [dealsFilters, setDealsFilters] = useState({ name: '', amountMin: '', amountMax: '', stage: '', userId: '', accountId: '', contactId: '', startDate: '', endDate: '', closeDateFrom: '', closeDateTo: '' });
@@ -813,6 +829,61 @@ export default function CrmView() {
     });
     return counts;
   }, [activities]);
+
+  // Identify companies (accounts) that are already clients (have won deals, active/completed projects, or at least one client contact)
+  const clientAccountIds = useMemo(() => {
+    const ids = new Set<string>();
+    deals.forEach(d => {
+      if (d.accountId && d.stage === DealStage.WON) ids.add(d.accountId);
+    });
+    projects.forEach((p: any) => {
+      if (p.accountId) ids.add(p.accountId);
+    });
+    contacts.forEach(c => {
+      if (c.accountId && parseContactTagAndNotes(c.notes).explicitTag === 'CLIENT') {
+        ids.add(c.accountId);
+      }
+    });
+    return ids;
+  }, [deals, projects, contacts]);
+
+  const handleSetContactTag = async (contact: Contact, newTag: ContactCommercialTag | null) => {
+    const updatedNotes = buildContactNotesWithTag(contact.notes, newTag);
+    // Optimistic update
+    setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, notes: updatedNotes } : c));
+    try {
+      await contactsService.update(contact.id, { notes: updatedNotes });
+      const label = newTag === 'CLIENT' ? 'Ya es Cliente ⭐' : newTag === 'DO_NOT_CALL' ? 'No llamar 🚫' : 'Prospecto 🔵';
+      toast.success(`${contact.name || 'Contacto'} marcado como ${label}`);
+    } catch (err: any) {
+      showNotification(err?.response?.data?.message || 'Error al actualizar etiqueta del contacto', 'error');
+      fetchData();
+    }
+  };
+
+  const handleBulkSetContactTag = async (newTag: ContactCommercialTag | null) => {
+    const ids = Array.from(selectedContacts);
+    if (ids.length === 0) return;
+    try {
+      setIsLoading(true);
+      const targetContacts = contacts.filter(c => selectedContacts.has(c.id));
+      await Promise.all(
+        targetContacts.map(c => {
+          const updatedNotes = buildContactNotesWithTag(c.notes, newTag);
+          return contactsService.update(c.id, { notes: updatedNotes });
+        })
+      );
+      const label = newTag === 'CLIENT' ? 'Ya es Cliente ⭐' : newTag === 'DO_NOT_CALL' ? 'No llamar 🚫' : 'Prospecto 🔵';
+      showNotification(`${ids.length} ${ids.length === 1 ? 'contacto marcado' : 'contactos marcados'} como ${label}`);
+      setSelectedContacts(new Set());
+      setIsBulkSelectionModeContacts(false);
+      fetchData();
+    } catch (err: any) {
+      showNotification(err?.response?.data?.message || 'Error al etiquetar contactos en lote', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const [exportingTarget, setExportingTarget] = useState<'excel' | 'pdf' | null>(null);
   const pdfRef = React.useRef<HTMLDivElement>(null);
@@ -1650,8 +1721,20 @@ export default function CrmView() {
       if (contactsFilters.activityStatus === 'PLANNED') {
         return contactActivities.some(a => a.status === ActivityStatus.PLANNED && !a.completedAt);
       }
-      if (contactsFilters.activityStatus === 'COMPLETED') {
+      if ( contactsFilters.activityStatus === 'COMPLETED') {
         return contactActivities.some(a => a.status === ActivityStatus.COMPLETED || !!a.completedAt);
+      }
+    }
+    if (contactsFilters.commercialStatus && contactsFilters.commercialStatus !== 'ALL') {
+      const statusInfo = getContactCommercialStatus(contact, deals, activities);
+      if (contactsFilters.commercialStatus === 'ONLY_PROSPECTS' && statusInfo.status !== 'PROSPECT') {
+        return false;
+      }
+      if (contactsFilters.commercialStatus === 'ONLY_CLIENTS' && statusInfo.status !== 'CLIENT') {
+        return false;
+      }
+      if (contactsFilters.commercialStatus === 'ONLY_DO_NOT_CALL' && statusInfo.status !== 'DO_NOT_CALL') {
+        return false;
       }
     }
     return true;
@@ -2230,7 +2313,7 @@ export default function CrmView() {
                   <button 
                     onClick={() => {
                       setAccountsFilters({ name: '', cif: '', sector: '', sectors: [], activityStatus: 'ALL', city: '', email: '', phone: '', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
-                      setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], activityStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
+                      setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], activityStatus: 'ALL', commercialStatus: 'ALL', startDate: '', endDate: '', orderBy: 'createdAt', orderDir: 'desc' });
                       setDealsFilters({ name: '', amountMin: '', amountMax: '', stage: '', userId: '', accountId: '', contactId: '', startDate: '', endDate: '', closeDateFrom: '', closeDateTo: '' });
                       setQuotationsFilters({ status: '', businessLineId: '', startDate: '', endDate: '' });
                       setActivitiesFilters({ subject: '', notes: '', activityType: '', result: '', userId: '', dealId: '', accountId: '', contactId: '', parentActivityId: '', startDate: '', endDate: '', completedAtFrom: '', completedAtTo: '', plannedDateFrom: '', plannedDateTo: '' });
@@ -2655,9 +2738,29 @@ export default function CrmView() {
                               <td className={`p-3.5 align-middle overflow-hidden transition-colors ${theme.midCell}`}>
                                 {act.contact?.name ? (
                                   <div className="flex flex-col gap-1.5 max-w-full">
-                                    <div className="flex items-center gap-2 text-[15px] font-bold text-slate-900">
+                                    <div className="flex items-center gap-2 text-[15px] font-bold text-slate-900 flex-wrap">
                                       <Users size={17} className="text-[#001c3a] shrink-0" />
                                       <span className="truncate" title={act.contact.name}>{act.contact.name}</span>
+                                      {(() => {
+                                        const fullContact = contacts.find(c => c.id === act.contactId) || (act.contact as any);
+                                        if (!fullContact?.id && !act.contactId) return null;
+                                        const st = getContactCommercialStatus({ id: act.contactId || fullContact.id, notes: fullContact?.notes }, deals, activities);
+                                        if (st.status === 'CLIENT') {
+                                          return (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs" title={st.label}>
+                                              <Star size={10} className="fill-emerald-600 text-emerald-600" /> Ya es Cliente
+                                            </span>
+                                          );
+                                        }
+                                        if (st.status === 'DO_NOT_CALL') {
+                                          return (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-100 text-red-800 border border-red-300 shadow-2xs" title={st.label}>
+                                              <Ban size={10} className="text-red-600" /> No llamar
+                                            </span>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
                                     </div>
                                     {act.contact.position && (
                                       <div className="text-xs text-slate-500 font-medium truncate ml-6 -mt-0.5">
@@ -2696,9 +2799,16 @@ export default function CrmView() {
                               <td className={`p-3.5 align-middle overflow-hidden transition-colors ${theme.midCell}`}>
                                 <div className="flex flex-col gap-1.5 max-w-full">
                                   {act.account?.name ? (
-                                    <div className="flex items-center gap-2 text-sm font-bold text-[#001c3a] truncate">
-                                      <Building2 size={16} className="text-slate-500 shrink-0" />
-                                      <span className="truncate" title={act.account.name}>{act.account.name}</span>
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center gap-2 text-sm font-bold text-[#001c3a] truncate">
+                                        <Building2 size={16} className="text-slate-500 shrink-0" />
+                                        <span className="truncate" title={act.account.name}>{act.account.name}</span>
+                                      </div>
+                                      {act.accountId && clientAccountIds.has(act.accountId) && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 w-fit ml-6" title="Esta empresa ya es cliente de Coatline">
+                                          🏢 Empresa Cliente
+                                        </span>
+                                      )}
                                     </div>
                                   ) : (
                                     <span className="text-xs text-slate-400 italic font-medium">Sin empresa</span>
@@ -3502,6 +3612,27 @@ export default function CrmView() {
                     sectors={sectorsList}
                     onOpenManageModal={() => setShowManageSectorsModal(true)}
                   />
+                  <div className={`border rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-2 transition-colors ${
+                    contactsFilters.commercialStatus === 'ONLY_PROSPECTS'
+                      ? 'bg-sky-50 border-sky-300 text-sky-900'
+                      : contactsFilters.commercialStatus === 'ONLY_CLIENTS'
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                      : contactsFilters.commercialStatus === 'ONLY_DO_NOT_CALL'
+                      ? 'bg-red-50 border-red-300 text-red-900'
+                      : 'bg-white border-slate-200'
+                  }`}>
+                    <span className="text-xs font-semibold text-slate-500 uppercase">Tipo:</span>
+                    <select 
+                      value={contactsFilters.commercialStatus} 
+                      onChange={(e) => setContactsFilters({...contactsFilters, commercialStatus: e.target.value})} 
+                      className="text-sm font-bold text-slate-800 bg-transparent border-none focus:outline-none cursor-pointer pr-2"
+                    >
+                      <option value="ALL">Todos</option>
+                      <option value="ONLY_PROSPECTS">🎯 Solo Prospectos (No clientes)</option>
+                      <option value="ONLY_CLIENTS">⭐ Ya son Clientes</option>
+                      <option value="ONLY_DO_NOT_CALL">🚫 No llamar / Descartados</option>
+                    </select>
+                  </div>
                   <div className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm flex items-center gap-2">
                     <span className="text-xs font-semibold text-slate-500 uppercase">Actividades:</span>
                     <select 
@@ -3523,9 +3654,9 @@ export default function CrmView() {
                     <Filter size={14} /> Más filtros
                   </button>
                   
-                  {(contactsFilters.name || contactsFilters.email || contactsFilters.phone || contactsFilters.position || contactsFilters.accountId || contactsFilters.sector || (contactsFilters.sectors && contactsFilters.sectors.length > 0) || contactsFilters.startDate || contactsFilters.endDate || contactsFilters.activityStatus !== 'ALL') && (
+                  {(contactsFilters.name || contactsFilters.email || contactsFilters.phone || contactsFilters.position || contactsFilters.accountId || contactsFilters.sector || (contactsFilters.sectors && contactsFilters.sectors.length > 0) || contactsFilters.startDate || contactsFilters.endDate || contactsFilters.activityStatus !== 'ALL' || contactsFilters.commercialStatus !== 'ALL') && (
                     <button 
-                      onClick={() => setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], startDate: '', endDate: '', activityStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' })}
+                      onClick={() => setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], startDate: '', endDate: '', activityStatus: 'ALL', commercialStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' })}
                       className="text-xs font-medium text-slate-500 hover:text-red-600 underline ml-2 transition-colors"
                     >
                       Limpiar filtros
@@ -3793,12 +3924,63 @@ export default function CrmView() {
               )}
 
               {isBulkSelectionModeContacts && selectedContacts.size > 0 && activeTab === 'contacts' && (
-                <button
-                  onClick={() => setShowBulkActivityModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-md active:scale-95"
-                >
-                  <Wand2 size={16} /> Crear Plan ({selectedContacts.size})
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSetContactTag('CLIENT')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 shadow-xs active:scale-95 cursor-pointer"
+                    title="Marcar los contactos seleccionados como Ya es Cliente (para no prospectarlos)"
+                  >
+                    <Star size={14} className="fill-emerald-600 text-emerald-600" />
+                    <span>Marcar Cliente ({selectedContacts.size})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSetContactTag('DO_NOT_CALL')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 shadow-xs active:scale-95 cursor-pointer"
+                    title="Marcar los contactos seleccionados como No llamar"
+                  >
+                    <Ban size={14} className="text-red-600" />
+                    <span>No llamar ({selectedContacts.size})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkSetContactTag('PROSPECT')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 shadow-xs active:scale-95 cursor-pointer"
+                    title="Restablecer los contactos seleccionados como Prospectos"
+                  >
+                    <span>Marcar Prospecto</span>
+                  </button>
+                  {(() => {
+                    const nonProspectIdsInSelection = Array.from(selectedContacts).filter(id => {
+                      const c = contacts.find(x => x.id === id);
+                      if (!c) return false;
+                      return getContactCommercialStatus(c, deals, activities).status !== 'PROSPECT';
+                    });
+                    if (nonProspectIdsInSelection.length === 0) return null;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = new Set(selectedContacts);
+                          nonProspectIdsInSelection.forEach(id => next.delete(id));
+                          setSelectedContacts(next);
+                          toast.success(`Se quitaron ${nonProspectIdsInSelection.length} clientes/no llamar de la selección`);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 shadow-xs active:scale-95 cursor-pointer"
+                        title="Quitar de la selección a los que ya son clientes o no llamar antes de crear el plan"
+                      >
+                        <span>Excluir clientes ({nonProspectIdsInSelection.length})</span>
+                      </button>
+                    );
+                  })()}
+                  <button
+                    onClick={() => setShowBulkActivityModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-md active:scale-95"
+                  >
+                    <Wand2 size={16} /> Crear Plan ({selectedContacts.size})
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -4192,22 +4374,73 @@ export default function CrmView() {
 
                               {/* Contacto Avatar + Name */}
                               <td className="px-3.5 py-3">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
-                                    {(contact.name || '?').charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="text-slate-900 font-bold text-sm truncate flex items-center gap-1.5">
-                                      <span>{contact.name || 'Sin Nombre'}</span>
-                                      {isExpanded && (
-                                        <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
-                                          Abierto
-                                        </span>
-                                      )}
+                                {(() => {
+                                  const statusInfo = getContactCommercialStatus(contact, deals, activities);
+                                  return (
+                                    <div className="flex items-center gap-2.5">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                        statusInfo.status === 'CLIENT'
+                                          ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300'
+                                          : statusInfo.status === 'DO_NOT_CALL'
+                                          ? 'bg-red-100 text-red-700 ring-1 ring-red-200'
+                                          : 'bg-slate-200 text-slate-700'
+                                      }`}>
+                                        {(contact.name || '?').charAt(0).toUpperCase()}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="text-slate-900 font-bold text-sm truncate flex items-center gap-1.5 flex-wrap">
+                                          <span className="truncate">{contact.name || 'Sin Nombre'}</span>
+                                          {statusInfo.status === 'CLIENT' ? (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleSetContactTag(contact, 'PROSPECT');
+                                              }}
+                                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer"
+                                              title={`${statusInfo.label} (Clic para cambiar a Prospecto)`}
+                                            >
+                                              <Star size={10} className="fill-emerald-600 text-emerald-600" />
+                                              <span>Ya es Cliente</span>
+                                            </button>
+                                          ) : statusInfo.status === 'DO_NOT_CALL' ? (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleSetContactTag(contact, 'PROSPECT');
+                                              }}
+                                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-100 hover:bg-red-200 text-red-800 border border-red-300 transition-colors cursor-pointer"
+                                              title={`${statusInfo.label} (Clic para cambiar a Prospecto)`}
+                                            >
+                                              <Ban size={10} className="text-red-600" />
+                                              <span>No llamar</span>
+                                            </button>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleSetContactTag(contact, 'CLIENT');
+                                              }}
+                                              className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 hover:bg-emerald-100 text-slate-500 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 transition-all cursor-pointer"
+                                              title="Marcar este contacto como Ya es Cliente con 1 clic"
+                                            >
+                                              <Star size={10} />
+                                              <span>Marcar Cliente</span>
+                                            </button>
+                                          )}
+                                          {isExpanded && (
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded bg-blue-100 text-blue-800">
+                                              Abierto
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-xs text-slate-400 sm:hidden truncate">{contact.position || contact.account?.name || '-'}</div>
+                                      </div>
                                     </div>
-                                    <div className="text-xs text-slate-400 sm:hidden truncate">{contact.position || contact.account?.name || '-'}</div>
-                                  </div>
-                                </div>
+                                  );
+                                })()}
                               </td>
 
                               {/* Email */}
@@ -4248,10 +4481,17 @@ export default function CrmView() {
                               </td>
 
                               {/* Empresa */}
-                              <td className="px-3.5 py-3 max-w-[160px]">
-                                <div className="flex items-center gap-1.5 text-sm font-medium text-[#001c3a] truncate" title={contact.account?.name || 'Desconocida'}>
-                                  <Briefcase size={13} className="text-slate-400 shrink-0" />
-                                  <span className="truncate">{contact.account?.name || 'Desconocida'}</span>
+                              <td className="px-3.5 py-3 max-w-[180px]">
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="flex items-center gap-1.5 text-sm font-medium text-[#001c3a] truncate" title={contact.account?.name || 'Desconocida'}>
+                                    <Briefcase size={13} className="text-slate-400 shrink-0" />
+                                    <span className="truncate">{contact.account?.name || 'Desconocida'}</span>
+                                  </div>
+                                  {contact.accountId && clientAccountIds.has(contact.accountId) && (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 w-fit" title="Esta empresa ya es cliente de Coatline (aunque este contacto puede ser un prospecto nuevo)">
+                                      🏢 Empresa Cliente
+                                    </span>
+                                  )}
                                 </div>
                               </td>
 
@@ -4267,36 +4507,41 @@ export default function CrmView() {
                               </td>
 
                               {/* Notas */}
-                              <td 
-                                className="px-3 py-3 text-slate-500 text-sm max-w-[140px] truncate" 
-                                title={contact.notes ? `${contact.notes}\n(Clic para ver la nota completa)` : ''}
-                              >
-                                {contact.notes ? (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveNoteModal({
-                                        title: 'Nota del Contacto',
-                                        entityName: contact.name,
-                                        subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
-                                        notes: contact.notes || '',
-                                        onEdit: () => {
-                                          setActiveNoteModal(null);
-                                          setEditingContact(contact);
-                                          setShowContactModal(true);
-                                        }
-                                      });
-                                    }}
-                                    className="inline-flex items-center gap-1 max-w-full text-slate-700 hover:text-blue-600 transition-colors group/note font-medium text-left cursor-pointer focus:outline-none"
+                              {(() => {
+                                const { cleanNotes } = parseContactTagAndNotes(contact.notes);
+                                return (
+                                  <td 
+                                    className="px-3 py-3 text-slate-500 text-sm max-w-[140px] truncate" 
+                                    title={cleanNotes ? `${cleanNotes}\n(Clic para ver la nota completa)` : ''}
                                   >
-                                    <FileText size={13} className="shrink-0 text-slate-400 group-hover/note:text-blue-500 transition-colors" />
-                                    <span className="truncate group-hover/note:underline">{contact.notes}</span>
-                                  </button>
-                                ) : (
-                                  <span className="text-slate-300">-</span>
-                                )}
-                              </td>
+                                    {cleanNotes ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveNoteModal({
+                                            title: 'Nota del Contacto',
+                                            entityName: contact.name || 'Contacto',
+                                            subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
+                                            notes: cleanNotes,
+                                            onEdit: () => {
+                                              setActiveNoteModal(null);
+                                              setEditingContact(contact);
+                                              setShowContactModal(true);
+                                            }
+                                          });
+                                        }}
+                                        className="inline-flex items-center gap-1 max-w-full text-slate-700 hover:text-blue-600 transition-colors group/note font-medium text-left cursor-pointer focus:outline-none"
+                                      >
+                                        <FileText size={13} className="shrink-0 text-slate-400 group-hover/note:text-blue-500 transition-colors" />
+                                        <span className="truncate group-hover/note:underline">{cleanNotes}</span>
+                                      </button>
+                                    ) : (
+                                      <span className="text-slate-300">-</span>
+                                    )}
+                                  </td>
+                                );
+                              })()}
 
                               {/* Acciones */}
                               <td className="px-3.5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
@@ -4354,7 +4599,49 @@ export default function CrmView() {
                                         </div>
                                       </div>
 
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        {(() => {
+                                          const st = getContactCommercialStatus(contact, deals, activities);
+                                          return (
+                                            <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 mr-1">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleSetContactTag(contact, 'PROSPECT')}
+                                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                                  st.status === 'PROSPECT'
+                                                    ? 'bg-white text-sky-800 shadow-xs border border-sky-200'
+                                                    : 'text-slate-500 hover:text-slate-800'
+                                                }`}
+                                              >
+                                                🔵 Prospecto
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleSetContactTag(contact, 'CLIENT')}
+                                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                                  st.status === 'CLIENT'
+                                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                                    : 'text-slate-500 hover:text-emerald-700'
+                                                }`}
+                                              >
+                                                <Star size={11} className={st.status === 'CLIENT' ? 'fill-white text-white' : ''} />
+                                                <span>Ya es Cliente</span>
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleSetContactTag(contact, 'DO_NOT_CALL')}
+                                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                                  st.status === 'DO_NOT_CALL'
+                                                    ? 'bg-red-600 text-white shadow-xs'
+                                                    : 'text-slate-500 hover:text-red-700'
+                                                }`}
+                                              >
+                                                <Ban size={11} />
+                                                <span>No llamar</span>
+                                              </button>
+                                            </div>
+                                          );
+                                        })()}
                                         <button
                                           type="button"
                                           onClick={() => setRecord360({ id: contact.id, type: 'contact', accountId: contact.accountId })}
@@ -4438,60 +4725,65 @@ export default function CrmView() {
                                       </div>
 
                                       {/* Columna 2: Notas y Observaciones */}
-                                      <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
-                                        <div>
-                                          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                                              <FileText size={13} className="text-slate-500" /> Notas y Observaciones
-                                            </span>
-                                            {contact.notes && (
+                                      {(() => {
+                                        const { cleanNotes } = parseContactTagAndNotes(contact.notes);
+                                        return (
+                                          <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                                            <div>
+                                              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                                  <FileText size={13} className="text-slate-500" /> Notas y Observaciones
+                                                </span>
+                                                {cleanNotes && (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      navigator.clipboard.writeText(cleanNotes);
+                                                      toast.success('Nota copiada al portapapeles');
+                                                    }}
+                                                    className="text-[11px] text-slate-400 hover:text-slate-700 flex items-center gap-1"
+                                                    title="Copiar nota"
+                                                  >
+                                                    <Copy size={11} /> Copiar
+                                                  </button>
+                                                )}
+                                              </div>
+                                              <div className="mt-3">
+                                                {cleanNotes ? (
+                                                  <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                                                    {cleanNotes}
+                                                  </p>
+                                                ) : (
+                                                  <div className="py-6 text-center">
+                                                    <p className="text-xs italic text-slate-400">Sin notas registradas para este contacto.</p>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="pt-3 border-t border-slate-100 mt-2 flex justify-end">
                                               <button
                                                 type="button"
                                                 onClick={() => {
-                                                  navigator.clipboard.writeText(contact.notes || '');
-                                                  toast.success('Nota copiada al portapapeles');
+                                                  setActiveNoteModal({
+                                                    title: 'Nota del Contacto',
+                                                    entityName: contact.name || 'Contacto',
+                                                    subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
+                                                    notes: cleanNotes,
+                                                    onEdit: () => {
+                                                      setActiveNoteModal(null);
+                                                      setEditingContact(contact);
+                                                      setShowContactModal(true);
+                                                    }
+                                                  });
                                                 }}
-                                                className="text-[11px] text-slate-400 hover:text-slate-700 flex items-center gap-1"
-                                                title="Copiar nota"
+                                                className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
                                               >
-                                                <Copy size={11} /> Copiar
+                                                {cleanNotes ? 'Ver en ventana completa →' : '+ Añadir nota'}
                                               </button>
-                                            )}
+                                            </div>
                                           </div>
-                                          <div className="mt-3">
-                                            {contact.notes ? (
-                                              <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto pr-1 custom-scrollbar">
-                                                {contact.notes}
-                                              </p>
-                                            ) : (
-                                              <div className="py-6 text-center">
-                                                <p className="text-xs italic text-slate-400">Sin notas registradas para este contacto.</p>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <div className="pt-3 border-t border-slate-100 mt-2 flex justify-end">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setActiveNoteModal({
-                                                title: 'Nota del Contacto',
-                                                entityName: contact.name,
-                                                subtitle: contact.account?.name ? `Empresa: ${contact.account.name}` : undefined,
-                                                notes: contact.notes || '',
-                                                onEdit: () => {
-                                                  setActiveNoteModal(null);
-                                                  setEditingContact(contact);
-                                                  setShowContactModal(true);
-                                                }
-                                              });
-                                            }}
-                                            className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
-                                          >
-                                            {contact.notes ? 'Ver en ventana completa →' : '+ Añadir nota'}
-                                          </button>
-                                        </div>
-                                      </div>
+                                        );
+                                      })()}
 
                                       {/* Columna 3: Actividades Asociadas */}
                                       <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
@@ -4883,10 +5175,72 @@ export default function CrmView() {
                 </div>
 
                 <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Estatus Comercial del Contacto</label>
+                  {(() => {
+                    const currentParsed = parseContactTagAndNotes(editingContact.notes);
+                    const currentTag: ContactCommercialTag = currentParsed.explicitTag || 'PROSPECT';
+                    return (
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingContact({
+                            ...editingContact,
+                            notes: buildContactNotesWithTag(currentParsed.cleanNotes, null)
+                          })}
+                          className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            currentTag === 'PROSPECT'
+                              ? 'bg-sky-50 border-sky-400 text-sky-900 ring-2 ring-sky-500/15'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span>🔵 Prospecto</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingContact({
+                            ...editingContact,
+                            notes: buildContactNotesWithTag(currentParsed.cleanNotes, 'CLIENT')
+                          })}
+                          className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            currentTag === 'CLIENT'
+                              ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-500/15'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <Star size={12} className={currentTag === 'CLIENT' ? 'fill-emerald-600 text-emerald-600' : ''} />
+                          <span>Ya es Cliente</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingContact({
+                            ...editingContact,
+                            notes: buildContactNotesWithTag(currentParsed.cleanNotes, 'DO_NOT_CALL')
+                          })}
+                          className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            currentTag === 'DO_NOT_CALL'
+                              ? 'bg-red-50 border-red-400 text-red-900 ring-2 ring-red-500/15'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <Ban size={12} className={currentTag === 'DO_NOT_CALL' ? 'text-red-600' : ''} />
+                          <span>No llamar</span>
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Notas</label>
                   <textarea
-                    value={editingContact.notes || ''}
-                    onChange={(e) => setEditingContact({...editingContact, notes: e.target.value})}
+                    value={parseContactTagAndNotes(editingContact.notes).cleanNotes}
+                    onChange={(e) => {
+                      const currentTag = parseContactTagAndNotes(editingContact.notes).explicitTag;
+                      setEditingContact({
+                        ...editingContact,
+                        notes: buildContactNotesWithTag(e.target.value, currentTag)
+                      });
+                    }}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#001c3a]/50 min-h-[80px] resize-y"
                     placeholder="Notas adicionales sobre el contacto..."
                   />
@@ -5396,7 +5750,7 @@ export default function CrmView() {
                 if (filteredIdx !== -1) {
                   setContactsPage(Math.floor(filteredIdx / ITEMS_PER_PAGE) + 1);
                 } else {
-                  setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], startDate: '', endDate: '', activityStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' });
+                  setContactsFilters({ name: '', email: '', phone: '', position: '', accountId: '', sector: '', sectors: [], startDate: '', endDate: '', activityStatus: 'ALL', commercialStatus: 'ALL', orderBy: 'createdAt', orderDir: 'desc' });
                   setSearchQuery('');
                   const allIdx = contacts.findIndex(c => c.id === targetId);
                   if (allIdx !== -1) {

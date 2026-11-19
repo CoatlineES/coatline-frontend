@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { accountsService, contactsService } from '../../services/crm.service';
 import { activitiesService, ACTIVITY_RESULT_LABELS, ActivityResult } from '../../services/activities.service';
+import { parseContactTagAndNotes, getContactCommercialStatus } from '../../utils/contactCommercialStatus';
 
 export interface Record360Focus {
   type: 'account' | 'contact' | 'deal' | 'activity' | 'quotation';
@@ -392,12 +393,34 @@ export default function Record360Modal({ focus, onClose, onNavigate }: Record360
                         )}
                       </div>
 
-                      {targetContact.notes && (
-                        <div className="mt-4 p-3.5 bg-slate-50 rounded-xl text-xs text-slate-600 border border-slate-100">
-                          <span className="font-bold text-slate-700 block mb-1">Notas del contacto:</span>
-                          {targetContact.notes}
-                        </div>
-                      )}
+                      {(() => {
+                        const st = getContactCommercialStatus(targetContact, data?.deals || [], allActivities);
+                        return (
+                          <>
+                            <div className="mt-3 flex items-center gap-2">
+                              {st.status === 'CLIENT' ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  ⭐ {st.label}
+                                </span>
+                              ) : st.status === 'DO_NOT_CALL' ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-red-100 text-red-800 border border-red-300">
+                                  🚫 {st.label}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-50 text-sky-800 border border-sky-200">
+                                  🔵 Prospecto
+                                </span>
+                              )}
+                            </div>
+                            {st.cleanNotes && (
+                              <div className="mt-4 p-3.5 bg-slate-50 rounded-xl text-xs text-slate-600 border border-slate-100">
+                                <span className="font-bold text-slate-700 block mb-1">Notas del contacto:</span>
+                                {st.cleanNotes}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </SectionStatic>
                 )}
